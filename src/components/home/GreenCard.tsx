@@ -1,4 +1,5 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { EXPENSE_CATEGORIES, FinancialStatus } from '../../types';
 import DonutChart from './DonutChart';
@@ -51,8 +52,53 @@ function CopperCoin() {
   );
 }
 
+// Draws a rounded rectangle path (does not stroke/fill — caller does that)
+function rrPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawDonutOnCanvas(
+  ctx: CanvasRenderingContext2D,
+  cx: number, cy: number,
+  outerR: number, innerR: number,
+  slices: Slice[], total: number,
+) {
+  if (total === 0 || slices.length === 0) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+    ctx.arc(cx, cy, innerR, 0, Math.PI * 2, true);
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.fill();
+    return;
+  }
+  const GAP = 0.04;
+  let angle = -Math.PI / 2;
+  for (const slice of slices) {
+    const sweep = (slice.amount / total) * Math.PI * 2 - GAP;
+    if (sweep <= 0) continue;
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, angle + GAP / 2, angle + GAP / 2 + sweep);
+    ctx.arc(cx, cy, innerR, angle + GAP / 2 + sweep, angle + GAP / 2, true);
+    ctx.closePath();
+    ctx.fillStyle = slice.color;
+    ctx.fill();
+    angle += sweep + GAP;
+  }
+}
+
 export default function GreenCard({ year, month, onPrev, onNext }: Props) {
   const { getMonthTransactions, getMonthIncome, getMonthExpenses } = useApp();
+  const [sharing, setSharing] = useState(false);
 
   const txs = getMonthTransactions(year, month);
   const totalIncome = getMonthIncome(year, month);
@@ -62,13 +108,12 @@ export default function GreenCard({ year, month, onPrev, onNext }: Props) {
   const status = getStatus(totalIncome, totalExpenses);
 
   const statusConfig = {
-    excellent: { label: 'Excellent', Coin: GoldCoin, bg: 'rgba(251,191,36,0.2)', text: '#fbbf24' },
-    sustained: { label: 'Sustained', Coin: SilverCoin, bg: 'rgba(148,163,184,0.2)', text: '#cbd5e1' },
-    critical: { label: 'Critical', Coin: CopperCoin, bg: 'rgba(180,83,9,0.2)', text: '#f97316' },
+    excellent: { label: 'Excellent', Coin: GoldCoin, text: '#fbbf24', coinColor: '#f59e0b' },
+    sustained: { label: 'Sustained', Coin: SilverCoin, text: '#cbd5e1', coinColor: '#94a3b8' },
+    critical:  { label: 'Critical',  Coin: CopperCoin, text: '#f97316', coinColor: '#b45309' },
   };
-  const { label, Coin, bg, text } = statusConfig[status];
+  const { label, Coin, text, coinColor } = statusConfig[status];
 
-  // Build pie slices from expense categories
   const categoryTotals: Record<string, number> = {};
   txs.filter(t => t.type === 'expense').forEach(t => {
     categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
@@ -76,22 +121,193 @@ export default function GreenCard({ year, month, onPrev, onNext }: Props) {
 
   const slices: Slice[] = EXPENSE_CATEGORIES
     .filter(c => categoryTotals[c.id])
-    .map(c => ({
-      category: c.id,
-      label: c.label,
-      amount: categoryTotals[c.id],
-      color: c.color,
-    }));
+    .map(c => ({ category: c.id, label: c.label, amount: categoryTotals[c.id], color: c.color }));
 
   const now = new Date();
-  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
   const isFuture = new Date(year, month) > new Date(now.getFullYear(), now.getMonth());
 
-  return (
-    <div className="mx-4 mt-4 rounded-3xl overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 40%, #166534 100%)' }}>
+  async function handleShare() {
+    setSharing(true);
+    try {
+      const SCALE = 2;
+      const W = 750, H = 460, PAD = 24;
+      const canvas = document.createElement('canvas');
+      canvas.width = W * SCALE;
+      canvas.height = H * SCALE;
+      const ctx = canvas.getContext('2d')!;
+      ctx.scale(SCALE, SCALE);
 
-      {/* Month nav */}
+      // Background gradient
+      const grad = ctx.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, '#16a34a');
+      grad.addColorStop(0.5, '#15803d');
+      grad.addColorStop(1, '#14532d');
+      ctx.fillStyle = grad;
+      rrPath(ctx, 0, 0, W, H, 24);
+      ctx.fill();
+
+      // ── Header: logo + month ──
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.font = '13px -apple-system, system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('ExpenseWise', PAD, 34);
+
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 20px -apple-system, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${MONTHS[month]} ${year}`, W / 2, 35);
+
+      // ── Status glass box (y: 50–122) ──
+      const sY = 50, sH = 72;
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      rrPath(ctx, PAD, sY, W - PAD * 2, sH, 16);
+      ctx.fill();
+
+      // Coin circle
+      const coinX = PAD + 38, coinY = sY + sH / 2;
+      ctx.fillStyle = coinColor;
+      ctx.beginPath();
+      ctx.arc(coinX, coinY, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = status === 'excellent' ? '#92400e' : status === 'sustained' ? '#1e293b' : '#fef3c7';
+      ctx.font = 'bold 14px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('$', coinX, coinY + 5);
+
+      // Status text
+      ctx.fillStyle = text;
+      ctx.font = 'bold 20px -apple-system, system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(label, PAD + 68, sY + 33);
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = '12px -apple-system, system-ui, sans-serif';
+      ctx.fillText('Financial Status', PAD + 68, sY + 53);
+
+      // Score right
+      ctx.textAlign = 'right';
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.fillText('Score', W - PAD, sY + 33);
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 18px -apple-system, system-ui, sans-serif';
+      ctx.fillText(status === 'excellent' ? '90+' : status === 'sustained' ? '60–79' : '<60', W - PAD, sY + 55);
+
+      // ── Donut + category list (y: 138–338) ──
+      const chartY = sY + sH + 16;
+      const chartH = 200;
+      const chartCX = 140, chartCY = chartY + chartH / 2;
+      const outerR = 74, innerR = 48;
+
+      drawDonutOnCanvas(ctx, chartCX, chartCY, outerR, innerR, slices, totalExpenses);
+
+      // Center label
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Expenses', chartCX, chartCY - 11);
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 17px -apple-system, system-ui, sans-serif';
+      ctx.fillText(`$${totalExpenses.toLocaleString()}`, chartCX, chartCY + 10);
+
+      // Category list
+      const catStartX = chartCX + outerR + 30;
+      const topSlices = slices.slice(0, 4);
+      ctx.textAlign = 'left';
+      topSlices.forEach((slice, i) => {
+        const rowY = chartY + 16 + i * 46;
+        ctx.fillStyle = slice.color;
+        ctx.beginPath();
+        ctx.arc(catStartX, rowY + 8, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.font = '14px -apple-system, system-ui, sans-serif';
+        ctx.textAlign = 'left';
+        // Truncate long labels
+        const maxLabelW = W - PAD - catStartX - 16 - 80;
+        let lbl = slice.label;
+        ctx.font = '14px -apple-system, system-ui, sans-serif';
+        while (ctx.measureText(lbl).width > maxLabelW && lbl.length > 3) {
+          lbl = lbl.slice(0, -1);
+        }
+        if (lbl !== slice.label) lbl += '…';
+        ctx.fillText(lbl, catStartX + 16, rowY + 13);
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 14px -apple-system, system-ui, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(`$${slice.amount.toLocaleString()}`, W - PAD, rowY + 13);
+      });
+
+      if (slices.length === 0) {
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = '14px -apple-system, system-ui, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('No expenses recorded', catStartX, chartY + chartH / 2 + 5);
+      }
+
+      // ── Income / Remaining boxes (y: 354–426) ──
+      const boxY = chartY + chartH + 16;
+      const boxH = 72;
+      const boxW = Math.floor((W - PAD * 2 - 12) / 2);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      rrPath(ctx, PAD, boxY, boxW, boxH, 16);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('INCOME', PAD + 14, boxY + 24);
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 22px -apple-system, system-ui, sans-serif';
+      ctx.fillText(`$${totalIncome.toLocaleString()}`, PAD + 14, boxY + 54);
+
+      const remX = PAD + boxW + 12;
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      rrPath(ctx, remX, boxY, boxW, boxH, 16);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('REMAINING', remX + 14, boxY + 24);
+      ctx.fillStyle = remaining >= 0 ? 'white' : '#fca5a5';
+      ctx.font = 'bold 22px -apple-system, system-ui, sans-serif';
+      ctx.fillText(`$${Math.abs(remaining).toLocaleString()}`, remX + 14, boxY + 54);
+
+      // ── Footer ──
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.font = '11px -apple-system, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      ctx.fillText(`Generated with ExpenseWise · ${today}`, W / 2, boxY + boxH + 22);
+
+      // Download / share
+      const dataUrl = canvas.toDataURL('image/png');
+      const filename = `ExpenseWise-${MONTHS[month]}-${year}.png`;
+
+      if (navigator.share) {
+        try {
+          const blob = await fetch(dataUrl).then(r => r.blob());
+          const file = new File([blob], filename, { type: 'image/png' });
+          if (navigator.canShare?.({ files: [file] })) {
+            await navigator.share({ files: [file], title: `${MONTHS[month]} ${year} – ExpenseWise` });
+            return;
+          }
+        } catch { /* fall through */ }
+      }
+      const a = document.createElement('a');
+      a.download = filename;
+      a.href = dataUrl;
+      a.click();
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  return (
+    <div
+      className="mx-4 mt-4 rounded-3xl overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 40%, #166534 100%)' }}
+    >
+      {/* Month nav + share button */}
       <div className="flex items-center justify-between px-5 pt-4 pb-2">
         <button onClick={onPrev} className="w-7 h-7 rounded-full glass flex items-center justify-center active:scale-90 transition-transform">
           <ChevronLeft size={16} className="text-white" />
@@ -99,9 +315,26 @@ export default function GreenCard({ year, month, onPrev, onNext }: Props) {
         <span className="text-white font-semibold text-sm tracking-wide">
           {MONTHS[month]} {year}
         </span>
-        <button onClick={onNext} disabled={isFuture} className="w-7 h-7 rounded-full glass flex items-center justify-center active:scale-90 transition-transform disabled:opacity-30">
-          <ChevronRight size={16} className="text-white" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={onNext}
+            disabled={isFuture}
+            className="w-7 h-7 rounded-full glass flex items-center justify-center active:scale-90 transition-transform disabled:opacity-30"
+          >
+            <ChevronRight size={16} className="text-white" />
+          </button>
+          <button
+            onClick={handleShare}
+            disabled={sharing}
+            className="w-7 h-7 rounded-full glass flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
+            title="Share as image"
+          >
+            {sharing
+              ? <div className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" />
+              : <Share2 size={13} className="text-white" />
+            }
+          </button>
+        </div>
       </div>
 
       {/* Financial status glass box */}

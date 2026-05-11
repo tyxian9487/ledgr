@@ -70,10 +70,14 @@ export default function ReceiptCapture() {
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d')?.drawImage(video, 0, 0);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    // Resize to max 600px wide to keep stored image small
+    const MAX_W = 600;
+    const scale = Math.min(1, MAX_W / video.videoWidth);
+    canvas.width = Math.round(video.videoWidth * scale);
+    canvas.height = Math.round(video.videoHeight * scale);
+    const ctx2d = canvas.getContext('2d');
+    ctx2d?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
     stopCamera();
     setCapturedImage(dataUrl);
     setStage('processing');
@@ -91,11 +95,11 @@ export default function ReceiptCapture() {
     setCameraActive(false);
   }, [stopCamera]);
 
-  // Show entry modal after AI parse
+  // Show entry modal after AI parse — pass receipt image through
   if (stage === 'review' && parsed) {
     return (
       <ManualEntryModal
-        prefill={parsed}
+        prefill={{ ...parsed, receiptImage: capturedImage ?? undefined }}
         onClose={() => { navigate('/'); }}
       />
     );

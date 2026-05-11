@@ -13,6 +13,7 @@ export interface Transaction {
   date: string;
   isAutoDebit: boolean;
   autoDebitPeriod?: AutoDebitPeriod;
+  receiptImage?: string;
 }
 
 export interface UserProfile {
