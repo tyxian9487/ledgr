@@ -69,8 +69,8 @@ export default function ManualEntryModal({ onClose, prefill }: Props) {
       >
         {/* Sheet — flex column so header+footer never scroll away */}
         <div
-          className="w-full max-w-[430px] bg-white dark:bg-gray-900 rounded-t-3xl animate-slide-up flex flex-col"
-          style={{ maxHeight: '92dvh' }}
+          className="w-full max-w-[430px] bg-white dark:bg-gray-900 rounded-t-3xl animate-slide-up flex flex-col overflow-hidden"
+          style={{ maxHeight: '92vh' }}
         >
           {/* ── Non-scrolling header ── */}
           <div className="flex-shrink-0">
@@ -85,8 +85,8 @@ export default function ManualEntryModal({ onClose, prefill }: Props) {
             </div>
           </div>
 
-          {/* ── Scrollable form body ── */}
-          <div className="flex-1 overflow-y-auto px-5 space-y-4 pb-2" style={{ overscrollBehavior: 'contain' }}>
+          {/* ── Scrollable form body — min-h-0 is required so flex-1 can shrink below content size ── */}
+          <div className="flex-1 min-h-0 overflow-y-auto px-5 space-y-4 pb-2" style={{ overscrollBehavior: 'contain' }}>
 
             {/* Receipt thumbnail (from capture) */}
             {prefill?.receiptImage && (
