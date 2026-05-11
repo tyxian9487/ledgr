@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { EXPENSE_CATEGORIES } from '../../types';
 
 interface Slice {
   category: string;

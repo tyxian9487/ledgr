@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { Camera, X, RefreshCw, CheckCircle } from 'lucide-react';
+import { Camera, X, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ManualEntryModal from '../components/home/ManualEntryModal';
 import { TransactionType } from '../types';
