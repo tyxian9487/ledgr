@@ -148,7 +148,8 @@ export default function ManualEntryModal({ onClose, prefill }: Props) {
                   type="date"
                   value={date}
                   onChange={e => setDate(e.target.value)}
-                  className="flex-1 bg-transparent text-sm font-medium outline-none dark:text-white dark:[color-scheme:dark]"
+                  className="flex-1 bg-transparent text-sm font-medium outline-none dark:text-white"
+                  style={{ colorScheme: 'auto' }}
                 />
               </div>
             </div>

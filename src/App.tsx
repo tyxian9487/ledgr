@@ -1,5 +1,6 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
+import ErrorBoundary from './components/ErrorBoundary';
 import BottomNav from './components/BottomNav';
 import Home from './pages/Home';
 import ReceiptCapture from './pages/ReceiptCapture';
@@ -23,8 +24,10 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppRoutes />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <AppRoutes />
+      </AppProvider>
+    </ErrorBoundary>
   );
 }
