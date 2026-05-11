@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/heylookhereee/',
+  base: '/ledgr/',
   server: {
     host: true,
     allowedHosts: true,
