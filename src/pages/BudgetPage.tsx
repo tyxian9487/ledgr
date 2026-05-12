@@ -3,6 +3,7 @@ import {
   ArrowLeft, Sparkles, RotateCcw, ChevronDown, ChevronUp,
   Home, UtensilsCrossed, Car, Heart, Zap, Tv, ShoppingBag,
   PiggyBank, RefreshCw, Gem, MoreHorizontal, TrendingUp, ToggleLeft, ToggleRight,
+  Lock, Unlock,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -147,6 +148,8 @@ export default function BudgetPage() {
   const [analyzed, setAnalyzed] = useState(budget.allocations.length > 0);
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
+  const [incomeFixed, setIncomeFixed] = useState(budget.incomeFixed ?? false);
+
   const [savingsEnabled, setSavingsEnabled] = useState(true);
   const [savingsMode, setSavingsMode] = useState<'pct' | 'fixed'>('pct');
   const [savingsValue, setSavingsValue] = useState('');
@@ -191,7 +194,14 @@ export default function BudgetPage() {
         ? parseFloat(investValue)
         : Math.round((parseFloat(investValue) / income) * 100)
       : undefined;
-    const result = analyzeAllocations(income, savPct, invPct);
+    const savAmt = savingsEnabled && savingsValue
+      ? savingsMode === 'pct' ? income * (parseFloat(savingsValue) / 100) : parseFloat(savingsValue)
+      : 0;
+    const invAmt = investEnabled && investValue
+      ? investMode === 'pct' ? income * (parseFloat(investValue) / 100) : parseFloat(investValue)
+      : 0;
+    const spendable = Math.max(0, income - savAmt - invAmt);
+    const result = analyzeAllocations(spendable, savPct, invPct);
     setAllocations(result);
     setAnalyzed(true);
   }
@@ -213,11 +223,12 @@ export default function BudgetPage() {
   const investAmt = income > 0 && investValue
     ? investMode === 'pct' ? income * (parseFloat(investValue) / 100) : parseFloat(investValue)
     : 0;
+  const netIncome = Math.max(0, income - savingsAmt - investAmt);
 
   const handleSave = useCallback(() => {
-    updateBudget({ expectedIncome: income, allocations });
+    updateBudget({ expectedIncome: income, allocations, incomeFixed });
     navigate('/');
-  }, [income, allocations, updateBudget, navigate]);
+  }, [income, allocations, incomeFixed, updateBudget, navigate]);
 
   const refIncome = income > 0 ? income : (actualIncome > 0 ? actualIncome : 5000);
 
@@ -247,7 +258,21 @@ export default function BudgetPage() {
 
         {/* Income input */}
         <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800">
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider mb-3">Expected Monthly Income</p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">Expected Monthly Income</p>
+            <button
+              type="button"
+              onClick={() => setIncomeFixed(v => !v)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors ${
+                incomeFixed
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
+              }`}
+            >
+              {incomeFixed ? <Lock size={10} /> : <Unlock size={10} />}
+              {incomeFixed ? 'Fixed' : 'Variable'}
+            </button>
+          </div>
           {actualIncome > 0 && !budget.expectedIncome && (
             <p className="text-xs text-green-600 dark:text-green-400 mb-2 font-medium">
               Auto-filled from your {new Date(NOW.getFullYear(), NOW.getMonth()).toLocaleString('default', { month: 'long' })} income
@@ -373,12 +398,19 @@ export default function BudgetPage() {
         {/* Donut + total */}
         {analyzed && (
           <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">Budget Allocation</p>
               <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${Math.abs(totalPct - 100) < 1 ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-orange-100 dark:bg-orange-900/30 text-orange-500'}`}>
                 {totalPct.toFixed(0)}% allocated
               </span>
             </div>
+            {(savingsAmt > 0 || investAmt > 0) && income > 0 && (
+              <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-xl">
+                <span className="text-xs text-gray-500 dark:text-gray-400 flex-1">Spendable after goals</span>
+                <span className="text-xs font-bold text-green-700 dark:text-green-400">${Math.round(netIncome).toLocaleString()}</span>
+                <span className="text-[10px] text-gray-400">/ ${Math.round(income).toLocaleString()}</span>
+              </div>
+            )}
             <div className="flex items-center gap-5">
               <div className="flex-shrink-0 relative">
                 <MiniDonut allocations={displayAllocations} size={140} />

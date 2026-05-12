@@ -33,6 +33,7 @@ export interface BudgetAllocation {
 export interface BudgetSettings {
   expectedIncome: number;
   allocations: BudgetAllocation[];
+  incomeFixed?: boolean;
 }
 
 export const EXPENSE_CATEGORIES = [

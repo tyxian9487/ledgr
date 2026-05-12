@@ -8,6 +8,7 @@ import ManualEntryModal from './ManualEntryModal';
 interface Props {
   year: number;
   month: number;
+  filterFn?: (t: Transaction) => boolean;
 }
 
 function formatDate(iso: string) {
@@ -15,13 +16,14 @@ function formatDate(iso: string) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export default function Categories({ year, month }: Props) {
+export default function Categories({ year, month, filterFn }: Props) {
   const { getMonthTransactions, removeTransaction } = useApp();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
 
-  const txs = getMonthTransactions(year, month);
+  const allTxs = getMonthTransactions(year, month);
+  const txs = filterFn ? allTxs.filter(filterFn) : allTxs;
   const allCategories = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
 
   const rows = allCategories
