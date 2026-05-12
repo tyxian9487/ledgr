@@ -39,21 +39,31 @@ export default function DonutChart({ slices, total }: Props) {
   });
 
   const active = paths.find(p => p.category === activeSlice);
+  const ringR = (outerR + innerR) / 2;
+  const ringW = outerR - innerR;
 
   return (
     <div className="flex flex-col items-center gap-1">
       <div className="relative">
         <svg width={160} height={160} viewBox="0 0 160 160">
           {paths.length === 0 ? (
-            <circle cx={cx} cy={cy} r={outerR} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={outerR - innerR} />
+            <circle cx={cx} cy={cy} r={ringR} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={ringW} />
+          ) : paths.length === 1 ? (
+            /* Single slice — full ring, no arc ambiguity */
+            <circle
+              cx={cx} cy={cy} r={ringR} fill="none"
+              stroke={paths[0].color} strokeWidth={ringW}
+              opacity={1} style={{ cursor: 'pointer' }}
+              onClick={() => setActiveSlice(activeSlice === paths[0].category ? null : paths[0].category)}
+            />
           ) : (
             paths.map((p) => (
               <path
                 key={p.category}
-                d={arcPath(cx, cy, (outerR + innerR) / 2, p.start, p.end)}
+                d={arcPath(cx, cy, ringR, p.start, p.end)}
                 fill="none"
                 stroke={p.color}
-                strokeWidth={outerR - innerR}
+                strokeWidth={ringW}
                 strokeLinecap="butt"
                 opacity={activeSlice && activeSlice !== p.category ? 0.4 : 1}
                 style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}

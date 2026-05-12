@@ -67,7 +67,7 @@ export default function SubscriptionPage() {
               </div>
               <div>
                 <p className="font-bold text-base dark:text-white">Monthly</p>
-                <p className="text-xs text-gray-400 mt-0.5">Billed every month</p>
+                <p className="text-xs text-gray-400 mt-0.5 text-left">Billed every month</p>
               </div>
             </div>
             {/* Right — price */}
@@ -101,7 +101,7 @@ export default function SubscriptionPage() {
                     Best Value
                   </span>
                 </div>
-                <p className="text-xs text-gray-400 mt-0.5">Billed once a year</p>
+                <p className="text-xs text-gray-400 mt-0.5 text-left">Billed once a year</p>
                 <p className="text-xs text-green-600 dark:text-green-400 font-medium mt-1">
                   Save <span className="font-bold">${YEARLY_SAVINGS}</span> vs monthly
                 </p>
