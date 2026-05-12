@@ -1,14 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Transaction, UserProfile } from '../types';
+import { Transaction, UserProfile, BudgetSettings } from '../types';
 
 interface AppContextType {
   transactions: Transaction[];
   userProfile: UserProfile;
   darkMode: boolean;
+  budget: BudgetSettings;
   addTransaction: (t: Omit<Transaction, 'id'>) => void;
   removeTransaction: (id: string) => void;
   updateUserProfile: (p: Partial<UserProfile>) => void;
   toggleDarkMode: () => void;
+  updateBudget: (b: BudgetSettings) => void;
   getMonthTransactions: (year: number, month: number) => Transaction[];
   getMonthIncome: (year: number, month: number) => number;
   getMonthExpenses: (year: number, month: number) => number;
@@ -23,6 +25,11 @@ const DEFAULT_PROFILE: UserProfile = {
   email: 'user@example.com',
   avatar: null,
   plan: 'free',
+};
+
+const DEFAULT_BUDGET: BudgetSettings = {
+  expectedIncome: 0,
+  allocations: [],
 };
 
 function generateSampleData(): Transaction[] {
@@ -50,6 +57,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [darkMode, setDarkMode] = useState(false);
+  const [budget, setBudget] = useState<BudgetSettings>(DEFAULT_BUDGET);
 
   useEffect(() => {
     try {
@@ -59,6 +67,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setTransactions(data.transactions || generateSampleData());
         setUserProfile(data.userProfile || DEFAULT_PROFILE);
         setDarkMode(data.darkMode || false);
+        setBudget(data.budget || DEFAULT_BUDGET);
       } else {
         setTransactions(generateSampleData());
       }
@@ -76,8 +85,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [darkMode]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ transactions, userProfile, darkMode }));
-  }, [transactions, userProfile, darkMode]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ transactions, userProfile, darkMode, budget }));
+  }, [transactions, userProfile, darkMode, budget]);
 
   const addTransaction = useCallback((t: Omit<Transaction, 'id'>) => {
     const newT: Transaction = { ...t, id: Date.now().toString() };
@@ -94,6 +103,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const toggleDarkMode = useCallback(() => {
     setDarkMode(prev => !prev);
+  }, []);
+
+  const updateBudget = useCallback((b: BudgetSettings) => {
+    setBudget(b);
   }, []);
 
   const getMonthTransactions = useCallback((year: number, month: number) => {
@@ -120,10 +133,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       transactions,
       userProfile,
       darkMode,
+      budget,
       addTransaction,
       removeTransaction,
       updateUserProfile,
       toggleDarkMode,
+      updateBudget,
       getMonthTransactions,
       getMonthIncome,
       getMonthExpenses,

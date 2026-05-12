@@ -23,6 +23,18 @@ export interface UserProfile {
   plan: 'free' | 'premium';
 }
 
+export interface BudgetAllocation {
+  categoryId: string;
+  label: string;
+  color: string;
+  percentage: number;
+}
+
+export interface BudgetSettings {
+  expectedIncome: number;
+  allocations: BudgetAllocation[];
+}
+
 export const EXPENSE_CATEGORIES = [
   { id: 'food', label: 'Food & Dining', icon: 'UtensilsCrossed', color: '#f97316' },
   { id: 'transport', label: 'Transportation', icon: 'Car', color: '#3b82f6' },
