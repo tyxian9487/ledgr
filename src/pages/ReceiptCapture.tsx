@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { Camera, RefreshCw, ImageIcon } from 'lucide-react';
+import { Camera, X, RefreshCw, ImageIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ManualEntryModal from '../components/home/ManualEntryModal';
 import { TransactionType } from '../types';
@@ -179,17 +179,18 @@ export default function ReceiptCapture() {
         onChange={handleGalleryUpload}
       />
 
-      {/* Controls */}
-      <div className="bg-black/80 px-6 py-6 pb-24 flex items-center justify-between gap-4">
+      {/* Controls — always: [red X cancel] [main action] [gallery] */}
+      <div className="bg-black/80 px-8 py-6 pb-24 flex items-center justify-between">
+        {/* Cancel — round red X */}
         <button
-          onClick={() => navigate('/')}
-          className="px-5 py-2.5 rounded-2xl bg-white/15 border border-white/20 text-white text-sm font-semibold active:scale-95 transition-transform"
+          onClick={() => { stopCamera(); navigate('/'); }}
+          className="w-14 h-14 rounded-full bg-red-500/20 border-2 border-red-500/60 flex items-center justify-center active:scale-90 transition-transform"
         >
-          Cancel
+          <X size={22} className="text-red-400" />
         </button>
 
+        {/* Center — shutter when active, start-camera when not */}
         {cameraActive ? (
-          /* Shutter button */
           <button
             onClick={capturePhoto}
             className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
@@ -197,32 +198,21 @@ export default function ReceiptCapture() {
             <div className="w-16 h-16 rounded-full border-4 border-black/20 bg-white" />
           </button>
         ) : (
-          /* Two buttons: camera + gallery */
-          <div className="flex flex-1 gap-3">
-            <button
-              onClick={startCamera}
-              className="flex-1 py-4 rounded-2xl bg-green-600 text-white font-bold text-sm active:scale-[0.98] transition-transform shadow-lg shadow-green-600/30 flex items-center justify-center gap-2"
-            >
-              <Camera size={18} />
-              Camera
-            </button>
-            <button
-              onClick={() => galleryRef.current?.click()}
-              className="flex-1 py-4 rounded-2xl bg-white/10 border border-white/20 text-white font-bold text-sm active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
-            >
-              <ImageIcon size={18} />
-              Gallery
-            </button>
-          </div>
+          <button
+            onClick={startCamera}
+            className="w-20 h-20 rounded-full bg-green-600 flex items-center justify-center shadow-2xl shadow-green-600/40 active:scale-95 transition-transform"
+          >
+            <Camera size={32} className="text-white" />
+          </button>
         )}
 
-        {cameraActive ? (
-          <button onClick={reset} className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
-            <RefreshCw size={18} className="text-white" />
-          </button>
-        ) : (
-          <div className="w-12" />
-        )}
+        {/* Gallery — round */}
+        <button
+          onClick={() => galleryRef.current?.click()}
+          className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center active:scale-90 transition-transform"
+        >
+          <ImageIcon size={20} className="text-white" />
+        </button>
       </div>
     </div>
   );

@@ -31,7 +31,7 @@ const BUDGET_GROUPS: BudgetGroup[] = [
   { label: 'Other', color: '#94a3b8', categoryIds: ['education', 'travel', 'insurance', 'others'], Icon: MoreHorizontal },
 ];
 
-function analyzeAllocations(income: number): BudgetAllocation[] {
+function analyzeAllocations(income: number, savingsTargetPct?: number, investTargetPct?: number): BudgetAllocation[] {
   let plan: { id: string; pct: number }[];
   if (income >= 8000) {
     plan = [
@@ -55,12 +55,34 @@ function analyzeAllocations(income: number): BudgetAllocation[] {
       { id: 'personal', pct: 4 }, { id: 'other', pct: 3 },
     ];
   }
-  return BUDGET_GROUPS.map((g, i) => ({
+
+  const result = BUDGET_GROUPS.map((g, i) => ({
     categoryId: g.categoryIds[0],
     label: g.label,
     color: g.color,
     percentage: plan[i]?.pct ?? 5,
   }));
+
+  // Apply savings override — bake the user's goal directly into the allocation
+  if (savingsTargetPct !== undefined) {
+    const idx = result.findIndex(a => a.categoryId === 'savings');
+    if (idx >= 0) result[idx] = { ...result[idx], percentage: savingsTargetPct };
+  }
+
+  // If investment goal takes up budget, scale non-savings items proportionally
+  if (investTargetPct && investTargetPct > 0) {
+    const savPct = result.find(a => a.categoryId === 'savings')?.percentage ?? 0;
+    const nonSavTotal = result.filter(a => a.categoryId !== 'savings').reduce((s, a) => s + a.percentage, 0);
+    const nonSavTarget = 100 - savPct - investTargetPct;
+    if (nonSavTotal > 0 && nonSavTarget > 0) {
+      const scale = nonSavTarget / nonSavTotal;
+      result.forEach((a, i) => {
+        if (a.categoryId !== 'savings') result[i] = { ...a, percentage: Math.max(1, Math.round(a.percentage * scale)) };
+      });
+    }
+  }
+
+  return result;
 }
 
 function MiniDonut({ allocations, size = 140 }: { allocations: BudgetAllocation[]; size?: number }) {
@@ -144,12 +166,34 @@ export default function BudgetPage() {
       .reduce((s, t) => s + t.amount, 0);
   });
 
+  // Validate: goals that are enabled must have a value before generating
+  const canAnalyze = income > 0
+    && (!savingsEnabled || savingsValue.trim() !== '')
+    && (!investEnabled || investValue.trim() !== '');
+
+  const analyzeBlockReason = income <= 0
+    ? 'Enter your expected income first'
+    : savingsEnabled && savingsValue.trim() === ''
+    ? 'Enter your savings goal amount or disable it'
+    : investEnabled && investValue.trim() === ''
+    ? 'Enter your investment goal amount or disable it'
+    : null;
+
   function handleAnalyze() {
-    if (income <= 0) return;
-    const result = analyzeAllocations(income);
+    if (!canAnalyze) return;
+    const savPct = savingsEnabled && savingsValue
+      ? savingsMode === 'pct'
+        ? parseFloat(savingsValue)
+        : Math.round((parseFloat(savingsValue) / income) * 100)
+      : undefined;
+    const invPct = investEnabled && investValue
+      ? investMode === 'pct'
+        ? parseFloat(investValue)
+        : Math.round((parseFloat(investValue) / income) * 100)
+      : undefined;
+    const result = analyzeAllocations(income, savPct, invPct);
     setAllocations(result);
     setAnalyzed(true);
-    setSavingsEnabled(true);
   }
 
   function handleReset() {
@@ -179,19 +223,11 @@ export default function BudgetPage() {
 
   const savingsPct = analyzed ? (allocations.find(a => a.categoryId === 'savings')?.percentage ?? 0) : 0;
 
-  // Merge savings/investment goals into allocations for the donut display
-  const displayAllocations: BudgetAllocation[] = analyzed ? (() => {
-    const result = allocations.map(a => {
-      if (a.categoryId === 'savings' && savingsEnabled && savingsAmt > 0 && income > 0) {
-        return { ...a, percentage: Math.round((savingsAmt / income) * 100) };
-      }
-      return a;
-    });
-    if (investEnabled && investAmt > 0 && income > 0) {
-      result.push({ categoryId: 'investment_goal', label: 'Investment Goal', color: '#8b5cf6', percentage: Math.round((investAmt / income) * 100) });
-    }
-    return result;
-  })() : allocations;
+  // Savings is already baked into allocations by handleAnalyze.
+  // Only add investment goal as an extra display item.
+  const displayAllocations: BudgetAllocation[] = analyzed && investEnabled && investAmt > 0 && income > 0
+    ? [...allocations, { categoryId: 'investment_goal', label: 'Investment Goal', color: '#8b5cf6', percentage: Math.round((investAmt / income) * 100) }]
+    : allocations;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-10">
@@ -228,14 +264,17 @@ export default function BudgetPage() {
               inputMode="decimal"
             />
           </div>
-          <button type="button" onClick={handleAnalyze} disabled={income <= 0}
+          <button type="button" onClick={handleAnalyze} disabled={!canAnalyze}
             className="w-full py-3.5 rounded-2xl bg-green-600 text-white font-bold flex items-center justify-center gap-2 disabled:opacity-40 active:scale-[0.98] transition-all shadow-md shadow-green-600/20">
             <Sparkles size={16} />
             Analyze with AI
           </button>
-          {analyzed && (
-            <p className="text-center text-xs text-green-600 dark:text-green-400 font-medium mt-2">
-              ✓ Optimal allocation calculated · Includes {savingsPct}% savings
+          {analyzeBlockReason && (
+            <p className="text-left text-xs text-amber-500 dark:text-amber-400 font-medium mt-2">⚠ {analyzeBlockReason}</p>
+          )}
+          {analyzed && !analyzeBlockReason && (
+            <p className="text-left text-xs text-green-600 dark:text-green-400 font-medium mt-2">
+              ✓ Allocation generated{savingsEnabled && savingsValue ? ` · Savings locked at ${savingsPct}%` : ` · Includes ${savingsPct}% savings`}{investEnabled && investValue ? ` · Investment goal included` : ''}
             </p>
           )}
         </div>
@@ -463,7 +502,7 @@ export default function BudgetPage() {
               );
             })}
             {allocations.filter(a => a.percentage > 0 && actualByGroup[a.categoryId] > 0).length === 0 && (
-              <p className="text-xs text-gray-400 text-center py-2">No expense data for this month yet</p>
+              <p className="text-xs text-gray-400 text-left py-2">No expense data for this month yet</p>
             )}
           </div>
         )}
