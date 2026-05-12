@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { Camera, X, RefreshCw } from 'lucide-react';
+import { Camera, X, RefreshCw, ImageIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ManualEntryModal from '../components/home/ManualEntryModal';
 import { TransactionType } from '../types';
@@ -13,11 +13,9 @@ interface ParsedReceipt {
   description: string;
 }
 
-// Simulates AI receipt parsing
 function parseReceiptMock(imageDataUrl: string): Promise<ParsedReceipt> {
   return new Promise(resolve => {
     setTimeout(() => {
-      // Deterministic mock based on "image content"
       const hash = imageDataUrl.length % 5;
       const mocks: ParsedReceipt[] = [
         { type: 'expense', amount: 42.50, category: 'food', description: 'Restaurant meal' },
@@ -36,6 +34,7 @@ export default function ReceiptCapture() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
 
   const [stage, setStage] = useState<Stage>('preview');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -55,7 +54,7 @@ export default function ReceiptCapture() {
         await videoRef.current.play();
       }
       setCameraActive(true);
-    } catch (err) {
+    } catch {
       setCameraError('Camera access denied or not available. Please allow camera access and try again.');
     }
   }, []);
@@ -70,7 +69,6 @@ export default function ReceiptCapture() {
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    // Resize to max 600px wide to keep stored image small
     const MAX_W = 600;
     const scale = Math.min(1, MAX_W / video.videoWidth);
     canvas.width = Math.round(video.videoWidth * scale);
@@ -86,6 +84,24 @@ export default function ReceiptCapture() {
     setStage('review');
   }, [stopCamera]);
 
+  const handleGalleryUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    stopCamera();
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setCapturedImage(dataUrl);
+      setStage('processing');
+      const result = await parseReceiptMock(dataUrl);
+      setParsed(result);
+      setStage('review');
+    };
+    reader.readAsDataURL(file);
+    // reset input so same file can be re-selected
+    e.target.value = '';
+  }, [stopCamera]);
+
   const reset = useCallback(() => {
     stopCamera();
     setCapturedImage(null);
@@ -95,7 +111,6 @@ export default function ReceiptCapture() {
     setCameraActive(false);
   }, [stopCamera]);
 
-  // Show entry modal after AI parse — pass receipt image through
   if (stage === 'review' && parsed) {
     return (
       <ManualEntryModal
@@ -107,31 +122,31 @@ export default function ReceiptCapture() {
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col max-w-[430px] mx-auto">
-      {/* Camera viewfinder or placeholder */}
+      {/* Viewfinder */}
       <div className="flex-1 relative overflow-hidden">
         {cameraActive ? (
           <>
-            <video
-              ref={videoRef}
-              className="w-full h-full object-cover"
-              playsInline
-              muted
-            />
-            {/* Receipt overlay guide */}
+            <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-3/4 h-2/3 border-2 border-white/60 rounded-2xl" style={{
-                boxShadow: '0 0 0 9999px rgba(0,0,0,0.45)'
-              }} />
+              <div className="w-3/4 h-2/3 border-2 border-white/60 rounded-2xl" style={{ boxShadow: '0 0 0 9999px rgba(0,0,0,0.45)' }} />
             </div>
             <p className="absolute bottom-36 left-0 right-0 text-center text-white/80 text-xs">
               Align receipt within frame
             </p>
+            {/* Gallery button overlay while camera is active */}
+            <button
+              onClick={() => galleryRef.current?.click()}
+              className="absolute bottom-32 right-6 flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5"
+            >
+              <ImageIcon size={14} className="text-white" />
+              <span className="text-white text-xs font-medium">Gallery</span>
+            </button>
           </>
         ) : stage === 'processing' && capturedImage ? (
           <div className="w-full h-full flex flex-col items-center justify-center gap-4">
             <img src={capturedImage} alt="Captured" className="w-3/4 rounded-2xl opacity-50 object-contain max-h-64" />
             <div className="flex flex-col items-center gap-3">
-              <div className="w-10 h-10 border-3 border-white/30 border-t-white rounded-full animate-spin" style={{ borderWidth: 3 }} />
+              <div className="w-10 h-10 border-t-white rounded-full animate-spin border-white/30" style={{ borderWidth: 3, borderStyle: 'solid' }} />
               <p className="text-white font-medium text-sm">Analyzing receipt...</p>
               <p className="text-white/60 text-xs">AI is reading your receipt</p>
             </div>
@@ -155,6 +170,15 @@ export default function ReceiptCapture() {
         <canvas ref={canvasRef} className="hidden" />
       </div>
 
+      {/* Hidden gallery file input */}
+      <input
+        ref={galleryRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleGalleryUpload}
+      />
+
       {/* Controls */}
       <div className="bg-black/80 px-6 py-6 pb-24 flex items-center justify-between gap-4">
         <button
@@ -165,6 +189,7 @@ export default function ReceiptCapture() {
         </button>
 
         {cameraActive ? (
+          /* Shutter button */
           <button
             onClick={capturePhoto}
             className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
@@ -172,20 +197,27 @@ export default function ReceiptCapture() {
             <div className="w-16 h-16 rounded-full border-4 border-black/20 bg-white" />
           </button>
         ) : (
-          <button
-            onClick={startCamera}
-            className="flex-1 py-4 rounded-2xl bg-green-600 text-white font-bold text-base active:scale-[0.98] transition-transform shadow-lg shadow-green-600/30 flex items-center justify-center gap-2"
-          >
-            <Camera size={20} />
-            Open Camera
-          </button>
+          /* Two buttons: camera + gallery */
+          <div className="flex flex-1 gap-3">
+            <button
+              onClick={startCamera}
+              className="flex-1 py-4 rounded-2xl bg-green-600 text-white font-bold text-sm active:scale-[0.98] transition-transform shadow-lg shadow-green-600/30 flex items-center justify-center gap-2"
+            >
+              <Camera size={18} />
+              Camera
+            </button>
+            <button
+              onClick={() => galleryRef.current?.click()}
+              className="flex-1 py-4 rounded-2xl bg-white/10 border border-white/20 text-white font-bold text-sm active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+            >
+              <ImageIcon size={18} />
+              Gallery
+            </button>
+          </div>
         )}
 
         {cameraActive ? (
-          <button
-            onClick={reset}
-            className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center"
-          >
+          <button onClick={reset} className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
             <RefreshCw size={18} className="text-white" />
           </button>
         ) : (
