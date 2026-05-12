@@ -128,7 +128,7 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-gray-400 mt-0.5">Tap to set financial goals</p>
+              <p className="text-xs text-gray-400 mt-0.5 text-left">Tap to set financial goals</p>
             )}
           </div>
 
