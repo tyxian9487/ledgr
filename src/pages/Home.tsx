@@ -12,7 +12,7 @@ export default function Home() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const [showEntry, setShowEntry] = useState(false);
-  const { budget, getMonthExpenses } = useApp();
+  const { budget, getMonthExpenses, userProfile } = useApp();
 
   function handlePrev() {
     if (month === 0) { setYear(y => y - 1); setMonth(11); }
@@ -41,9 +41,15 @@ export default function Home() {
           <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">Good {getGreeting()}</p>
           <h1 className="text-xl font-bold dark:text-white">My Finances</h1>
         </div>
-        <div className="w-9 h-9 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-          <span className="text-green-700 dark:text-green-400 font-bold text-sm">U</span>
-        </div>
+        <button
+          onClick={() => navigate('/profile')}
+          className="w-9 h-9 rounded-full bg-green-100 dark:bg-green-900/30 overflow-hidden flex items-center justify-center active:scale-90 transition-transform"
+        >
+          {userProfile.avatar
+            ? <img src={userProfile.avatar} alt="Profile" className="w-full h-full object-cover" />
+            : <span className="text-green-700 dark:text-green-400 font-bold text-sm">{userProfile.name.charAt(0).toUpperCase()}</span>
+          }
+        </button>
       </div>
 
       {/* Green summary card */}

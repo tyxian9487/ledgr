@@ -8,6 +8,7 @@ interface AppContextType {
   budget: BudgetSettings;
   addTransaction: (t: Omit<Transaction, 'id'>) => void;
   removeTransaction: (id: string) => void;
+  updateTransaction: (id: string, data: Omit<Transaction, 'id'>) => void;
   updateUserProfile: (p: Partial<UserProfile>) => void;
   toggleDarkMode: () => void;
   updateBudget: (b: BudgetSettings) => void;
@@ -97,6 +98,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTransactions(prev => prev.filter(t => t.id !== id));
   }, []);
 
+  const updateTransaction = useCallback((id: string, data: Omit<Transaction, 'id'>) => {
+    setTransactions(prev => prev.map(t => t.id === id ? { ...data, id } : t));
+  }, []);
+
   const updateUserProfile = useCallback((p: Partial<UserProfile>) => {
     setUserProfile(prev => ({ ...prev, ...p }));
   }, []);
@@ -136,6 +141,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       budget,
       addTransaction,
       removeTransaction,
+      updateTransaction,
       updateUserProfile,
       toggleDarkMode,
       updateBudget,

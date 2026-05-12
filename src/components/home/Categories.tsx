@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { ChevronDown, Trash2, X, Receipt } from 'lucide-react';
+import { ChevronDown, Trash2, X, Receipt, Edit2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../../types';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, Transaction } from '../../types';
 import CategoryIcon from './CategoryIcon';
+import ManualEntryModal from './ManualEntryModal';
 
 interface Props {
   year: number;
@@ -18,6 +19,7 @@ export default function Categories({ year, month }: Props) {
   const { getMonthTransactions, removeTransaction } = useApp();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [editTx, setEditTx] = useState<Transaction | null>(null);
 
   const txs = getMonthTransactions(year, month);
   const allCategories = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
@@ -110,6 +112,13 @@ export default function Categories({ year, month }: Props) {
                       </span>
 
                       <button
+                        onClick={() => setEditTx(tx)}
+                        className="ml-1 w-6 h-6 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity"
+                      >
+                        <Edit2 size={11} className="text-blue-500" />
+                      </button>
+
+                      <button
                         onClick={() => removeTransaction(tx.id)}
                         className="ml-1 w-6 h-6 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity"
                       >
@@ -123,6 +132,22 @@ export default function Categories({ year, month }: Props) {
           );
         })}
       </div>
+
+      {/* Edit transaction modal */}
+      {editTx && (
+        <ManualEntryModal
+          transactionId={editTx.id}
+          prefill={{
+            type: editTx.type,
+            amount: editTx.amount,
+            category: editTx.category,
+            description: editTx.description,
+            receiptImage: editTx.receiptImage,
+            date: editTx.date.slice(0, 10),
+          }}
+          onClose={() => setEditTx(null)}
+        />
+      )}
 
       {/* Receipt lightbox */}
       {lightboxImage && (

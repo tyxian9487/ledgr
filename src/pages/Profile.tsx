@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../types';
 
 const PW_KEY = 'ledgr_password';
 const DEFAULT_PW = 'ledgr123';
@@ -81,6 +82,7 @@ export default function Profile() {
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
   const [showReport, setShowReport] = useState(false);
   const [showChangePw, setShowChangePw] = useState(false);
+  const [showCSV, setShowCSV] = useState(false);
 
   const [notifEnabled, setNotifEnabled] = useState(true);
   const [notifTransactions, setNotifTransactions] = useState(true);
@@ -138,7 +140,7 @@ export default function Profile() {
     Object.entries(catTotals).sort((a, b) => b[1] - a[1]).forEach(([id, amt]) => { catData.push({ label: id.charAt(0).toUpperCase() + id.slice(1), amount: amt, color: COLORS[id] || '#94a3b8' }); });
 
     const rowH = 40;
-    const H = 120 + 200 + 100 + Math.max(catData.length, 1) * rowH + 120;
+    const H = 120 + 225 + 100 + Math.max(catData.length, 1) * rowH + 120;
     const canvas = document.createElement('canvas');
     canvas.width = W * SCALE; canvas.height = H * SCALE;
     const ctx = canvas.getContext('2d')!;
@@ -169,14 +171,16 @@ export default function Profile() {
     const start = -Math.PI / 2, end = start + (score / 100) * Math.PI * 2;
     ctx.beginPath(); ctx.arc(cx, cy, (rOuter + rInner) / 2, start, end);
     ctx.strokeStyle = scoreColor; ctx.lineWidth = rOuter - rInner; ctx.lineCap = 'round'; ctx.stroke();
+    // Score number centered inside the ring
     ctx.fillStyle = scoreColor; ctx.font = `bold 28px -apple-system, system-ui, sans-serif`; ctx.textAlign = 'center';
-    ctx.fillText(String(score), cx, cy + 10);
+    ctx.fillText(String(score), cx, cy + 5);
     ctx.fillStyle = '#9ca3af'; ctx.font = '11px -apple-system, sans-serif';
-    ctx.fillText('SCORE', cx, cy + 26);
+    ctx.fillText('SCORE', cx, cy + 22);
+    // Status label placed clearly below the ring (ring bottom = cy + rOuter = cy + 58)
     ctx.fillStyle = '#111827'; ctx.font = 'bold 15px -apple-system, system-ui, sans-serif';
-    ctx.fillText(scoreLabel, cx, cy + 54);
+    ctx.fillText(scoreLabel, cx, cy + 82);
 
-    y = cy + 80;
+    y = cy + 105;
 
     // Income / Expense boxes
     const boxW = (W - PAD * 2 - 12) / 2;
@@ -439,6 +443,12 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
           </button>
         </div>
 
+        {/* Data */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
+          <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-4 pt-3 pb-1">Data</p>
+          <SettingsRow icon={<Download size={16} />} label="Export CSV" value="Transactions" onClick={() => setShowCSV(true)} />
+        </div>
+
         {/* Legal */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
           <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-4 pt-3 pb-1">Legal & Support</p>
@@ -454,6 +464,11 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
       </div>
 
       <p className="text-center text-[11px] text-gray-300 dark:text-gray-700 pb-4">ledgr v1.0.0</p>
+
+      {/* ── CSV Export modal ── */}
+      {showCSV && (
+        <CSVExportModal transactions={transactions} onClose={() => setShowCSV(false)} />
+      )}
 
       {/* ── Report modal ── */}
       {showReport && (
@@ -656,6 +671,87 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+const ALL_CATEGORIES = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
+
+function CSVExportModal({ transactions, onClose }: { transactions: import('../types').Transaction[]; onClose: () => void }) {
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [category, setCategory] = useState('all');
+
+  function handleExport() {
+    let filtered = transactions;
+    if (dateFrom) filtered = filtered.filter(t => t.date >= dateFrom);
+    if (dateTo) filtered = filtered.filter(t => t.date <= dateTo + 'T23:59:59');
+    if (category !== 'all') filtered = filtered.filter(t => t.category === category);
+
+    const header = 'Date,Type,Category,Description,Amount';
+    const rows = filtered.map(t => {
+      const d = new Date(t.date).toLocaleDateString('en-US');
+      const cat = ALL_CATEGORIES.find(c => c.id === t.category)?.label || t.category;
+      const desc = `"${(t.description || '').replace(/"/g, '""')}"`;
+      return `${d},${t.type},${cat},${desc},${t.amount.toFixed(2)}`;
+    });
+    const csv = [header, ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ledgr-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/60 flex items-end justify-center" onClick={onClose}>
+      <div
+        className="w-full max-w-[430px] bg-white dark:bg-gray-900 rounded-t-3xl animate-slide-up flex flex-col overflow-hidden"
+        style={{ maxHeight: '75vh' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100 dark:border-gray-800">
+          <h2 className="text-lg font-bold dark:text-white">Export Transactions</h2>
+          <button type="button" onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+            <X size={16} className="text-gray-500 dark:text-gray-400" />
+          </button>
+        </div>
+
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4">
+          <div>
+            <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">Date From</label>
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+              className="w-full border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 text-sm bg-gray-50 dark:bg-gray-800 dark:text-white outline-none focus:border-green-500 transition-colors"
+              style={{ colorScheme: 'auto' }} />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">Date To</label>
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+              className="w-full border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 text-sm bg-gray-50 dark:bg-gray-800 dark:text-white outline-none focus:border-green-500 transition-colors"
+              style={{ colorScheme: 'auto' }} />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">Category</label>
+            <select value={category} onChange={e => setCategory(e.target.value)}
+              className="w-full border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 text-sm bg-gray-50 dark:bg-gray-800 dark:text-white outline-none focus:border-green-500 transition-colors">
+              <option value="all">All Categories</option>
+              {ALL_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+            </select>
+          </div>
+          <p className="text-xs text-gray-400 text-left">Leave dates empty to export all transactions. CSV includes: Date, Type, Category, Description, Amount.</p>
+        </div>
+
+        <div className="flex-shrink-0 px-5 pt-3 pb-8 border-t border-gray-100 dark:border-gray-800">
+          <button type="button" onClick={handleExport}
+            className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base active:scale-[0.98] transition-transform shadow-lg shadow-green-600/30 flex items-center justify-center gap-2">
+            <Download size={18} />
+            Download CSV
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

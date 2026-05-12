@@ -179,6 +179,20 @@ export default function BudgetPage() {
 
   const savingsPct = analyzed ? (allocations.find(a => a.categoryId === 'savings')?.percentage ?? 0) : 0;
 
+  // Merge savings/investment goals into allocations for the donut display
+  const displayAllocations: BudgetAllocation[] = analyzed ? (() => {
+    const result = allocations.map(a => {
+      if (a.categoryId === 'savings' && savingsEnabled && savingsAmt > 0 && income > 0) {
+        return { ...a, percentage: Math.round((savingsAmt / income) * 100) };
+      }
+      return a;
+    });
+    if (investEnabled && investAmt > 0 && income > 0) {
+      result.push({ categoryId: 'investment_goal', label: 'Investment Goal', color: '#8b5cf6', percentage: Math.round((investAmt / income) * 100) });
+    }
+    return result;
+  })() : allocations;
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-10">
       {/* Header */}
@@ -230,7 +244,7 @@ export default function BudgetPage() {
         <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden">
           <div className="px-5 pt-4 pb-3 border-b border-gray-50 dark:border-gray-800">
             <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">Savings & Investment Goals</p>
-            <p className="text-xs text-gray-400 mt-0.5">Optional — set a personal target alongside your budget</p>
+            <p className="text-xs text-gray-400 mt-0.5 text-left">Optional — set a personal target alongside your budget</p>
           </div>
 
           {/* Savings goal */}
@@ -269,7 +283,7 @@ export default function BudgetPage() {
                   )}
                 </div>
                 {analyzed && savingsPct > 0 && (
-                  <p className="text-xs text-gray-400 mt-2">
+                  <p className="text-xs text-gray-400 mt-2 text-left">
                     AI suggests <span className="text-green-600 font-semibold">{savingsPct}%</span> (${Math.round(income * savingsPct / 100).toLocaleString()}/mo) for savings
                   </p>
                 )}
@@ -328,22 +342,22 @@ export default function BudgetPage() {
             </div>
             <div className="flex items-center gap-5">
               <div className="flex-shrink-0 relative">
-                <MiniDonut allocations={allocations} size={140} />
+                <MiniDonut allocations={displayAllocations} size={140} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-[10px] text-gray-400 font-medium">Budget</span>
                   <span className="text-base font-black dark:text-white">${Math.round(refIncome).toLocaleString()}</span>
                 </div>
               </div>
               <div className="flex-1 space-y-1.5 min-w-0">
-                {allocations.filter(a => a.percentage > 0).slice(0, 6).map(a => (
+                {displayAllocations.filter(a => a.percentage > 0).slice(0, 6).map(a => (
                   <div key={a.categoryId} className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: a.color }} />
-                    <span className="text-xs text-gray-600 dark:text-gray-400 truncate flex-1">{a.label}</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400 truncate flex-1 text-left">{a.label}</span>
                     <span className="text-xs font-bold dark:text-white flex-shrink-0">{a.percentage}%</span>
                   </div>
                 ))}
-                {allocations.filter(a => a.percentage > 0).length > 6 && (
-                  <p className="text-[11px] text-gray-400 pl-4">+{allocations.filter(a => a.percentage > 0).length - 6} more</p>
+                {displayAllocations.filter(a => a.percentage > 0).length > 6 && (
+                  <p className="text-[11px] text-gray-400 pl-4 text-left">+{displayAllocations.filter(a => a.percentage > 0).length - 6} more</p>
                 )}
               </div>
             </div>
