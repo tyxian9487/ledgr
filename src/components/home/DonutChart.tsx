@@ -64,8 +64,9 @@ export default function DonutChart({ slices, total }: Props) {
         </svg>
         {/* Center total */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-[10px] text-white/70 font-medium">Total</span>
-          <span className="text-white font-bold text-sm leading-tight">
+          <span className="text-[9px] text-white/70 font-medium leading-tight">Total</span>
+          <span className="text-[9px] text-white/70 font-medium leading-tight">Expenses</span>
+          <span className="text-white font-bold text-sm leading-tight mt-0.5">
             ${total.toLocaleString()}
           </span>
         </div>

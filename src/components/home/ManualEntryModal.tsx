@@ -206,24 +206,22 @@ export default function ManualEntryModal({ onClose, prefill }: Props) {
 
             {/* Auto debit toggle */}
             <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4">
-              <button
-                type="button"
-                onClick={() => setIsAutoDebit(!isAutoDebit)}
-                className="w-full flex items-center justify-between"
-              >
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <RefreshCw size={16} className="text-green-600" />
-                  <div className="text-left">
+                  <div>
                     <p className="text-sm font-medium dark:text-white">Auto Debit</p>
                     <p className="text-[11px] text-gray-400">Repeat this transaction</p>
                   </div>
                 </div>
-                <div
-                  className={`w-12 h-6 rounded-full transition-colors duration-200 relative flex-shrink-0 pointer-events-none ${isAutoDebit ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'}`}
+                <button
+                  type="button"
+                  onClick={() => setIsAutoDebit(!isAutoDebit)}
+                  className={`w-12 h-6 rounded-full transition-colors duration-200 relative flex-shrink-0 ${isAutoDebit ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'}`}
                 >
-                  <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${isAutoDebit ? 'translate-x-6' : 'translate-x-0.5'}`} />
-                </div>
-              </button>
+                  <span className={`absolute top-0.5 h-5 w-5 bg-white rounded-full shadow-md transition-all duration-200 ${isAutoDebit ? 'left-[26px]' : 'left-0.5'}`} />
+                </button>
+              </div>
 
               {isAutoDebit && (
                 <div className="mt-3 relative">
