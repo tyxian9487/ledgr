@@ -158,6 +158,7 @@ export default function ManualEntryModal({ onClose, prefill }: Props) {
             <div className="relative">
               <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">Category</label>
               <button
+                type="button"
                 onClick={() => { setShowCategoryDropdown(!showCategoryDropdown); setShowPeriodDropdown(false); }}
                 className="w-full flex items-center justify-between border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 bg-gray-50 dark:bg-gray-800 transition-colors"
               >
@@ -205,25 +206,29 @@ export default function ManualEntryModal({ onClose, prefill }: Props) {
 
             {/* Auto debit toggle */}
             <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4">
-              <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setIsAutoDebit(!isAutoDebit)}
+                className="w-full flex items-center justify-between"
+              >
                 <div className="flex items-center gap-2">
                   <RefreshCw size={16} className="text-green-600" />
-                  <div>
+                  <div className="text-left">
                     <p className="text-sm font-medium dark:text-white">Auto Debit</p>
                     <p className="text-[11px] text-gray-400">Repeat this transaction</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setIsAutoDebit(!isAutoDebit)}
-                  className={`w-12 h-6 rounded-full transition-colors relative flex-shrink-0 ${isAutoDebit ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'}`}
+                <div
+                  className={`w-12 h-6 rounded-full transition-colors duration-200 relative flex-shrink-0 pointer-events-none ${isAutoDebit ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'}`}
                 >
-                  <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isAutoDebit ? 'translate-x-6' : 'translate-x-0.5'}`} />
-                </button>
-              </div>
+                  <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${isAutoDebit ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                </div>
+              </button>
 
               {isAutoDebit && (
                 <div className="mt-3 relative">
                   <button
+                    type="button"
                     onClick={() => { setShowPeriodDropdown(!showPeriodDropdown); setShowCategoryDropdown(false); }}
                     className="w-full flex items-center justify-between border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 bg-white dark:bg-gray-900"
                   >
@@ -253,13 +258,14 @@ export default function ManualEntryModal({ onClose, prefill }: Props) {
           </div>
 
           {/* ── Non-scrolling confirm button ── */}
-          <div className="flex-shrink-0 px-5 pt-3 pb-8 bg-white dark:bg-gray-900 border-t border-gray-50 dark:border-gray-800">
+          <div className="flex-shrink-0 px-5 pt-3 pb-8 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
             <button
+              type="button"
               onClick={handleSubmit}
               disabled={!amount || !category}
-              className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base disabled:opacity-40 active:scale-[0.98] transition-transform shadow-lg shadow-green-600/30"
+              className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-all duration-150 shadow-lg shadow-green-600/30"
             >
-              Confirm
+              {!amount || !category ? 'Fill in Amount & Category' : 'Confirm Transaction'}
             </button>
           </div>
         </div>

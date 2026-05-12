@@ -236,18 +236,21 @@ export default function Profile() {
         <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
           <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-4 pt-3 pb-1">Preferences</p>
           <SettingsRow icon={<Bell size={16} />} label="Notifications" />
-          <div className="w-full flex items-center gap-3 px-4 py-3.5">
+          <button
+            type="button"
+            onClick={toggleDarkMode}
+            className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left"
+          >
             <div className="w-9 h-9 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-              {darkMode ? <Moon size={16} className="text-gray-500 dark:text-gray-400" /> : <Sun size={16} className="text-gray-500" />}
+              {darkMode ? <Moon size={16} className="text-blue-400" /> : <Sun size={16} className="text-yellow-500" />}
             </div>
             <span className="flex-1 text-sm font-medium dark:text-white">Dark Mode</span>
-            <button
-              onClick={toggleDarkMode}
-              className={`w-12 h-6 rounded-full transition-colors relative ${darkMode ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'}`}
+            <div
+              className={`w-12 h-6 rounded-full transition-colors duration-200 relative pointer-events-none flex-shrink-0 ${darkMode ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'}`}
             >
-              <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${darkMode ? 'translate-x-6' : 'translate-x-0.5'}`} />
-            </button>
-          </div>
+              <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${darkMode ? 'translate-x-6' : 'translate-x-0.5'}`} />
+            </div>
+          </button>
         </div>
 
         {/* Legal */}
