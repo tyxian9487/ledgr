@@ -1,5 +1,7 @@
 name = "ledgr"
+main = "src/worker.js"
 compatibility_date = "2026-05-12"
 
 [assets]
 directory = "./dist"
+binding = "ASSETS"
