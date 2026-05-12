@@ -2,10 +2,8 @@ import { useState, useRef } from 'react';
 import {
   Moon, Sun, ChevronRight, Camera, Bell, Lock, HelpCircle,
   FileText, LogOut, Star, Trash2, Edit3, TrendingUp, TrendingDown,
-  Share2, Download, X,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../types';
 
 function ScoreRing({ score }: { score: number }) {
   const r = 52;
@@ -62,7 +60,6 @@ export default function Profile() {
   const [editingEmail, setEditingEmail] = useState(false);
   const [emailInput, setEmailInput] = useState(userProfile.email);
   const [showTerms, setShowTerms] = useState(false);
-  const [showCSV, setShowCSV] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Calculate yearly / all-time stats
@@ -90,118 +87,6 @@ export default function Profile() {
     const reader = new FileReader();
     reader.onload = ev => updateUserProfile({ avatar: ev.target?.result as string });
     reader.readAsDataURL(file);
-  }
-
-  function handleShareCard() {
-    const W = 390, H = 520;
-    const canvas = document.createElement('canvas');
-    canvas.width = W; canvas.height = H;
-    const ctx = canvas.getContext('2d')!;
-
-    // Background gradient
-    const grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, '#064e3b');
-    grad.addColorStop(1, '#022c22');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
-
-    // Card background
-    ctx.fillStyle = 'rgba(255,255,255,0.05)';
-    ctx.beginPath();
-    ctx.roundRect(24, 24, W - 48, H - 48, 24);
-    ctx.fill();
-
-    // Title
-    ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.font = 'bold 13px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('FINANCIAL ASSESSMENT', W / 2, 70);
-
-    // App name
-    ctx.fillStyle = '#4ade80';
-    ctx.font = 'bold 11px system-ui, sans-serif';
-    ctx.fillText('LEDGR', W / 2, 90);
-
-    // Score ring (canvas arc)
-    const cx = W / 2, cy = 210, r = 80;
-    const color = score >= 80 ? '#22c55e' : score >= 60 ? '#eab308' : '#ef4444';
-    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-    ctx.lineWidth = 12;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, -Math.PI / 2, Math.PI * 1.5);
-    ctx.stroke();
-    ctx.strokeStyle = color;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * score / 100));
-    ctx.stroke();
-
-    // Score number — centered inside ring
-    ctx.fillStyle = color;
-    ctx.font = 'black 52px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(String(score), cx, cy);
-
-    // "Score" label below number
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.font = '11px system-ui, sans-serif';
-    ctx.textBaseline = 'top';
-    ctx.fillText('SCORE', cx, cy + 36);
-
-    // Status text — in its own row below the ring
-    const statusLabel = score >= 80 ? 'Excellent Financial Health' : score >= 60 ? 'Fair Financial Health' : 'Needs Improvement';
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 18px system-ui, sans-serif';
-    ctx.textBaseline = 'top';
-    ctx.fillText(statusLabel, cx, 320);
-
-    // Divider
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(60, 358); ctx.lineTo(W - 60, 358);
-    ctx.stroke();
-
-    // Income and Expenses stats
-    ctx.font = '11px system-ui, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.textAlign = 'left';
-    ctx.fillText('ANNUAL INCOME', 60, 374);
-    ctx.textAlign = 'right';
-    ctx.fillText('ANNUAL EXPENSES', W - 60, 374);
-
-    ctx.font = 'bold 18px system-ui, sans-serif';
-    ctx.fillStyle = '#4ade80';
-    ctx.textAlign = 'left';
-    ctx.fillText(`$${yearIncome.toLocaleString()}`, 60, 394);
-    ctx.fillStyle = '#f87171';
-    ctx.textAlign = 'right';
-    ctx.fillText(`$${yearExpenses.toLocaleString()}`, W - 60, 394);
-
-    // Name
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    ctx.font = '12px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(userProfile.name, cx, 445);
-
-    const dataUrl = canvas.toDataURL('image/png');
-    if (navigator.share) {
-      canvas.toBlob(blob => {
-        if (!blob) return;
-        const file = new File([blob], 'financial-score.png', { type: 'image/png' });
-        navigator.share({ files: [file], title: 'My Financial Score' }).catch(() => downloadImage(dataUrl));
-      });
-    } else {
-      downloadImage(dataUrl);
-    }
-  }
-
-  function downloadImage(dataUrl: string) {
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = 'financial-score.png';
-    a.click();
   }
 
   return (
@@ -286,16 +171,6 @@ export default function Profile() {
 
         {/* Score ring */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 flex flex-col items-center gap-3 shadow-sm border border-gray-50 dark:border-gray-800">
-          <div className="flex items-center justify-between w-full mb-1">
-            <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Health Score</span>
-            <button
-              onClick={handleShareCard}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-green-50 dark:bg-green-900/30 active:scale-95 transition-transform"
-            >
-              <Share2 size={13} className="text-green-600 dark:text-green-400" />
-              <span className="text-xs font-semibold text-green-600 dark:text-green-400">Share</span>
-            </button>
-          </div>
           <ScoreRing score={score} />
           <div className="text-center">
             <p className="font-bold text-base dark:text-white">
@@ -375,12 +250,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Data */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
-          <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-4 pt-3 pb-1">Data</p>
-          <SettingsRow icon={<Download size={16} />} label="Export CSV" value="Transactions" onClick={() => setShowCSV(true)} />
-        </div>
-
         {/* Legal */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
           <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-4 pt-3 pb-1">Legal & Support</p>
@@ -402,11 +271,6 @@ export default function Profile() {
 
       {/* App version */}
       <p className="text-center text-[11px] text-gray-300 dark:text-gray-700 pb-4">ExpenseWise v1.0.0</p>
-
-      {/* CSV Export modal */}
-      {showCSV && (
-        <CSVExportModal transactions={transactions} onClose={() => setShowCSV(false)} />
-      )}
 
       {/* Terms modal — flex-col so title + button are always visible, only text scrolls */}
       {showTerms && (
@@ -443,108 +307,6 @@ export default function Profile() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-interface CSVModalProps {
-  transactions: import('../types').Transaction[];
-  onClose: () => void;
-}
-
-function CSVExportModal({ transactions, onClose }: CSVModalProps) {
-  const allCategories = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [category, setCategory] = useState('all');
-
-  function handleExport() {
-    let filtered = transactions;
-    if (dateFrom) filtered = filtered.filter(t => t.date >= dateFrom);
-    if (dateTo) filtered = filtered.filter(t => t.date <= dateTo + 'T23:59:59');
-    if (category !== 'all') filtered = filtered.filter(t => t.category === category);
-
-    const header = 'Date,Type,Category,Description,Amount';
-    const rows = filtered.map(t => {
-      const d = new Date(t.date).toLocaleDateString('en-US');
-      const cat = allCategories.find(c => c.id === t.category)?.label || t.category;
-      const desc = `"${(t.description || '').replace(/"/g, '""')}"`;
-      return `${d},${t.type},${cat},${desc},${t.amount.toFixed(2)}`;
-    });
-    const csv = [header, ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `transactions-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    onClose();
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-end justify-center" onClick={onClose}>
-      <div
-        className="w-full max-w-[430px] bg-white dark:bg-gray-900 rounded-t-3xl animate-slide-up flex flex-col overflow-hidden"
-        style={{ maxHeight: '75vh' }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100 dark:border-gray-800">
-          <h2 className="text-lg font-bold dark:text-white">Export Transactions</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-            <X size={16} className="text-gray-500 dark:text-gray-400" />
-          </button>
-        </div>
-
-        <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4">
-          <div>
-            <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">Date From</label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={e => setDateFrom(e.target.value)}
-              className="w-full border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 text-sm bg-gray-50 dark:bg-gray-800 dark:text-white outline-none focus:border-green-500 transition-colors"
-              style={{ colorScheme: 'auto' }}
-            />
-          </div>
-          <div>
-            <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">Date To</label>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={e => setDateTo(e.target.value)}
-              className="w-full border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 text-sm bg-gray-50 dark:bg-gray-800 dark:text-white outline-none focus:border-green-500 transition-colors"
-              style={{ colorScheme: 'auto' }}
-            />
-          </div>
-          <div>
-            <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">Category</label>
-            <select
-              value={category}
-              onChange={e => setCategory(e.target.value)}
-              className="w-full border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 text-sm bg-gray-50 dark:bg-gray-800 dark:text-white outline-none focus:border-green-500 transition-colors"
-            >
-              <option value="all">All Categories</option>
-              {allCategories.map(c => (
-                <option key={c.id} value={c.id}>{c.label}</option>
-              ))}
-            </select>
-          </div>
-          <p className="text-xs text-gray-400">
-            Leave dates empty to export all time. The CSV will include: Date, Type, Category, Description, Amount.
-          </p>
-        </div>
-
-        <div className="flex-shrink-0 px-5 pt-3 pb-8 border-t border-gray-100 dark:border-gray-800">
-          <button
-            onClick={handleExport}
-            className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base active:scale-[0.98] transition-transform shadow-lg shadow-green-600/30 flex items-center justify-center gap-2"
-          >
-            <Download size={18} />
-            Download CSV
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

@@ -5,14 +5,12 @@ import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, TransactionType, AutoDebitPeriod
 
 interface Props {
   onClose: () => void;
-  transactionId?: string;
   prefill?: {
     type?: TransactionType;
     amount?: number;
     category?: string;
     description?: string;
     receiptImage?: string;
-    date?: string;
   };
 }
 
@@ -29,12 +27,12 @@ function todayString() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export default function ManualEntryModal({ onClose, transactionId, prefill }: Props) {
-  const { addTransaction, updateTransaction } = useApp();
+export default function ManualEntryModal({ onClose, prefill }: Props) {
+  const { addTransaction } = useApp();
 
   const [type, setType] = useState<TransactionType>(prefill?.type || 'expense');
   const [amount, setAmount] = useState(prefill?.amount ? String(prefill.amount) : '');
-  const [date, setDate] = useState(prefill?.date || todayString());
+  const [date, setDate] = useState(todayString);
   const [category, setCategory] = useState(prefill?.category || '');
   const [description, setDescription] = useState(prefill?.description || '');
   const [isAutoDebit, setIsAutoDebit] = useState(false);
@@ -48,7 +46,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
 
   function handleSubmit() {
     if (!amount || !category) return;
-    const data = {
+    addTransaction({
       type,
       amount: parseFloat(amount),
       category,
@@ -57,12 +55,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
       isAutoDebit,
       autoDebitPeriod: isAutoDebit ? period : undefined,
       receiptImage: prefill?.receiptImage,
-    };
-    if (transactionId) {
-      updateTransaction(transactionId, data);
-    } else {
-      addTransaction(data);
-    }
+    });
     onClose();
   }
 
@@ -85,7 +78,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
               <div className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
             </div>
             <div className="flex items-center justify-between px-5 py-3">
-              <h2 className="text-lg font-bold dark:text-white">{transactionId ? 'Edit Record' : 'New Record'}</h2>
+              <h2 className="text-lg font-bold dark:text-white">New Record</h2>
               <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                 <X size={16} className="text-gray-500 dark:text-gray-400" />
               </button>

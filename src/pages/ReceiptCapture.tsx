@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { Camera, RefreshCw } from 'lucide-react';
+import { Camera, X, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ManualEntryModal from '../components/home/ManualEntryModal';
 import { TransactionType } from '../types';
@@ -159,9 +159,9 @@ export default function ReceiptCapture() {
       <div className="bg-black/80 px-6 py-6 pb-24 flex items-center justify-between gap-4">
         <button
           onClick={() => navigate('/')}
-          className="px-5 py-2.5 rounded-2xl bg-white/15 border border-white/20 text-white text-sm font-semibold active:scale-95 transition-transform"
+          className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center"
         >
-          Cancel
+          <X size={22} className="text-white" />
         </button>
 
         {cameraActive ? (
