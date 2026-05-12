@@ -5,6 +5,7 @@ import BottomNav from './components/BottomNav';
 import Home from './pages/Home';
 import ReceiptCapture from './pages/ReceiptCapture';
 import Profile from './pages/Profile';
+import Budget from './pages/Budget';
 
 function AppRoutes() {
   const location = useLocation();
@@ -16,6 +17,7 @@ function AppRoutes() {
         <Route path="/" element={<Home />} />
         <Route path="/capture" element={<ReceiptCapture />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/budget" element={<Budget />} />
       </Routes>
       {!hideNav && <BottomNav />}
     </div>

@@ -1,4 +1,4 @@
-import { Home, Camera, User } from 'lucide-react';
+import { Home, Camera, User, PieChart } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function BottomNav() {
@@ -6,6 +6,7 @@ export default function BottomNav() {
   const location = useLocation();
 
   const isHome = location.pathname === '/';
+  const isBudget = location.pathname === '/budget';
   const isProfile = location.pathname === '/profile';
 
   return (
@@ -14,7 +15,7 @@ export default function BottomNav() {
         {/* Home */}
         <button
           onClick={() => navigate('/')}
-          className="flex flex-col items-center gap-0.5 min-w-[60px]"
+          className="flex flex-col items-center gap-0.5 min-w-[52px]"
         >
           <Home
             size={22}
@@ -37,10 +38,25 @@ export default function BottomNav() {
           <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 mt-0.5">Capture</span>
         </button>
 
+        {/* Budget */}
+        <button
+          onClick={() => navigate('/budget')}
+          className="flex flex-col items-center gap-0.5 min-w-[52px]"
+        >
+          <PieChart
+            size={22}
+            className={isBudget ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}
+            strokeWidth={isBudget ? 2.5 : 1.8}
+          />
+          <span className={`text-[11px] font-medium ${isBudget ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>
+            Budget
+          </span>
+        </button>
+
         {/* Profile */}
         <button
           onClick={() => navigate('/profile')}
-          className="flex flex-col items-center gap-0.5 min-w-[60px]"
+          className="flex flex-col items-center gap-0.5 min-w-[52px]"
         >
           <User
             size={22}
