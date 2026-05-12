@@ -63,7 +63,7 @@ export default function ManualEntryModal({ onClose, prefill }: Props) {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 flex items-end justify-center"
+        className="fixed inset-0 z-[100] flex items-end justify-center"
         style={{ background: 'rgba(0,0,0,0.5)' }}
         onClick={(e) => e.target === e.currentTarget && onClose()}
       >
@@ -274,7 +274,7 @@ export default function ManualEntryModal({ onClose, prefill }: Props) {
       {/* Full-screen receipt viewer */}
       {viewReceipt && prefill?.receiptImage && (
         <div
-          className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[110] bg-black/90 flex items-center justify-center p-4"
           onClick={() => setViewReceipt(false)}
         >
           <img src={prefill.receiptImage} alt="Receipt" className="max-w-full max-h-full object-contain rounded-2xl" />

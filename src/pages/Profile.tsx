@@ -277,7 +277,7 @@ export default function Profile() {
 
       {/* Terms modal — flex-col so title + button are always visible, only text scrolls */}
       {showTerms && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-end justify-center" onClick={() => setShowTerms(false)}>
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-end justify-center" onClick={() => setShowTerms(false)}>
           <div
             className="w-full max-w-[430px] bg-white dark:bg-gray-900 rounded-t-3xl animate-slide-up flex flex-col overflow-hidden"
             style={{ maxHeight: '80vh' }}
