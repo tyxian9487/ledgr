@@ -32,7 +32,7 @@ const BUDGET_GROUPS: BudgetGroup[] = [
   { label: 'Other', color: '#94a3b8', categoryIds: ['education', 'travel', 'insurance', 'others'], Icon: MoreHorizontal },
 ];
 
-function analyzeAllocations(income: number, savingsTargetPct?: number, investTargetPct?: number): BudgetAllocation[] {
+function analyzeAllocations(income: number): BudgetAllocation[] {
   let plan: { id: string; pct: number }[];
   if (income >= 8000) {
     plan = [
@@ -57,36 +57,24 @@ function analyzeAllocations(income: number, savingsTargetPct?: number, investTar
     ];
   }
 
-  const result = BUDGET_GROUPS.map((g, i) => ({
+  const filtered = plan.filter(item => item.id !== 'savings');
+  const totalPct = filtered.reduce((sum, item) => sum + item.pct, 0) || 1;
+  const scaled = filtered.map(item => ({
+    ...item,
+    pct: Math.round((item.pct / totalPct) * 100),
+  }));
+
+  const groups = BUDGET_GROUPS.filter(g => g.categoryIds[0] !== 'savings');
+  return groups.map((g, index) => ({
     categoryId: g.categoryIds[0],
     label: g.label,
     color: g.color,
-    percentage: plan[i]?.pct ?? 5,
+    percentage: scaled[index]?.pct ?? 0,
   }));
-
-  // Apply savings override — bake the user's goal directly into the allocation
-  if (savingsTargetPct !== undefined) {
-    const idx = result.findIndex(a => a.categoryId === 'savings');
-    if (idx >= 0) result[idx] = { ...result[idx], percentage: savingsTargetPct };
-  }
-
-  // If investment goal takes up budget, scale non-savings items proportionally
-  if (investTargetPct && investTargetPct > 0) {
-    const savPct = result.find(a => a.categoryId === 'savings')?.percentage ?? 0;
-    const nonSavTotal = result.filter(a => a.categoryId !== 'savings').reduce((s, a) => s + a.percentage, 0);
-    const nonSavTarget = 100 - savPct - investTargetPct;
-    if (nonSavTotal > 0 && nonSavTarget > 0) {
-      const scale = nonSavTarget / nonSavTotal;
-      result.forEach((a, i) => {
-        if (a.categoryId !== 'savings') result[i] = { ...a, percentage: Math.max(1, Math.round(a.percentage * scale)) };
-      });
-    }
-  }
-
-  return result;
 }
 
 function MiniDonut({ allocations, size = 140 }: { allocations: BudgetAllocation[]; size?: number }) {
+  const [activeSlice, setActiveSlice] = useState<string | null>(null);
   const cx = size / 2, cy = size / 2;
   const outerR = size * 0.44, innerR = size * 0.27;
   const active = allocations.filter(a => a.percentage > 0);
@@ -94,40 +82,65 @@ function MiniDonut({ allocations, size = 140 }: { allocations: BudgetAllocation[
   const GAP = 0.03;
   let angle = -Math.PI / 2;
 
-  if (active.length === 0) {
-    return (
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <circle cx={cx} cy={cy} r={(outerR + innerR) / 2} fill="none" stroke="#e5e7eb" strokeWidth={outerR - innerR} />
-      </svg>
-    );
-  }
-
-  if (active.length === 1) {
-    return (
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <circle cx={cx} cy={cy} r={(outerR + innerR) / 2} fill="none" stroke={active[0].color} strokeWidth={outerR - innerR} />
-      </svg>
-    );
-  }
-
   const arcs = active.map(a => {
     const sweep = (a.percentage / total) * Math.PI * 2 - GAP;
     const s = angle + GAP / 2;
     const e = s + Math.max(sweep, 0);
-    angle += sweep + GAP;
+    const path = {
+      category: a.categoryId,
+      label: a.label,
+      percentage: a.percentage,
+      color: a.color,
+      d: '',
+    };
     const x1 = cx + outerR * Math.cos(s), y1 = cy + outerR * Math.sin(s);
     const x2 = cx + outerR * Math.cos(e), y2 = cy + outerR * Math.sin(e);
     const x3 = cx + innerR * Math.cos(e), y3 = cy + innerR * Math.sin(e);
     const x4 = cx + innerR * Math.cos(s), y4 = cy + innerR * Math.sin(s);
     const large = sweep > Math.PI ? 1 : 0;
-    const d = `M${x1},${y1} A${outerR},${outerR} 0 ${large} 1 ${x2},${y2} L${x3},${y3} A${innerR},${innerR} 0 ${large} 0 ${x4},${y4} Z`;
-    return { d, color: a.color };
+    path.d = `M${x1},${y1} A${outerR},${outerR} 0 ${large} 1 ${x2},${y2} L${x3},${y3} A${innerR},${innerR} 0 ${large} 0 ${x4},${y4} Z`;
+    angle += sweep + GAP;
+    return path;
   });
 
+  const selected = active.find(a => a.category === activeSlice) || null;
+
+  if (active.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-2">
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          <circle cx={cx} cy={cy} r={(outerR + innerR) / 2} fill="none" stroke="#e5e7eb" strokeWidth={outerR - innerR} />
+        </svg>
+      </div>
+    );
+  }
+
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {arcs.map((arc, i) => <path key={i} d={arc.d} fill={arc.color} />)}
-    </svg>
+    <div className="flex flex-col items-center gap-2">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {active.length === 1 ? (
+          <circle cx={cx} cy={cy} r={(outerR + innerR) / 2} fill="none" stroke={active[0].color} strokeWidth={outerR - innerR} />
+        ) : (
+          arcs.map((arc, i) => (
+            <path
+              key={arc.category}
+              d={arc.d}
+              fill={arc.color}
+              opacity={activeSlice && activeSlice !== arc.category ? 0.4 : 1}
+              style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
+              onClick={() => setActiveSlice(activeSlice === arc.category ? null : arc.category)}
+            />
+          ))
+        )}
+      </svg>
+      {selected && (
+        <div className="flex items-center gap-2 glass rounded-full px-3 py-1">
+          <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: selected.color }} />
+          <span className="text-xs text-white font-medium">{selected.label}</span>
+          <span className="text-xs text-white/80">{selected.percentage}%</span>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -184,16 +197,6 @@ export default function BudgetPage() {
 
   function handleAnalyze() {
     if (!canAnalyze) return;
-    const savPct = savingsEnabled && savingsValue
-      ? savingsMode === 'pct'
-        ? parseFloat(savingsValue)
-        : Math.round((parseFloat(savingsValue) / income) * 100)
-      : undefined;
-    const invPct = investEnabled && investValue
-      ? investMode === 'pct'
-        ? parseFloat(investValue)
-        : Math.round((parseFloat(investValue) / income) * 100)
-      : undefined;
     const savAmt = savingsEnabled && savingsValue
       ? savingsMode === 'pct' ? income * (parseFloat(savingsValue) / 100) : parseFloat(savingsValue)
       : 0;
@@ -201,7 +204,7 @@ export default function BudgetPage() {
       ? investMode === 'pct' ? income * (parseFloat(investValue) / 100) : parseFloat(investValue)
       : 0;
     const spendable = Math.max(0, income - savAmt - invAmt);
-    const result = analyzeAllocations(spendable, savPct, invPct);
+    const result = analyzeAllocations(spendable);
     setAllocations(result);
     setAnalyzed(true);
   }
@@ -214,7 +217,12 @@ export default function BudgetPage() {
   }
 
   function handlePctChange(idx: number, val: number) {
-    setAllocations(prev => prev.map((a, i) => i === idx ? { ...a, percentage: Math.max(0, Math.min(100, val)) } : a));
+    setAllocations(prev => {
+      const otherTotal = prev.reduce((sum, a, i) => i === idx ? sum : sum + a.percentage, 0);
+      const maxAllowed = Math.max(0, 100 - otherTotal);
+      const clamped = Math.max(0, Math.min(maxAllowed, val));
+      return prev.map((a, i) => i === idx ? { ...a, percentage: clamped } : a);
+    });
   }
 
   const savingsAmt = income > 0 && savingsValue
@@ -231,14 +239,13 @@ export default function BudgetPage() {
   }, [income, allocations, incomeFixed, updateBudget, navigate]);
 
   const refIncome = income > 0 ? income : (actualIncome > 0 ? actualIncome : 5000);
+  const chartAmount = analyzed ? netIncome : refIncome;
 
   const savingsPct = analyzed ? (allocations.find(a => a.categoryId === 'savings')?.percentage ?? 0) : 0;
 
   // Savings is already baked into allocations by handleAnalyze.
   // Only add investment goal as an extra display item.
-  const displayAllocations: BudgetAllocation[] = analyzed && investEnabled && investAmt > 0 && income > 0
-    ? [...allocations, { categoryId: 'investment_goal', label: 'Investment Goal', color: '#8b5cf6', percentage: Math.round((investAmt / income) * 100) }]
-    : allocations;
+  const displayAllocations: BudgetAllocation[] = allocations;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-10">
@@ -411,26 +418,15 @@ export default function BudgetPage() {
                 <span className="text-[10px] text-gray-400">/ ${Math.round(income).toLocaleString()}</span>
               </div>
             )}
-            <div className="flex items-center gap-5">
-              <div className="flex-shrink-0 relative">
+            <div className="flex flex-col items-center">
+              <div className="relative">
                 <MiniDonut allocations={displayAllocations} size={140} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-[10px] text-gray-400 font-medium">Budget</span>
-                  <span className="text-base font-black dark:text-white">${Math.round(refIncome).toLocaleString()}</span>
+                  <span className="text-[10px] text-gray-400 font-medium">Spendable</span>
+                  <span className="text-base font-black dark:text-white">${Math.round(chartAmount).toLocaleString()}</span>
                 </div>
               </div>
-              <div className="flex-1 space-y-1.5 min-w-0">
-                {displayAllocations.filter(a => a.percentage > 0).slice(0, 6).map(a => (
-                  <div key={a.categoryId} className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: a.color }} />
-                    <span className="text-xs text-gray-600 dark:text-gray-400 truncate flex-1 text-left">{a.label}</span>
-                    <span className="text-xs font-bold dark:text-white flex-shrink-0">{a.percentage}%</span>
-                  </div>
-                ))}
-                {displayAllocations.filter(a => a.percentage > 0).length > 6 && (
-                  <p className="text-[11px] text-gray-400 pl-4 text-left">+{displayAllocations.filter(a => a.percentage > 0).length - 6} more</p>
-                )}
-              </div>
+              <p className="text-[11px] text-gray-400 mt-3">Tap a slice to view category details</p>
             </div>
           </div>
         )}
@@ -450,7 +446,7 @@ export default function BudgetPage() {
             {allocations.map((alloc, idx) => {
               const group = BUDGET_GROUPS[idx];
               const { Icon } = group;
-              const budgetAmt = income > 0 ? Math.round(income * alloc.percentage / 100) : 0;
+              const budgetAmt = netIncome > 0 ? Math.round(netIncome * alloc.percentage / 100) : 0;
               const actual = actualByGroup[alloc.categoryId] || 0;
               const over = actual > budgetAmt && budgetAmt > 0;
               const isOpen = expandedIdx === idx;
@@ -514,7 +510,7 @@ export default function BudgetPage() {
           <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800">
             <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider mb-3">This Month Summary</p>
             {allocations.filter(a => a.percentage > 0 && actualByGroup[a.categoryId] > 0).map(a => {
-              const budgetAmt = Math.round(income * a.percentage / 100);
+              const budgetAmt = Math.round(netIncome * a.percentage / 100);
               const actual = actualByGroup[a.categoryId] || 0;
               const pct = budgetAmt > 0 ? Math.min(130, (actual / budgetAmt) * 100) : 0;
               const over = actual > budgetAmt;

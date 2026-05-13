@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { EXPENSE_CATEGORIES, FinancialStatus } from '../../types';
 import DonutChart from './DonutChart';
@@ -10,6 +10,7 @@ interface Props {
   month: number;
   onPrev: () => void;
   onNext: () => void;
+  onYearChange: (year: number) => void;
 }
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -106,6 +107,9 @@ export default function GreenCard({ year, month, onPrev, onNext }: Props) {
   const remaining = totalIncome - totalExpenses;
 
   const status = getStatus(totalIncome, totalExpenses);
+  const todayLabel = String(new Date().getDate()).padStart(2, '0');
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 6 }, (_, idx) => currentYear - idx);
 
   const statusConfig = {
     excellent: { label: 'Excellent', Coin: GoldCoin, text: '#fbbf24', coinColor: '#f59e0b' },
@@ -307,15 +311,18 @@ export default function GreenCard({ year, month, onPrev, onNext }: Props) {
       className="mx-4 mt-4 rounded-3xl overflow-hidden"
       style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 40%, #166534 100%)' }}
     >
-      {/* Month nav + share button */}
-      <div className="flex items-center justify-between px-5 pt-4 pb-2">
-        <button onClick={onPrev} className="w-7 h-7 rounded-full glass flex items-center justify-center active:scale-90 transition-transform">
-          <ChevronLeft size={16} className="text-white" />
-        </button>
-        <span className="text-white font-semibold text-sm tracking-wide">
-          {MONTHS[month]} {year}
-        </span>
-        <div className="flex items-center gap-1.5">
+      {/* Header: fixed date, centered month navigation, year dropdown arrow */}
+      <div className="relative flex items-center justify-between px-5 pt-4 pb-2">
+        <div className="rounded-2xl border border-white/25 bg-white/10 px-4 py-2 text-white text-sm font-semibold tracking-wide shadow-sm">
+          {todayLabel}
+        </div>
+        <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2">
+          <button onClick={onPrev} className="w-7 h-7 rounded-full glass flex items-center justify-center active:scale-90 transition-transform">
+            <ChevronLeft size={16} className="text-white" />
+          </button>
+          <span className="text-white font-semibold text-sm tracking-wide uppercase">
+            {MONTHS[month]}
+          </span>
           <button
             onClick={onNext}
             disabled={isFuture}
@@ -323,17 +330,19 @@ export default function GreenCard({ year, month, onPrev, onNext }: Props) {
           >
             <ChevronRight size={16} className="text-white" />
           </button>
-          <button
-            onClick={handleShare}
-            disabled={sharing}
-            className="w-7 h-7 rounded-full glass flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
-            title="Share as image"
+        </div>
+        <div className="relative rounded-2xl border border-white/25 bg-white/10 shadow-sm">
+          <select
+            value={year}
+            onChange={e => onYearChange(Number(e.target.value))}
+            className="w-20 appearance-none rounded-2xl bg-transparent px-3 py-2 pr-8 text-white text-sm font-semibold focus:outline-none"
+            aria-label="Select year"
           >
-            {sharing
-              ? <div className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" />
-              : <Share2 size={13} className="text-white" />
-            }
-          </button>
+            {yearOptions.map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+          <ChevronDown size={16} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-white" />
         </div>
       </div>
 
@@ -344,11 +353,24 @@ export default function GreenCard({ year, month, onPrev, onNext }: Props) {
           <p className="text-white/60 text-[10px] uppercase tracking-wider font-medium">Financial Status</p>
           <p className="font-bold text-base leading-tight" style={{ color: text }}>{label}</p>
         </div>
-        <div className="ml-auto text-right">
-          <p className="text-white/60 text-[10px]">Score</p>
-          <p className="text-white font-semibold text-sm">
-            {status === 'excellent' ? '90+' : status === 'sustained' ? '60–79' : '<60'}
-          </p>
+        <div className="ml-auto flex items-center gap-3">
+          <div className="text-right">
+            <p className="text-white/60 text-[10px]">Score</p>
+            <p className="text-white font-semibold text-sm">
+              {status === 'excellent' ? '90+' : status === 'sustained' ? '60–79' : '<60'}
+            </p>
+          </div>
+          <button
+            onClick={handleShare}
+            disabled={sharing}
+            className="w-9 h-9 rounded-full glass flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
+            title="Share financial status"
+          >
+            {sharing
+              ? <div className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" />
+              : <Share2 size={14} className="text-white" />
+            }
+          </button>
         </div>
       </div>
 

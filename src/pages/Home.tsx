@@ -103,7 +103,7 @@ export default function Home() {
       </div>
 
       {/* Green summary card */}
-      <GreenCard year={year} month={month} onPrev={handlePrev} onNext={handleNext} />
+      <GreenCard year={year} month={month} onPrev={handlePrev} onNext={handleNext} onYearChange={setYear} />
 
       {/* Action buttons — side by side, same height */}
       <div className="mx-4 mt-4 grid grid-cols-2 gap-3">
@@ -266,12 +266,12 @@ export default function Home() {
           {/* Amount range */}
           <div>
             <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider mb-2">Amount Range</p>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <input type="number" placeholder="Min $" value={filterMin} onChange={e => setFilterMin(e.target.value)}
-                className="flex-1 bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm outline-none dark:text-white placeholder:text-gray-400 border border-gray-100 dark:border-gray-700"
+                className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm outline-none dark:text-white placeholder:text-gray-400 border border-gray-100 dark:border-gray-700"
                 inputMode="decimal" />
               <input type="number" placeholder="Max $" value={filterMax} onChange={e => setFilterMax(e.target.value)}
-                className="flex-1 bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm outline-none dark:text-white placeholder:text-gray-400 border border-gray-100 dark:border-gray-700"
+                className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm outline-none dark:text-white placeholder:text-gray-400 border border-gray-100 dark:border-gray-700"
                 inputMode="decimal" />
             </div>
           </div>
