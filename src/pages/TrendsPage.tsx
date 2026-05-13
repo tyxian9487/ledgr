@@ -71,10 +71,10 @@ export default function TrendsPage() {
 
       {/* Summary cards */}
       <div className="px-4 mt-3 grid grid-cols-2 gap-3">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm border border-gray-50 dark:border-gray-800">
-          <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide mb-1">This Month</p>
-          <p className="text-xl font-black text-red-500">${currentMonth.expenses.toLocaleString()}</p>
-          <p className="text-[11px] text-gray-400 mt-0.5">spent</p>
+        <div className="bg-red-500 rounded-2xl p-4 shadow-sm">
+          <p className="text-[11px] text-red-100 font-semibold uppercase tracking-wide mb-1">This Month</p>
+          <p className="text-xl font-black text-white">${currentMonth.expenses.toLocaleString()}</p>
+          <p className="text-[11px] text-red-100 mt-0.5">spent</p>
           {prevMonth.expenses > 0 && (
             <div className={`flex items-center gap-1 mt-2 ${spendDiff > 0 ? 'text-red-500' : spendDiff < 0 ? 'text-green-600' : 'text-gray-400'}`}>
               {spendDiff > 0 ? <TrendingUp size={12} /> : spendDiff < 0 ? <TrendingDown size={12} /> : <Minus size={12} />}
@@ -82,12 +82,12 @@ export default function TrendsPage() {
             </div>
           )}
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm border border-gray-50 dark:border-gray-800">
-          <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide mb-1">This Month</p>
-          <p className="text-xl font-black text-green-600">${currentMonth.income.toLocaleString()}</p>
-          <p className="text-[11px] text-gray-400 mt-0.5">earned</p>
+        <div className="bg-green-600 rounded-2xl p-4 shadow-sm">
+          <p className="text-[11px] text-green-100 font-semibold uppercase tracking-wide mb-1">This Month</p>
+          <p className="text-xl font-black text-white">${currentMonth.income.toLocaleString()}</p>
+          <p className="text-[11px] text-green-100 mt-0.5">earned</p>
           {currentMonth.income > 0 && (
-            <div className={`flex items-center gap-1 mt-2 ${currentMonth.income >= currentMonth.expenses ? 'text-green-600' : 'text-red-500'}`}>
+            <div className="flex items-center gap-1 mt-2 text-green-100">
               {currentMonth.income >= currentMonth.expenses ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
               <span className="text-[11px] font-semibold">
                 {currentMonth.income >= currentMonth.expenses ? 'Surplus' : 'Deficit'} ${Math.abs(currentMonth.income - currentMonth.expenses).toLocaleString()}
