@@ -160,6 +160,7 @@ export default function BudgetPage() {
   );
   const [analyzed, setAnalyzed] = useState(budget.allocations.length > 0);
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+  const [showAllAdjust, setShowAllAdjust] = useState(false);
 
   const [incomeFixed, setIncomeFixed] = useState(budget.incomeFixed ?? false);
 
@@ -248,7 +249,7 @@ export default function BudgetPage() {
   const displayAllocations: BudgetAllocation[] = allocations;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-10">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-28">
       {/* Header */}
       <div className="bg-white dark:bg-gray-900 px-5 pt-12 pb-4 flex items-center gap-3 border-b border-gray-100 dark:border-gray-800">
         <button type="button" onClick={() => navigate('/')}
@@ -443,7 +444,7 @@ export default function BudgetPage() {
               </button>
             </div>
 
-            {allocations.map((alloc, idx) => {
+            {(showAllAdjust ? allocations : allocations.slice(0, 5)).map((alloc, idx) => {
               const group = BUDGET_GROUPS[idx];
               const { Icon } = group;
               const budgetAmt = netIncome > 0 ? Math.round(netIncome * alloc.percentage / 100) : 0;
@@ -502,6 +503,18 @@ export default function BudgetPage() {
                 </div>
               );
             })}
+
+            {allocations.length > 5 && (
+              <button
+                type="button"
+                onClick={() => setShowAllAdjust(v => !v)}
+                className="w-full py-3 border-t border-gray-100 dark:border-gray-800 text-[12px] font-semibold text-green-600 dark:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                {showAllAdjust
+                  ? 'Show less'
+                  : `Show ${allocations.length - 5} more categories`}
+              </button>
+            )}
           </div>
         )}
 
@@ -535,9 +548,12 @@ export default function BudgetPage() {
           </div>
         )}
 
-        {/* Save button */}
+      </div>
+
+      {/* Sticky Save button */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center bg-gradient-to-t from-gray-50 dark:from-gray-950 to-transparent pt-4 pb-6 px-5">
         <button type="button" onClick={handleSave}
-          className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base shadow-lg shadow-green-600/30 active:scale-[0.98] transition-transform">
+          className="w-full max-w-[430px] py-4 rounded-2xl bg-green-600 text-white font-bold text-base shadow-lg shadow-green-600/30 active:scale-[0.98] transition-transform">
           Save Budget Plan
         </button>
       </div>
