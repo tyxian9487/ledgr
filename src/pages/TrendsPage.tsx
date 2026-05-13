@@ -76,9 +76,9 @@ export default function TrendsPage() {
           <p className="text-xl font-black text-white">${currentMonth.expenses.toLocaleString()}</p>
           <p className="text-[11px] text-red-100 mt-0.5">spent</p>
           {prevMonth.expenses > 0 && (
-            <div className={`flex items-center gap-1 mt-2 ${spendDiff > 0 ? 'text-red-500' : spendDiff < 0 ? 'text-green-600' : 'text-gray-400'}`}>
+            <div className="flex items-center gap-1 mt-2 text-red-100">
               {spendDiff > 0 ? <TrendingUp size={12} /> : spendDiff < 0 ? <TrendingDown size={12} /> : <Minus size={12} />}
-              <span className="text-[11px] font-semibold">{spendDiff === 0 ? 'Same' : `${spendPct}% vs last month`}</span>
+              <span className="text-[11px] font-semibold">{spendDiff === 0 ? 'Same' : `${spendPct}% ${spendDiff > 0 ? 'more' : 'less'} than last month`}</span>
             </div>
           )}
         </div>
