@@ -19,7 +19,8 @@ interface DataPoint { label: string; value: number; }
 function LinePath({ points, W, H, color }: { points: DataPoint[]; W: number; H: number; color: string }) {
   if (points.length < 2) return null;
   const max = Math.max(...points.map(p => p.value), 1);
-  const pad = { top: 18, bottom: 24, left: 8, right: 8 };
+  // generous padding so labels never escape the SVG boundary
+  const pad = { top: 28, bottom: 30, left: 42, right: 14 };
   const chartW = W - pad.left - pad.right;
   const chartH = H - pad.top - pad.bottom;
 
@@ -39,56 +40,60 @@ function LinePath({ points, W, H, color }: { points: DataPoint[]; W: number; H: 
     d += ` C ${cpx} ${prev.y} ${cpx} ${curr.y} ${curr.x} ${curr.y}`;
   }
 
-  // Fill area below line
   const fillD = `${d} L ${coords[coords.length - 1].x} ${pad.top + chartH} L ${coords[0].x} ${pad.top + chartH} Z`;
+  const gradId = `grad-${color.replace('#', '')}`;
 
   return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={0.22} />
+          <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+        </linearGradient>
+      </defs>
+
       {/* Grid lines */}
       {[0, 0.5, 1].map(frac => (
-        <line
-          key={frac}
+        <line key={frac}
           x1={pad.left} x2={pad.left + chartW}
           y1={pad.top + frac * chartH} y2={pad.top + frac * chartH}
-          stroke="currentColor" strokeWidth={0.5} className="text-gray-100 dark:text-gray-800"
+          stroke="#e5e7eb" strokeWidth={0.8}
         />
       ))}
 
-      {/* Y axis labels */}
+      {/* Y-axis labels — anchored inside left pad */}
       {[0, 0.5, 1].map(frac => {
         const val = max * (1 - frac);
         return (
-          <text key={frac} x={pad.left - 2} y={pad.top + frac * chartH + 4}
-            textAnchor="end" fontSize={8} fill="#9ca3af">
+          <text key={frac}
+            x={pad.left - 5} y={pad.top + frac * chartH + 4}
+            textAnchor="end" fontSize={9} fill="#9ca3af">
             {val >= 1000 ? `$${(val / 1000).toFixed(1)}k` : `$${Math.round(val)}`}
           </text>
         );
       })}
 
-      {/* Area fill */}
-      <defs>
-        <linearGradient id={`grad-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity={0.25} />
-          <stop offset="100%" stopColor={color} stopOpacity={0.02} />
-        </linearGradient>
-      </defs>
-      <path d={fillD} fill={`url(#grad-${color.replace('#', '')})`} />
-
-      {/* Line */}
+      {/* Area + line */}
+      <path d={fillD} fill={`url(#${gradId})`} />
       <path d={d} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
 
-      {/* Points + x-labels */}
-      {coords.map((c, i) => (
-        <g key={i}>
-          <circle cx={c.x} cy={c.y} r={4} fill={color} stroke="white" strokeWidth={2} />
-          {c.value > 0 && (
-            <text x={c.x} y={c.y - 9} textAnchor="middle" fontSize={8.5} fontWeight="600" fill={color}>
-              {c.value >= 1000 ? `$${(c.value / 1000).toFixed(1)}k` : `$${Math.round(c.value)}`}
-            </text>
-          )}
-          <text x={c.x} y={H - 4} textAnchor="middle" fontSize={9} fill="#9ca3af">{c.label}</text>
-        </g>
-      ))}
+      {/* Points + labels */}
+      {coords.map((c, i) => {
+        // clamp value label so it never goes above the SVG top
+        const labelY = Math.max(c.y - 9, 12);
+        return (
+          <g key={i}>
+            <circle cx={c.x} cy={c.y} r={4} fill={color} stroke="white" strokeWidth={2} />
+            {c.value > 0 && (
+              <text x={c.x} y={labelY} textAnchor="middle" fontSize={8.5} fontWeight="600" fill={color}>
+                {c.value >= 1000 ? `$${(c.value / 1000).toFixed(1)}k` : `$${Math.round(c.value)}`}
+              </text>
+            )}
+            {/* x-label sits inside the bottom pad */}
+            <text x={c.x} y={H - 6} textAnchor="middle" fontSize={9} fill="#9ca3af">{c.label}</text>
+          </g>
+        );
+      })}
     </svg>
   );
 }
@@ -238,6 +243,7 @@ export default function TrendsPage() {
   const { transactions } = useApp();
   const [view, setView] = useState<'spending' | 'income'>('spending');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showAllCats, setShowAllCats] = useState(false);
 
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -268,7 +274,7 @@ export default function TrendsPage() {
     });
     const totals: Record<string, number> = {};
     yearTxs.forEach(t => { totals[t.category] = (totals[t.category] || 0) + t.amount; });
-    return Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    return Object.entries(totals).sort((a, b) => b[1] - a[1]);
   }, [transactions, currentYear]);
 
   const totalExpensesThisYear = categoryTotals.reduce((s, [, v]) => s + v, 0);
@@ -355,17 +361,17 @@ export default function TrendsPage() {
         </div>
       </div>
 
-      {/* Top Categories — clickable */}
+      {/* Top Categories — clickable + expandable */}
       <div className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
-          <p className="text-sm font-bold dark:text-white">Top Categories</p>
+          <p className="text-sm font-bold dark:text-white">Categories</p>
           <span className="text-[11px] text-gray-400">{currentYear} · tap to explore</span>
         </div>
         {categoryTotals.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-6">No expense data yet</p>
         ) : (
-          <div>
-            {categoryTotals.map(([id, amount]) => {
+          <>
+            {(showAllCats ? categoryTotals : categoryTotals.slice(0, 5)).map(([id, amount]) => {
               const pct = totalExpensesThisYear > 0 ? (amount / totalExpensesThisYear) * 100 : 0;
               const color = CATEGORY_COLORS[id] || '#94a3b8';
               const catLabel = id.charAt(0).toUpperCase() + id.slice(1);
@@ -392,7 +398,17 @@ export default function TrendsPage() {
                 </button>
               );
             })}
-          </div>
+            {categoryTotals.length > 5 && (
+              <button
+                onClick={() => setShowAllCats(v => !v)}
+                className="w-full py-3 border-t border-gray-100 dark:border-gray-800 text-[12px] font-semibold text-green-600 dark:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                {showAllCats
+                  ? 'Show less'
+                  : `Show ${categoryTotals.length - 5} more categor${categoryTotals.length - 5 === 1 ? 'y' : 'ies'}`}
+              </button>
+            )}
+          </>
         )}
       </div>
 
