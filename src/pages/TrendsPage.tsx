@@ -73,7 +73,7 @@ export default function TrendsPage() {
       <div className="px-4 mt-3 grid grid-cols-2 gap-3">
         <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm border border-gray-50 dark:border-gray-800">
           <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide mb-1">This Month</p>
-          <p className="text-xl font-black dark:text-white">${currentMonth.expenses.toLocaleString()}</p>
+          <p className="text-xl font-black text-red-500">${currentMonth.expenses.toLocaleString()}</p>
           <p className="text-[11px] text-gray-400 mt-0.5">spent</p>
           {prevMonth.expenses > 0 && (
             <div className={`flex items-center gap-1 mt-2 ${spendDiff > 0 ? 'text-red-500' : spendDiff < 0 ? 'text-green-600' : 'text-gray-400'}`}>
@@ -125,11 +125,11 @@ export default function TrendsPage() {
             const heightPct = maxBar > 0 ? (val / maxBar) * 100 : 0;
             const isLast = i === monthlyData.length - 1;
             const barColor = view === 'spending'
-              ? (isLast ? '#16a34a' : '#dcfce7')
-              : (isLast ? '#3b82f6' : '#dbeafe');
+              ? (isLast ? '#ef4444' : '#fee2e2')
+              : (isLast ? '#16a34a' : '#dcfce7');
             const darkBarColor = view === 'spending'
-              ? (isLast ? '#16a34a' : '#166534')
-              : (isLast ? '#3b82f6' : '#1e3a5f');
+              ? (isLast ? '#ef4444' : '#7f1d1d')
+              : (isLast ? '#16a34a' : '#166534');
             return (
               <div key={`${m.year}-${m.month}`} className="flex-1 flex flex-col items-center gap-1">
                 <span className="text-[9px] text-gray-400 font-medium">
@@ -147,7 +147,7 @@ export default function TrendsPage() {
                     <div data-bar={`${m.month}${m.year}`} className="w-full h-full rounded-t-lg" style={{ background: barColor }} />
                   </div>
                 </div>
-                <span className={`text-[10px] font-medium ${isLast ? (view === 'spending' ? 'text-green-600' : 'text-blue-600') : 'text-gray-400 dark:text-gray-500'}`}>
+                <span className={`text-[10px] font-medium ${isLast ? (view === 'spending' ? 'text-red-500' : 'text-green-600') : 'text-gray-400 dark:text-gray-500'}`}>
                   {m.label}
                 </span>
               </div>
