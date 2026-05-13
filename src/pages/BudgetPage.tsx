@@ -163,6 +163,7 @@ export default function BudgetPage() {
   const [showAllAdjust, setShowAllAdjust] = useState(false);
 
   const [incomeFixed, setIncomeFixed] = useState(budget.incomeFixed ?? false);
+  const [showGoals, setShowGoals] = useState(true);
 
   const [savingsEnabled, setSavingsEnabled] = useState(false);
   const [savingsMode, setSavingsMode] = useState<'pct' | 'fixed'>('pct');
@@ -315,11 +316,27 @@ export default function BudgetPage() {
 
         {/* Savings & Investment Goal card */}
         <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden">
-          <div className="px-5 pt-4 pb-3 border-b border-gray-50 dark:border-gray-800">
-            <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">Savings & Investment Goals</p>
-            <p className="text-xs text-gray-400 mt-0.5 text-left">Optional — set a personal target alongside your budget</p>
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowGoals(v => !v)}
+            className="w-full px-5 pt-4 pb-3 flex items-center justify-between border-b border-gray-50 dark:border-gray-800"
+          >
+            <div className="text-left">
+              <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">Savings & Investment Goals</p>
+              {!showGoals && (savingsAmt > 0 || investAmt > 0) ? (
+                <p className="text-xs text-green-600 dark:text-green-400 mt-0.5 font-medium">
+                  {savingsEnabled && savingsAmt > 0 ? `Savings $${Math.round(savingsAmt).toLocaleString()}/mo` : ''}
+                  {savingsEnabled && savingsAmt > 0 && investEnabled && investAmt > 0 ? ' · ' : ''}
+                  {investEnabled && investAmt > 0 ? `Invest $${Math.round(investAmt).toLocaleString()}/mo` : ''}
+                </p>
+              ) : (
+                <p className="text-xs text-gray-400 mt-0.5">Optional — set a personal target</p>
+              )}
+            </div>
+            <ChevronDown size={16} className={`text-gray-400 flex-shrink-0 ml-2 transition-transform duration-200 ${showGoals ? 'rotate-180' : ''}`} />
+          </button>
 
+          {showGoals && (<>
           {/* Savings goal */}
           <div className="px-5 py-4 border-b border-gray-50 dark:border-gray-800">
             <div className="flex items-center justify-between mb-3">
@@ -402,6 +419,7 @@ export default function BudgetPage() {
               </>
             )}
           </div>
+          </>)}
         </div>
 
         {/* Donut + total */}
@@ -549,12 +567,18 @@ export default function BudgetPage() {
           </div>
         )}
 
+        {/* Save button also inside scroll area so it's always reachable */}
+        <button type="button" onClick={handleSave}
+          className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base shadow-lg shadow-green-600/30 active:scale-[0.98] transition-transform mb-2">
+          Save Budget Plan
+        </button>
+
       </div>
 
-      {/* Save button — always visible at bottom */}
-      <div className="flex-shrink-0 px-5 py-4 bg-gray-50 dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800">
+      {/* Save button pinned at bottom for when flex layout works */}
+      <div className="flex-shrink-0 px-5 py-3 bg-gray-50 dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800">
         <button type="button" onClick={handleSave}
-          className="w-full max-w-[430px] py-4 rounded-2xl bg-green-600 text-white font-bold text-base shadow-lg shadow-green-600/30 active:scale-[0.98] transition-transform">
+          className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base shadow-lg shadow-green-600/30 active:scale-[0.98] transition-transform">
           Save Budget Plan
         </button>
       </div>
