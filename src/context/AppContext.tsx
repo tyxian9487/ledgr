@@ -1,5 +1,40 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Transaction, UserProfile, BudgetSettings } from '../types';
+import { Transaction, UserProfile, BudgetSettings, AutoDebitPeriod } from '../types';
+
+function advanceDate(date: Date, period: AutoDebitPeriod): Date {
+  const d = new Date(date);
+  if (period === 'daily') d.setDate(d.getDate() + 1);
+  else if (period === 'weekly') d.setDate(d.getDate() + 7);
+  else if (period === 'biweekly') d.setDate(d.getDate() + 14);
+  else if (period === 'monthly') d.setMonth(d.getMonth() + 1);
+  else if (period === 'yearly') d.setFullYear(d.getFullYear() + 1);
+  return d;
+}
+
+function processAutoDebits(txs: Transaction[]): Transaction[] {
+  const ceiling = new Date();
+  ceiling.setHours(23, 59, 59, 999);
+  const existingIds = new Set(txs.map(t => t.id));
+  const additions: Transaction[] = [];
+
+  const templates = txs.filter(t => t.isAutoDebit && t.autoDebitPeriod && !t.id.includes('_auto_'));
+
+  for (const tmpl of templates) {
+    const related = txs.filter(t => t.id === tmpl.id || t.id.startsWith(`${tmpl.id}_auto_`));
+    const lastMs = Math.max(...related.map(t => new Date(t.date).getTime()));
+    let next = advanceDate(new Date(lastMs), tmpl.autoDebitPeriod!);
+    while (next <= ceiling) {
+      const nid = `${tmpl.id}_auto_${next.getTime()}`;
+      if (!existingIds.has(nid)) {
+        additions.push({ ...tmpl, id: nid, date: next.toISOString() });
+        existingIds.add(nid);
+      }
+      next = advanceDate(next, tmpl.autoDebitPeriod!);
+    }
+  }
+
+  return additions.length > 0 ? [...txs, ...additions] : txs;
+}
 
 interface AppContextType {
   transactions: Transaction[];
@@ -65,15 +100,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const data = JSON.parse(saved);
-        setTransactions(data.transactions || generateSampleData());
+        setTransactions(processAutoDebits(data.transactions || generateSampleData()));
         setUserProfile(data.userProfile || DEFAULT_PROFILE);
         setDarkMode(data.darkMode || false);
         setBudget(data.budget || DEFAULT_BUDGET);
       } else {
-        setTransactions(generateSampleData());
+        setTransactions(processAutoDebits(generateSampleData()));
       }
     } catch {
-      setTransactions(generateSampleData());
+      setTransactions(processAutoDebits(generateSampleData()));
     }
   }, []);
 
