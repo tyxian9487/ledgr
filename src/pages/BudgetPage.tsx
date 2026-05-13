@@ -249,7 +249,7 @@ export default function BudgetPage() {
   const displayAllocations: BudgetAllocation[] = allocations;
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-gray-950 flex flex-col overflow-hidden">
+    <div className="flex flex-col bg-gray-50 dark:bg-gray-950 overflow-hidden" style={{ height: '100dvh' }}>
       {/* Header — non-scrolling */}
       <div className="flex-shrink-0 bg-white dark:bg-gray-900 px-5 pt-12 pb-4 flex items-center gap-3 border-b border-gray-100 dark:border-gray-800">
         <button type="button" onClick={() => navigate('/')}
@@ -263,7 +263,7 @@ export default function BudgetPage() {
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-5 pt-5 pb-4 space-y-4" style={{ overscrollBehavior: 'contain' }}>
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-5 pb-4 space-y-4" style={{ overscrollBehavior: 'contain' }}>
 
         {/* Income input */}
         <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800">
