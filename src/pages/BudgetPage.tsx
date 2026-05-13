@@ -163,7 +163,7 @@ export default function BudgetPage() {
 
   const [incomeFixed, setIncomeFixed] = useState(budget.incomeFixed ?? false);
 
-  const [savingsEnabled, setSavingsEnabled] = useState(true);
+  const [savingsEnabled, setSavingsEnabled] = useState(false);
   const [savingsMode, setSavingsMode] = useState<'pct' | 'fixed'>('pct');
   const [savingsValue, setSavingsValue] = useState('');
   const [investEnabled, setInvestEnabled] = useState(false);
