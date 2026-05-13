@@ -311,17 +311,20 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
       className="mx-4 mt-4 rounded-3xl overflow-hidden"
       style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 40%, #166534 100%)' }}
     >
-      {/* Header: fixed date, centered month navigation, year dropdown */}
-      <div className="relative flex items-center justify-between px-5 pt-4 pb-2">
-        <div className="rounded-2xl border border-white/25 bg-white/10 px-4 py-2 text-white text-sm font-semibold tracking-wide shadow-sm">
+      {/* Header: date pill | centered month nav | year dropdown — all in one flex row */}
+      <div className="flex items-center px-5 pt-4 pb-2 gap-2">
+        {/* Left — today's date pill */}
+        <div className="rounded-2xl border border-white/25 bg-white/10 px-4 py-2 text-white text-sm font-semibold tracking-wide shadow-sm flex-shrink-0">
           {todayLabel}
         </div>
-        <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2">
+
+        {/* Center — month navigation, takes remaining space and centers content */}
+        <div className="flex flex-1 items-center justify-center gap-2">
           <button onClick={onPrev} className="w-7 h-7 rounded-full glass flex items-center justify-center active:scale-90 transition-transform">
             <ChevronLeft size={16} className="text-white" />
           </button>
-          <span className="text-white font-semibold text-sm tracking-wide uppercase">
-            {MONTHS[month]}
+          <span className="text-white font-semibold text-sm tracking-wide uppercase w-10 text-center">
+            {MONTHS[month].slice(0, 3)}
           </span>
           <button
             onClick={onNext}
@@ -331,7 +334,9 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
             <ChevronRight size={16} className="text-white" />
           </button>
         </div>
-        <div className="relative rounded-2xl border border-white/25 bg-white/10 shadow-sm">
+
+        {/* Right — year dropdown */}
+        <div className="relative rounded-2xl border border-white/25 bg-white/10 shadow-sm flex-shrink-0">
           <select
             value={year}
             onChange={e => onYearChange(Number(e.target.value))}
