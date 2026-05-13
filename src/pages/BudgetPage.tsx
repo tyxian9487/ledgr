@@ -103,7 +103,7 @@ function MiniDonut({ allocations, size = 140 }: { allocations: BudgetAllocation[
     return path;
   });
 
-  const selected = active.find(a => a.category === activeSlice) || null;
+  const selected = active.find(a => a.categoryId === activeSlice) || null;
 
   if (active.length === 0) {
     return (
@@ -249,9 +249,9 @@ export default function BudgetPage() {
   const displayAllocations: BudgetAllocation[] = allocations;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-28">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-900 px-5 pt-12 pb-4 flex items-center gap-3 border-b border-gray-100 dark:border-gray-800">
+    <div className="h-screen bg-gray-50 dark:bg-gray-950 flex flex-col overflow-hidden">
+      {/* Header — non-scrolling */}
+      <div className="flex-shrink-0 bg-white dark:bg-gray-900 px-5 pt-12 pb-4 flex items-center gap-3 border-b border-gray-100 dark:border-gray-800">
         <button type="button" onClick={() => navigate('/')}
           className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
           <ArrowLeft size={18} className="text-gray-600 dark:text-gray-300" />
@@ -262,7 +262,8 @@ export default function BudgetPage() {
         </div>
       </div>
 
-      <div className="px-5 pt-5 space-y-4">
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto px-5 pt-5 pb-4 space-y-4" style={{ overscrollBehavior: 'contain' }}>
 
         {/* Income input */}
         <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800">
@@ -550,8 +551,8 @@ export default function BudgetPage() {
 
       </div>
 
-      {/* Sticky Save button */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center bg-gradient-to-t from-gray-50 dark:from-gray-950 to-transparent pt-4 pb-6 px-5">
+      {/* Save button — always visible at bottom */}
+      <div className="flex-shrink-0 px-5 py-4 bg-gray-50 dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800">
         <button type="button" onClick={handleSave}
           className="w-full max-w-[430px] py-4 rounded-2xl bg-green-600 text-white font-bold text-base shadow-lg shadow-green-600/30 active:scale-[0.98] transition-transform">
           Save Budget Plan

@@ -97,7 +97,7 @@ function drawDonutOnCanvas(
   }
 }
 
-export default function GreenCard({ year, month, onPrev, onNext }: Props) {
+export default function GreenCard({ year, month, onPrev, onNext, onYearChange }: Props) {
   const { getMonthTransactions, getMonthIncome, getMonthExpenses } = useApp();
   const [sharing, setSharing] = useState(false);
 
@@ -311,7 +311,7 @@ export default function GreenCard({ year, month, onPrev, onNext }: Props) {
       className="mx-4 mt-4 rounded-3xl overflow-hidden"
       style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 40%, #166534 100%)' }}
     >
-      {/* Header: fixed date, centered month navigation, year dropdown arrow */}
+      {/* Header: fixed date, centered month navigation, year dropdown */}
       <div className="relative flex items-center justify-between px-5 pt-4 pb-2">
         <div className="rounded-2xl border border-white/25 bg-white/10 px-4 py-2 text-white text-sm font-semibold tracking-wide shadow-sm">
           {todayLabel}
