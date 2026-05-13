@@ -368,10 +368,12 @@ export default function BudgetPage() {
                     onChange={e => setSavingsValue(e.target.value)}
                     className="flex-1 bg-transparent text-sm font-bold outline-none dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-600"
                     inputMode="decimal" />
-                  {savingsAmt > 0 && (
-                    <span className="text-xs text-green-600 font-semibold">${Math.round(savingsAmt).toLocaleString()}/mo</span>
-                  )}
                 </div>
+                {savingsAmt > 0 && (
+                  <p className="text-xs text-green-600 dark:text-green-400 font-semibold mt-1.5 text-right">
+                    = ${Math.round(savingsAmt).toLocaleString()} / mo
+                  </p>
+                )}
                 {analyzed && savingsPct > 0 && (
                   <p className="text-xs text-gray-400 mt-2 text-left">
                     AI suggests <span className="text-green-600 font-semibold">{savingsPct}%</span> (${Math.round(income * savingsPct / 100).toLocaleString()}/mo) for savings
@@ -412,10 +414,12 @@ export default function BudgetPage() {
                     onChange={e => setInvestValue(e.target.value)}
                     className="flex-1 bg-transparent text-sm font-bold outline-none dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-600"
                     inputMode="decimal" />
-                  {investAmt > 0 && (
-                    <span className="text-xs text-purple-600 font-semibold">${Math.round(investAmt).toLocaleString()}/mo</span>
-                  )}
                 </div>
+                {investAmt > 0 && (
+                  <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold mt-1.5 text-right">
+                    = ${Math.round(investAmt).toLocaleString()} / mo
+                  </p>
+                )}
               </>
             )}
           </div>
