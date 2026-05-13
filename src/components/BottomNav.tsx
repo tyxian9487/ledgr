@@ -1,32 +1,46 @@
-import { Home, Camera, User } from 'lucide-react';
+import { Home, Camera, User, LineChart, Target } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+
+const NAV_ITEMS = [
+  { label: 'Home', icon: Home, path: '/' },
+  { label: 'Trends', icon: LineChart, path: '/trends' },
+];
+
+const RIGHT_ITEMS = [
+  { label: 'Budgets', icon: Target, path: '/budget' },
+  { label: 'Profile', icon: User, path: '/profile' },
+];
 
 export default function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
+  const active = location.pathname;
 
-  const isHome = location.pathname === '/';
-  const isProfile = location.pathname === '/profile';
+  function NavBtn({ label, icon: Icon, path }: { label: string; icon: React.ElementType; path: string }) {
+    const isActive = active === path;
+    return (
+      <button
+        onClick={() => navigate(path)}
+        className="flex flex-col items-center gap-0.5 min-w-[52px]"
+      >
+        <Icon
+          size={22}
+          className={isActive ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}
+          strokeWidth={isActive ? 2.5 : 1.8}
+        />
+        <span className={`text-[11px] font-medium ${isActive ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>
+          {label}
+        </span>
+      </button>
+    );
+  }
 
   return (
     <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 safe-bottom z-50">
-      <div className="flex items-center justify-around px-4 pt-2 pb-3">
-        {/* Home */}
-        <button
-          onClick={() => navigate('/')}
-          className="flex flex-col items-center gap-0.5 min-w-[60px]"
-        >
-          <Home
-            size={22}
-            className={isHome ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}
-            strokeWidth={isHome ? 2.5 : 1.8}
-          />
-          <span className={`text-[11px] font-medium ${isHome ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>
-            Home
-          </span>
-        </button>
+      <div className="flex items-center justify-around px-2 pt-2 pb-3">
+        {NAV_ITEMS.map(item => <NavBtn key={item.path} {...item} />)}
 
-        {/* Camera — center with green bubble */}
+        {/* Centre Capture bubble */}
         <button
           onClick={() => navigate('/capture')}
           className="flex flex-col items-center gap-0.5 -mt-5"
@@ -37,20 +51,7 @@ export default function BottomNav() {
           <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 mt-0.5">Capture</span>
         </button>
 
-        {/* Profile */}
-        <button
-          onClick={() => navigate('/profile')}
-          className="flex flex-col items-center gap-0.5 min-w-[60px]"
-        >
-          <User
-            size={22}
-            className={isProfile ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}
-            strokeWidth={isProfile ? 2.5 : 1.8}
-          />
-          <span className={`text-[11px] font-medium ${isProfile ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>
-            Profile
-          </span>
-        </button>
+        {RIGHT_ITEMS.map(item => <NavBtn key={item.path} {...item} />)}
       </div>
     </nav>
   );

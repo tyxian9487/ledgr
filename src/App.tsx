@@ -7,10 +7,11 @@ import ReceiptCapture from './pages/ReceiptCapture';
 import Profile from './pages/Profile';
 import SubscriptionPage from './pages/SubscriptionPage';
 import BudgetPage from './pages/BudgetPage';
+import TrendsPage from './pages/TrendsPage';
 
 function AppRoutes() {
   const location = useLocation();
-  const hideNav = ['/capture', '/subscription', '/budget'].includes(location.pathname);
+  const hideNav = ['/capture', '/subscription'].includes(location.pathname);
 
   return (
     <div className="relative">
@@ -20,6 +21,7 @@ function AppRoutes() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/subscription" element={<SubscriptionPage />} />
         <Route path="/budget" element={<BudgetPage />} />
+        <Route path="/trends" element={<TrendsPage />} />
       </Routes>
       {!hideNav && <BottomNav />}
     </div>
