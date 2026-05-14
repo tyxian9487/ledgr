@@ -35,7 +35,7 @@ export default function OnboardingPage() {
     if (!hasName) return;
     updateUserProfile({ name: name.trim(), currency });
     completeOnboarding();
-    navigate('/');
+    navigate('/subscription', { state: { fromOnboarding: true } });
   }
 
   const initial = name.trim() ? name.trim().charAt(0).toUpperCase() : '?';

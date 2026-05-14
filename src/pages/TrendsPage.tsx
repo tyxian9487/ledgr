@@ -272,9 +272,10 @@ export default function TrendsPage() {
   }, [transactions]);
 
   const categoryTotals = useMemo(() => {
+    const endOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
     const yearTxs = transactions.filter(t => {
       const d = new Date(t.date);
-      return d.getFullYear() === currentYear && t.type === 'expense';
+      return d.getFullYear() === currentYear && t.type === 'expense' && d <= endOfCurrentMonth;
     });
     const totals: Record<string, number> = {};
     yearTxs.forEach(t => { totals[t.category] = (totals[t.category] || 0) + t.amount; });

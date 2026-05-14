@@ -130,7 +130,7 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
     .map(c => ({ category: c.id, label: c.label, amount: categoryTotals[c.id], color: c.color }));
 
   const now = new Date();
-  const isFuture = new Date(year, month) > new Date(now.getFullYear(), now.getMonth());
+  const isFuture = new Date(year, month) >= new Date(now.getFullYear(), now.getMonth());
 
   async function handleShare() {
     setSharing(true);
