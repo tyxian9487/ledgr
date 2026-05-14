@@ -19,8 +19,7 @@ interface DataPoint { label: string; value: number; }
 function LinePath({ points, W, H, color, formatCurrency }: { points: DataPoint[]; W: number; H: number; color: string; formatCurrency: (n: number) => string }) {
   if (points.length < 2) return null;
   const max = Math.max(...points.map(p => p.value), 1);
-  // generous padding so labels never escape the SVG boundary
-  const pad = { top: 28, bottom: 30, left: 42, right: 14 };
+  const pad = { top: 30, bottom: 26, left: 44, right: 12 };
   const chartW = W - pad.left - pad.right;
   const chartH = H - pad.top - pad.bottom;
 
@@ -31,7 +30,6 @@ function LinePath({ points, W, H, color, formatCurrency }: { points: DataPoint[]
     label: p.label,
   }));
 
-  // Smooth bezier path
   let d = `M ${coords[0].x} ${coords[0].y}`;
   for (let i = 1; i < coords.length; i++) {
     const prev = coords[i - 1];
@@ -44,7 +42,7 @@ function LinePath({ points, W, H, color, formatCurrency }: { points: DataPoint[]
   const gradId = `grad-${color.replace('#', '')}`;
 
   return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+    <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{ display: 'block' }}>
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity={0.22} />
@@ -61,13 +59,13 @@ function LinePath({ points, W, H, color, formatCurrency }: { points: DataPoint[]
         />
       ))}
 
-      {/* Y-axis labels — anchored inside left pad */}
+      {/* Y-axis labels */}
       {[0, 0.5, 1].map(frac => {
         const val = max * (1 - frac);
         return (
           <text key={frac}
-            x={pad.left - 8} y={pad.top + frac * chartH + 4}
-            textAnchor="end" fontSize={8} fill="#9ca3af">
+            x={pad.left - 6} y={pad.top + frac * chartH + 4}
+            textAnchor="end" fontSize={7.5} fill="#9ca3af">
             {formatCurrency(val)}
           </text>
         );
@@ -77,23 +75,18 @@ function LinePath({ points, W, H, color, formatCurrency }: { points: DataPoint[]
       <path d={fillD} fill={`url(#${gradId})`} />
       <path d={d} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
 
-      {/* Points + labels */}
+      {/* Points + labels — value label always above the dot, x-label in bottom pad */}
       {coords.map((c, i) => {
-        // Position labels above points, but ensure they stay within chart bounds
-        // For very low values, position label above the point; for high values, below
-        const isNearBottom = c.y > pad.top + chartH * 0.7;
-        const labelOffset = isNearBottom ? -12 : 12;
-        const labelY = Math.max(Math.min(c.y + labelOffset, pad.top + chartH - 8), 16);
+        const labelY = Math.max(c.y - 8, 10);
         return (
           <g key={i}>
-            <circle cx={c.x} cy={c.y} r={4} fill={color} stroke="white" strokeWidth={2} />
+            <circle cx={c.x} cy={c.y} r={3.5} fill={color} stroke="white" strokeWidth={2} />
             {c.value > 0 && (
-              <text x={c.x} y={labelY} textAnchor="middle" fontSize={8} fontWeight="600" fill={color}>
+              <text x={c.x} y={labelY} textAnchor="middle" fontSize={7.5} fontWeight="600" fill={color}>
                 {formatCurrency(c.value)}
               </text>
             )}
-            {/* x-label sits inside the bottom pad */}
-            <text x={c.x} y={H - 6} textAnchor="middle" fontSize={9} fill="#9ca3af">{c.label}</text>
+            <text x={c.x} y={H - 4} textAnchor="middle" fontSize={8.5} fill="#9ca3af">{c.label}</text>
           </g>
         );
       })}
@@ -195,13 +188,13 @@ function CategoryModal({
         </div>
 
         {/* Chart */}
-        <div className="flex-shrink-0 px-3">
+        <div className="flex-shrink-0 px-3 overflow-hidden">
           {total === 0 ? (
             <div className="h-40 flex items-center justify-center">
               <p className="text-sm text-gray-400">No data for this period</p>
             </div>
           ) : (
-            <LinePath points={points} W={390} H={160} color={color} formatCurrency={formatCurrency} />
+            <LinePath points={points} W={380} H={160} color={color} formatCurrency={formatCurrency} />
           )}
         </div>
 
@@ -272,10 +265,10 @@ export default function TrendsPage() {
   }, [transactions]);
 
   const categoryTotals = useMemo(() => {
-    const endOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
     const yearTxs = transactions.filter(t => {
       const d = new Date(t.date);
-      return d.getFullYear() === currentYear && t.type === 'expense' && d <= endOfCurrentMonth;
+      return d.getFullYear() === currentYear && t.type === 'expense' && d <= endOfToday;
     });
     const totals: Record<string, number> = {};
     yearTxs.forEach(t => { totals[t.category] = (totals[t.category] || 0) + t.amount; });

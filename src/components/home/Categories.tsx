@@ -55,6 +55,7 @@ function CalendarOverlay({
   const [calYear, setCalYear] = useState(year);
   const [calMonth, setCalMonth] = useState(month);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [expandedCat, setExpandedCat] = useState<string | null>(null);
 
   const now = new Date();
 
@@ -83,12 +84,12 @@ function CalendarOverlay({
   function prevMonth() {
     if (calMonth === 0) { setCalYear(y => y - 1); setCalMonth(11); }
     else setCalMonth(m => m - 1);
-    setSelectedDay(null);
+    setSelectedDay(null); setExpandedCat(null);
   }
   function nextMonth() {
     if (calMonth === 11) { setCalYear(y => y + 1); setCalMonth(0); }
     else setCalMonth(m => m + 1);
-    setSelectedDay(null);
+    setSelectedDay(null); setExpandedCat(null);
   }
 
   const cells: (number | null)[] = [
@@ -146,7 +147,7 @@ function CalendarOverlay({
               <div key={day} className="flex flex-col items-center py-1">
                 <button
                   type="button"
-                  onClick={() => hasTxs && setSelectedDay(isSelected ? null : day)}
+                  onClick={() => { if (!hasTxs) return; setSelectedDay(isSelected ? null : day); setExpandedCat(null); }}
                   className={`w-9 h-9 rounded-2xl flex flex-col items-center justify-center transition-all ${isToday ? 'ring-2 ring-green-500' : ''} ${isSelected ? 'ring-2 ring-blue-400 ring-offset-1' : ''} ${hasTxs ? 'active:scale-95' : ''}`}
                   style={incomeOnly
                     ? { background: `rgba(34,197,94,0.18)` }
@@ -191,52 +192,89 @@ function CalendarOverlay({
           </button>
         </div>
 
-        {/* Selected day detail */}
-        {selectedDay !== null && selectedDayTxs.length > 0 && (
-          <div className="px-5 pt-4">
-            <p className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider mb-3">
-              {MONTH_NAMES[calMonth]} {selectedDay}
-            </p>
-            <div className="space-y-2">
-              {selectedDayTxs.map(tx => {
-                const cat = allCategories.find(c => c.id === tx.category);
-                const isIncome = tx.type === 'income';
-                const baseId = tx.id.includes('_auto_') ? tx.id.split('_auto_')[0] : tx.id;
-                const template = transactions.find(t => t.id === baseId);
-                const autoEnabled = template?.isAutoDebit ?? false;
+        {/* Selected day detail — categories first, tap to expand individual transactions */}
+        {selectedDay !== null && selectedDayTxs.length > 0 && (() => {
+          const catMap: Record<string, { txs: Transaction[]; total: number; isIncome: boolean }> = {};
+          selectedDayTxs.forEach(tx => {
+            if (!catMap[tx.category]) catMap[tx.category] = { txs: [], total: 0, isIncome: tx.type === 'income' };
+            catMap[tx.category].txs.push(tx);
+            catMap[tx.category].total += tx.amount;
+          });
+          const groups = Object.entries(catMap);
 
-                return (
-                  <div key={tx.id} className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 rounded-2xl px-4 py-3">
-                    {cat && <CategoryIcon icon={cat.icon} color={cat.color} size={14} />}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold dark:text-white truncate">
-                        {tx.description || cat?.label || tx.category}
-                      </p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isIncome ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-red-100 dark:bg-red-900/30 text-red-500'}`}>
-                          {isIncome ? 'Income' : 'Expense'}
+          return (
+            <div className="px-5 pt-4">
+              <p className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider mb-3">
+                {MONTH_NAMES[calMonth]} {selectedDay}
+              </p>
+              <div className="space-y-2">
+                {groups.map(([catId, { txs: groupTxs, total, isIncome }]) => {
+                  const cat = allCategories.find(c => c.id === catId);
+                  const isOpen = expandedCat === catId;
+
+                  return (
+                    <div key={catId} className="bg-gray-50 dark:bg-gray-800 rounded-2xl overflow-hidden">
+                      {/* Category header */}
+                      <button type="button" onClick={() => setExpandedCat(isOpen ? null : catId)}
+                        className="w-full flex items-center gap-3 px-4 py-3">
+                        {cat && <CategoryIcon icon={cat.icon} color={cat.color} size={14} />}
+                        <div className="flex-1 min-w-0 text-left">
+                          <p className="text-sm font-semibold dark:text-white">{cat?.label || catId}</p>
+                          <p className="text-[10px] text-gray-400">{groupTxs.length} transaction{groupTxs.length !== 1 ? 's' : ''}</p>
+                        </div>
+                        <span className={`text-sm font-bold flex-shrink-0 mr-1 ${isIncome ? 'text-green-600' : 'text-gray-700 dark:text-gray-200'}`}>
+                          {isIncome ? '+' : '-'}{formatCurrency(total)}
                         </span>
-                        {cat && <span className="text-[10px] text-gray-400">{cat.label}</span>}
-                      </div>
-                    </div>
-                    <span className={`text-sm font-bold flex-shrink-0 mr-1 ${isIncome ? 'text-green-600' : 'text-gray-700 dark:text-gray-200'}`}>
-                      {isIncome ? '+' : '-'}{formatCurrency(tx.amount)}
-                    </span>
-                    {tx.isAutoDebit && (
-                      <button
-                        type="button"
-                        onClick={() => autoEnabled ? stopAutoDebit(tx.id) : restartAutoDebit(baseId)}
-                        className={`w-11 h-6 rounded-full transition-colors duration-200 relative flex-shrink-0 ${autoEnabled ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'}`}
-                      >
-                        <span className={`absolute top-0.5 h-5 w-5 bg-white rounded-full shadow-md transition-all duration-200 ${autoEnabled ? 'left-[22px]' : 'left-0.5'}`} />
+                        <ChevronDown size={14} className={`text-gray-400 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                       </button>
-                    )}
-                  </div>
-                );
-              })}
+
+                      {/* Individual transactions — only shown when category is expanded */}
+                      {isOpen && (
+                        <div className="border-t border-gray-100 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+                          {groupTxs.map(tx => {
+                            const baseId = tx.id.includes('_auto_') ? tx.id.split('_auto_')[0] : tx.id;
+                            const template = transactions.find(t => t.id === baseId);
+                            const autoEnabled = template?.isAutoDebit ?? false;
+
+                            return (
+                              <div key={tx.id} className="px-4 py-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1 min-w-0 pr-3">
+                                    <p className="text-xs font-semibold dark:text-gray-200 truncate">
+                                      {tx.description || cat?.label || catId}
+                                    </p>
+                                    <span className={`inline-block mt-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isIncome ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-red-100 dark:bg-red-900/30 text-red-500'}`}>
+                                      {isIncome ? 'Income' : 'Expense'}
+                                    </span>
+                                  </div>
+                                  <span className={`text-xs font-bold flex-shrink-0 ${isIncome ? 'text-green-600' : 'text-gray-700 dark:text-gray-200'}`}>
+                                    {isIncome ? '+' : '-'}{formatCurrency(tx.amount)}
+                                  </span>
+                                </div>
+                                {tx.isAutoDebit && (
+                                  <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-gray-100 dark:border-gray-700">
+                                    <span className="text-[10px] text-gray-400 font-medium">Enable auto debit</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => autoEnabled ? stopAutoDebit(tx.id) : restartAutoDebit(baseId)}
+                                      className={`w-11 h-6 rounded-full transition-colors duration-200 relative flex-shrink-0 ${autoEnabled ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'}`}
+                                    >
+                                      <span className={`absolute top-0.5 h-5 w-5 bg-white rounded-full shadow-md transition-all duration-200 ${autoEnabled ? 'left-[22px]' : 'left-0.5'}`} />
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         <div className="h-10" />
       </div>
