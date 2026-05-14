@@ -152,6 +152,7 @@ export default function BudgetPage() {
   const [analyzed, setAnalyzed] = useState(budget.allocations.length > 0);
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [showAllAdjust, setShowAllAdjust] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const [incomeFixed, setIncomeFixed] = useState(budget.incomeFixed ?? false);
   const [showGoals, setShowGoals] = useState(true);
@@ -199,6 +200,12 @@ export default function BudgetPage() {
     (budget.investmentGoal?.enabled ?? false) !== investEnabled ||
     (budget.investmentGoal?.mode ?? 'pct') !== investMode ||
     budgetInvestValue !== currentInvestValue;
+
+  useEffect(() => {
+    if (isDirty && saved) {
+      setSaved(false);
+    }
+  }, [isDirty, saved]);
 
   // Update display values when income or budget changes
   useEffect(() => {
@@ -300,6 +307,7 @@ export default function BudgetPage() {
       savingsGoal,
       investmentGoal,
     });
+    setSaved(true);
     navigate('/');
   }, [income, allocations, incomeFixed, savingsEnabled, savingsValue, savingsMode, investEnabled, investValue, investMode, updateBudget, navigate]);
 
