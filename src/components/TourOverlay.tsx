@@ -47,58 +47,15 @@ export default function TourOverlay() {
   const step = currentStep;
   const isLastStep = tourStepIndex === TOUR_STEPS.length - 1;
   const vw = window.innerWidth;
-  const vh = window.innerHeight;
   const cardW = Math.min(300, vw - 32);
-
-  // ── Card always anchored at bottom so it's never occluded ──────────────────
-  const CARD_BOTTOM_OFFSET = 24; // px from bottom of viewport
   const cardLeft = Math.max(16, (vw - cardW) / 2);
 
-  // ── SVG overlay: single element with a mask-based spotlight hole ────────────
-  // This avoids the backdrop-filter stacking-context issue on mobile Chrome
-  // that made sibling fixed elements invisible even at higher z-index.
-  const overlayEl = rect ? (
-    <svg
-      style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', display: 'block' }}
-      onClick={skipTour}
-    >
-      <defs>
-        <mask id="ledgr-tour-mask">
-          {/* White = show overlay; black rect = transparent hole */}
-          <rect x="0" y="0" width={vw} height={vh} fill="white" />
-          <rect
-            x={rect.left - PAD} y={rect.top - PAD}
-            width={rect.width + PAD * 2} height={rect.height + PAD * 2}
-            rx={16} fill="black"
-          />
-        </mask>
-      </defs>
-      {/* Dark overlay with spotlight hole */}
-      <rect x="0" y="0" width={vw} height={vh} fill="rgba(0,0,0,0.72)" mask="url(#ledgr-tour-mask)" />
-      {/* Spotlight border ring */}
-      <rect
-        x={rect.left - PAD} y={rect.top - PAD}
-        width={rect.width + PAD * 2} height={rect.height + PAD * 2}
-        rx={16} fill="none"
-        stroke="rgba(255,255,255,0.65)" strokeWidth={2}
-        style={{ pointerEvents: 'none' }}
-      />
-    </svg>
-  ) : (
-    <svg
-      style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', display: 'block' }}
-      onClick={skipTour}
-    >
-      <rect x="0" y="0" width={vw} height={vh} fill="rgba(0,0,0,0.72)" />
-    </svg>
-  );
-
   // ── Tooltip card ────────────────────────────────────────────────────────────
-  const cardEl = (
+  const card = (
     <div
       style={{
         position: 'fixed',
-        bottom: CARD_BOTTOM_OFFSET,
+        bottom: 24,
         left: cardLeft,
         width: cardW,
         zIndex: 99999,
@@ -110,14 +67,11 @@ export default function TourOverlay() {
         background: '#fff',
         borderRadius: 20,
         overflow: 'hidden',
-        boxShadow: '0 -4px 32px rgba(0,0,0,0.35), 0 8px 32px rgba(0,0,0,0.25)',
-        border: '1px solid rgba(0,0,0,0.06)',
+        boxShadow: '0 -4px 24px rgba(0,0,0,0.25), 0 8px 32px rgba(0,0,0,0.18)',
+        border: '1px solid rgba(0,0,0,0.07)',
       }}>
-        {/* Green accent stripe */}
         <div style={{ height: 4, background: 'linear-gradient(90deg,#16a34a,#34d399)' }} />
-
         <div style={{ padding: '14px 16px' }}>
-          {/* Progress pills + counter */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 10, flexWrap: 'wrap' }}>
             {TOUR_STEPS.map((_, i) => (
               <div key={i} style={{
@@ -131,14 +85,12 @@ export default function TourOverlay() {
               {tourStepIndex + 1} / {TOUR_STEPS.length}
             </span>
           </div>
-
           <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: '#111827', lineHeight: 1.35 }}>
             {step.title}
           </p>
           <p style={{ margin: '0 0 14px', fontSize: 12, color: '#6b7280', lineHeight: 1.6 }}>
             {step.body}
           </p>
-
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
             <button
               onClick={skipTour}
@@ -168,14 +120,47 @@ export default function TourOverlay() {
     </div>
   );
 
+  // ── Spotlight via box-shadow ─────────────────────────────────────────────────
+  // A single fixed div at the element position with a huge box-shadow spread
+  // covers everything outside the spotlight. No SVG masks, no backdrop-filter —
+  // box-shadow does NOT create a stacking context so z-index works predictably.
+  if (rect) {
+    const sx = rect.left - PAD;
+    const sy = rect.top - PAD;
+    const sw = rect.width + PAD * 2;
+    const sh = rect.height + PAD * 2;
+
+    return createPortal(
+      <>
+        {/* Four transparent click-capture divs for dismiss-on-tap-outside */}
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: Math.max(0, sy), zIndex: 99991 }} onClick={skipTour} />
+        <div style={{ position: 'fixed', top: sy + sh, left: 0, right: 0, bottom: 0, zIndex: 99991 }} onClick={skipTour} />
+        <div style={{ position: 'fixed', top: sy, left: 0, width: Math.max(0, sx), height: sh, zIndex: 99991 }} onClick={skipTour} />
+        <div style={{ position: 'fixed', top: sy, left: sx + sw, right: 0, height: sh, zIndex: 99991 }} onClick={skipTour} />
+
+        {/* Spotlight: box-shadow covers everything outside; element itself is clear */}
+        <div style={{
+          position: 'fixed',
+          top: sy, left: sx, width: sw, height: sh,
+          borderRadius: 18,
+          // 9999px spread = covers entire viewport outside this element
+          boxShadow: '0 0 0 9999px rgba(0,0,0,0.72)',
+          border: '2px solid rgba(255,255,255,0.65)',
+          zIndex: 99990,
+          pointerEvents: 'none',
+        }} />
+
+        {card}
+      </>,
+      document.body
+    );
+  }
+
+  // ── Fallback: element not in DOM yet ──────────────────────────────────────
   return createPortal(
     <>
-      {/* z-index 99990: SVG overlay (single element, no stacking-context conflicts) */}
-      <div style={{ position: 'fixed', inset: 0, zIndex: 99990 }}>
-        {overlayEl}
-      </div>
-      {/* z-index 99999: tooltip card — separate layer, always on top */}
-      {cardEl}
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', zIndex: 99990 }} onClick={skipTour} />
+      {card}
     </>,
     document.body
   );
