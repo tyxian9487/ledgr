@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowRightLeft, PiggyBank, TrendingUp } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { useApp } from '../../context/AppContext';
 import StatusCelebration from './StatusCelebration';
 
 interface Props {
@@ -15,6 +15,7 @@ export default function GoalTrackerCard({ year, month }: Props) {
   const [currentGoal, setCurrentGoal] = useState<GoalType>('savings');
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationType, setCelebrationType] = useState<'excellent' | 'sustained' | 'critical'>('excellent');
+  const [celebratedGoals, setCelebratedGoals] = useState<Set<string>>(new Set());
 
   const savingsGoal = budget.savingsGoal;
   const investmentGoal = budget.investmentGoal;
@@ -24,11 +25,19 @@ export default function GoalTrackerCard({ year, month }: Props) {
     return null;
   }
 
+  // Default to the enabled goal if only one is enabled
+  const defaultGoal: GoalType = savingsGoal?.enabled ? 'savings' : 'investment';
+  const actualCurrentGoal = (savingsGoal?.enabled && investmentGoal?.enabled) ? currentGoal : defaultGoal;
+
   const txs = getMonthTransactions(year, month);
+  
+  // Calculate totals for fallback
+  const totalIncome = txs.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = txs.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
   
   // Calculate actual savings/investment based on goal type
   let actualAmount = 0;
-  if (currentGoal === 'savings') {
+  if (actualCurrentGoal === 'savings') {
     // For savings, use transactions in savings category
     actualAmount = txs.filter(t => t.category === 'savings').reduce((sum, t) => sum + t.amount, 0);
   } else {
@@ -41,7 +50,7 @@ export default function GoalTrackerCard({ year, month }: Props) {
   }
 
   // Calculate progress
-  const currentGoalData = currentGoal === 'savings' ? savingsGoal : investmentGoal;
+  const currentGoalData = actualCurrentGoal === 'savings' ? savingsGoal : investmentGoal;
   const goalAmount = currentGoalData?.amount || 0;
   const progress = goalAmount > 0 ? Math.min((actualAmount / goalAmount) * 100, 100) : 0;
   const isCompleted = progress >= 100;
@@ -49,23 +58,27 @@ export default function GoalTrackerCard({ year, month }: Props) {
   // Trigger celebration when goal is reached
   useEffect(() => {
     if (isCompleted && !showCelebration) {
-      setCelebrationType('excellent');
-      setShowCelebration(true);
-      // Add haptic feedback
-      if ('vibrate' in navigator) {
-        navigator.vibrate(200);
+      const goalKey = `${year}-${month}-${actualCurrentGoal}`;
+      if (!celebratedGoals.has(goalKey)) {
+        setCelebratedGoals(prev => new Set([...prev, goalKey]));
+        setCelebrationType('excellent');
+        setShowCelebration(true);
+        // Add haptic feedback
+        if ('vibrate' in navigator) {
+          navigator.vibrate(200);
+        }
       }
     }
-  }, [isCompleted, showCelebration]);
+  }, [isCompleted, showCelebration, actualCurrentGoal, year, month, celebratedGoals]);
 
   const toggleGoal = () => {
     setCurrentGoal(current => current === 'savings' ? 'investment' : 'savings');
   };
 
   const monthName = new Date(year, month).toLocaleDateString('en-US', { month: 'long' });
-  const goalTitle = `${monthName} ${currentGoal === 'savings' ? 'Savings' : 'Investment'} Goal`;
-  const goalIcon = currentGoal === 'savings' ? PiggyBank : TrendingUp;
-  const goalColor = currentGoal === 'savings' ? 'green' : 'purple';
+  const goalTitle = `${monthName} ${actualCurrentGoal === 'savings' ? 'Savings' : 'Investment'} Goal`;
+  const goalIcon = actualCurrentGoal === 'savings' ? PiggyBank : TrendingUp;
+  const goalColor = actualCurrentGoal === 'savings' ? 'green' : 'purple';
 
   return (
     <>
@@ -111,7 +124,7 @@ export default function GoalTrackerCard({ year, month }: Props) {
           <button
             onClick={toggleGoal}
             className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity"
-            title={`Switch to ${currentGoal === 'savings' ? 'Investment' : 'Savings'} Goal`}
+            title={`Switch to ${actualCurrentGoal === 'savings' ? 'Investment' : 'Savings'} Goal`}
           >
             <ArrowRightLeft size={14} className="text-gray-600 dark:text-gray-300" />
           </button>
