@@ -29,6 +29,7 @@ export default function GoalTrackerCard({ year, month }: Props) {
   const defaultGoal: GoalType = savingsGoal?.enabled ? 'savings' : 'investment';
   const actualCurrentGoal = (savingsGoal?.enabled && investmentGoal?.enabled) ? currentGoal : defaultGoal;
 
+  const { formatCurrency } = useApp();
   const txs = getMonthTransactions(year, month);
   
   // Calculate totals for fallback
@@ -108,7 +109,7 @@ export default function GoalTrackerCard({ year, month }: Props) {
             </div>
             <div className="flex justify-between items-center mt-1">
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                ${actualAmount.toLocaleString()} / ${goalAmount.toLocaleString()}
+                {formatCurrency(actualAmount)} / {formatCurrency(goalAmount)}
               </span>
               <span className={`text-xs font-semibold ${
                 goalColor === 'green' ? 'text-green-600' : 'text-purple-600'

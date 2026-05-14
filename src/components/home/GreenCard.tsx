@@ -181,22 +181,31 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
       ctx.fillText('$', coinX, coinY + 5);
 
       // Status text
+      const statusTextX = PAD + 68;
+      const scoreTextX = W - PAD - 14;
+      const statusLabelY = sY + 28;
+      const statusSubY = sY + 48;
+      const scoreLabelY = sY + 28;
+      const scoreValueY = sY + 48;
+
+      ctx.textBaseline = 'middle';
       ctx.fillStyle = text;
       ctx.font = 'bold 20px -apple-system, system-ui, sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText(label, PAD + 68, sY + 33);
+      ctx.fillText(label, statusTextX, statusLabelY);
       ctx.fillStyle = 'rgba(255,255,255,0.6)';
       ctx.font = '12px -apple-system, system-ui, sans-serif';
-      ctx.fillText('Financial Status', PAD + 68, sY + 53);
+      ctx.fillText('Financial Status', statusTextX, statusSubY);
 
       // Score right
       ctx.textAlign = 'right';
       ctx.fillStyle = 'rgba(255,255,255,0.6)';
       ctx.font = '11px -apple-system, sans-serif';
-      ctx.fillText('Score', W - PAD, sY + 33);
+      ctx.fillText('Score', scoreTextX, scoreLabelY);
       ctx.fillStyle = 'white';
       ctx.font = 'bold 18px -apple-system, system-ui, sans-serif';
-      ctx.fillText(status === 'excellent' ? '90+' : status === 'sustained' ? '60–79' : '<60', W - PAD, sY + 55);
+      ctx.fillText(status === 'excellent' ? '90+' : status === 'sustained' ? '60–79' : '<60', scoreTextX, scoreValueY);
+      ctx.textBaseline = 'alphabetic';
 
       // ── Donut + category list (y: 138–338) ──
       const chartY = sY + sH + 16;

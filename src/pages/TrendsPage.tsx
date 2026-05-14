@@ -68,7 +68,7 @@ function LinePath({ points, W, H, color, formatCurrency }: { points: DataPoint[]
           <text key={frac}
             x={pad.left - 5} y={pad.top + frac * chartH + 4}
             textAnchor="end" fontSize={9} fill="#9ca3af">
-            {formatCurrency(Math.round(val))}
+            {formatCurrency(val)}
           </text>
         );
       })}
@@ -86,7 +86,7 @@ function LinePath({ points, W, H, color, formatCurrency }: { points: DataPoint[]
             <circle cx={c.x} cy={c.y} r={4} fill={color} stroke="white" strokeWidth={2} />
             {c.value > 0 && (
               <text x={c.x} y={labelY} textAnchor="middle" fontSize={8.5} fontWeight="600" fill={color}>
-                {formatCurrency(Math.round(c.value))}
+                {formatCurrency(c.value)}
               </text>
             )}
             {/* x-label sits inside the bottom pad */}
@@ -206,8 +206,8 @@ function CategoryModal({
         <div className="flex-shrink-0 px-5 mt-2 grid grid-cols-3 gap-3 pb-4">
           {[
             { label: 'Total', value: formatCurrency(total) },
-            { label: 'Avg / period', value: formatCurrency(Math.round(avg)) },
-            { label: 'Highest', value: highest && highest.value > 0 ? `${formatCurrency(Math.round(highest.value))} (${highest.label})` : '—' },
+            { label: 'Avg / period', value: formatCurrency(avg) },
+            { label: 'Highest', value: highest && highest.value > 0 ? `${formatCurrency(highest.value)} (${highest.label})` : '—' },
           ].map(s => (
             <div key={s.label} className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-3">
               <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-1">{s.label}</p>

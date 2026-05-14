@@ -221,7 +221,7 @@ export default function Profile() {
     ctx.fillStyle = savings >= 0 ? '#16a34a' : '#dc2626'; ctx.font = 'bold 18px -apple-system, system-ui, sans-serif';
     ctx.fillText(`${savings >= 0 ? '+' : ''}${formatCurrency(savings)}`, PAD + 14, y + 42);
     ctx.textAlign = 'right'; ctx.fillStyle = '#9ca3af'; ctx.font = '11px -apple-system, sans-serif';
-    ctx.fillText(`Avg income: ${formatCurrency(Math.round(avgIncome))}/mo  ·  Avg expenses: ${formatCurrency(Math.round(avgExpenses))}/mo`, W - PAD, y + 42);
+    ctx.fillText(`Avg income: ${formatCurrency(avgIncome)}/mo  ·  Avg expenses: ${formatCurrency(avgExpenses)}/mo`, W - PAD, y + 42);
 
     y += 68;
 
@@ -301,8 +301,8 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
     <div class="score-desc"><h3>${scoreLabel}</h3><p>${score >= 80 ? "You're saving a healthy portion of your income. Keep it up!" : score >= 60 ? "You're managing well but there's room to save more." : "Your expenses are high relative to income. Try cutting discretionary spending."}</p><p style="margin-top:8px;font-size:12px;color:#9ca3af">Based on ${currentYear} transactions · ${yearTxs.length} total records</p></div>
   </div>
   <div class="stats">
-    <div class="stat inc"><div class="stat-label">INCOME ${currentYear}</div><div class="stat-val">${formatCurrency(yearIncome)}</div><div style="font-size:12px;color:#16a34a;margin-top:4px">~${formatCurrency(Math.round(avgIncome))}/mo avg</div></div>
-    <div class="stat exp"><div class="stat-label">EXPENSES ${currentYear}</div><div class="stat-val">${formatCurrency(yearExpenses)}</div><div style="font-size:12px;color:#ef4444;margin-top:4px">~${formatCurrency(Math.round(avgExpenses))}/mo avg</div></div>
+    <div class="stat inc"><div class="stat-label">INCOME ${currentYear}</div><div class="stat-val">${formatCurrency(yearIncome)}</div><div style="font-size:12px;color:#16a34a;margin-top:4px">~${formatCurrency(avgIncome)}/mo avg</div></div>
+    <div class="stat exp"><div class="stat-label">EXPENSES ${currentYear}</div><div class="stat-val">${formatCurrency(yearExpenses)}</div><div style="font-size:12px;color:#ef4444;margin-top:4px">~${formatCurrency(avgExpenses)}/mo avg</div></div>
     <div class="stat sav"><div class="stat-label">NET SAVINGS</div><div class="stat-val">${yearIncome - yearExpenses >= 0 ? '+' : ''}${formatCurrency(yearIncome - yearExpenses)}</div><div style="font-size:12px;color:#6b7280;margin-top:4px">${yearIncome > 0 ? Math.round((1 - yearExpenses / yearIncome) * 100) : 0}% saving rate</div></div>
   </div>
   ${catRows ? `<h3 style="font-size:12px;font-weight:700;letter-spacing:.05em;color:#6b7280;margin-bottom:10px">EXPENSE BREAKDOWN</h3>
@@ -378,7 +378,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
             </div>
             <p className="text-xl font-black text-green-700 dark:text-green-400">{formatCurrency(yearIncome)}</p>
             <p className="text-[11px] text-green-600/70 mt-0.5">This year</p>
-            <p className="text-[11px] text-green-600 mt-1 font-medium">~{formatCurrency(Math.round(avgIncome))}/mo avg</p>
+            <p className="text-[11px] text-green-600 mt-1 font-medium">~{formatCurrency(avgIncome)}/mo avg</p>
           </div>
           <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-4 border border-red-100 dark:border-red-900/30">
             <div className="flex items-center gap-1.5 mb-2">
@@ -387,7 +387,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
             </div>
             <p className="text-xl font-black text-red-600 dark:text-red-400">{formatCurrency(yearExpenses)}</p>
             <p className="text-[11px] text-red-500/70 mt-0.5">This year</p>
-            <p className="text-[11px] text-red-500 mt-1 font-medium">~{formatCurrency(Math.round(avgExpenses))}/mo avg</p>
+            <p className="text-[11px] text-red-500 mt-1 font-medium">~{formatCurrency(avgExpenses)}/mo avg</p>
           </div>
         </div>
 

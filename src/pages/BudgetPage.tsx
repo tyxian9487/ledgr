@@ -396,9 +396,9 @@ export default function BudgetPage() {
               <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">Savings & Investment Goals</p>
               {!showGoals && (savingsAmt > 0 || investAmt > 0) ? (
                 <p className="text-xs text-green-600 dark:text-green-400 mt-0.5 font-medium">
-                  {savingsEnabled && savingsAmt > 0 ? `Savings ${formatCurrency(Math.round(savingsAmt))}/mo` : ''}
+                  {savingsEnabled && savingsAmt > 0 ? `Savings ${formatCurrency(savingsAmt)}/mo` : ''}
                   {savingsEnabled && savingsAmt > 0 && investEnabled && investAmt > 0 ? ' · ' : ''}
-                  {investEnabled && investAmt > 0 ? `Invest ${formatCurrency(Math.round(investAmt))}/mo` : ''}
+                  {investEnabled && investAmt > 0 ? `Invest ${formatCurrency(investAmt)}/mo` : ''}
                 </p>
               ) : (
                 <p className="text-xs text-gray-400 mt-0.5">Optional — set a personal target</p>
@@ -442,12 +442,12 @@ export default function BudgetPage() {
                 </div>
                 {savingsAmt > 0 && (
                   <p className="text-xs text-green-600 dark:text-green-400 font-semibold mt-1.5 text-right">
-                    = {formatCurrency(Math.round(savingsAmt))} / mo
+                    = {formatCurrency(savingsAmt)} / mo
                   </p>
                 )}
                 {analyzed && savingsPct > 0 && (
                   <p className="text-xs text-gray-400 mt-2 text-left">
-                    AI suggests <span className="text-green-600 font-semibold">{savingsPct}%</span> ({formatCurrency(Math.round(income * savingsPct / 100))}/mo) for savings
+                    AI suggests <span className="text-green-600 font-semibold">{savingsPct}%</span> ({formatCurrency(income * savingsPct / 100)}/mo) for savings
                   </p>
                 )}
               </>
@@ -488,7 +488,7 @@ export default function BudgetPage() {
                 </div>
                 {investAmt > 0 && (
                   <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold mt-1.5 text-right">
-                    = {formatCurrency(Math.round(investAmt))} / mo
+                    = {formatCurrency(investAmt)} / mo
                   </p>
                 )}
               </>
@@ -509,8 +509,8 @@ export default function BudgetPage() {
             {(savingsAmt > 0 || investAmt > 0) && income > 0 && (
               <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-white/10 rounded-xl">
                 <span className="text-xs text-green-100/90 flex-1">Spendable after goals</span>
-                <span className="text-xs font-bold text-white">{formatCurrency(Math.round(netIncome))}</span>
-                <span className="text-[10px] text-green-100/80">/ {formatCurrency(Math.round(income))}</span>
+                <span className="text-xs font-bold text-white">{formatCurrency(netIncome)}</span>
+                <span className="text-[10px] text-green-100/80">/ {formatCurrency(income)}</span>
               </div>
             )}
             <div className="flex flex-col items-center gap-2">
@@ -524,7 +524,7 @@ export default function BudgetPage() {
                 />
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-[10px] text-gray-400 font-medium">Spendable</span>
-                  <span className="text-base font-black dark:text-white">{formatCurrency(Math.round(chartAmount))}</span>
+                  <span className="text-base font-black dark:text-white">{formatCurrency(chartAmount)}</span>
                 </div>
               </div>
               {/* Tooltip rendered outside the fixed container so it never shifts center text */}
