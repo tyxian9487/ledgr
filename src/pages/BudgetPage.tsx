@@ -73,8 +73,12 @@ function analyzeAllocations(income: number): BudgetAllocation[] {
   }));
 }
 
-function MiniDonut({ allocations, size = 140 }: { allocations: BudgetAllocation[]; size?: number }) {
-  const [activeSlice, setActiveSlice] = useState<string | null>(null);
+function MiniDonut({ allocations, size = 140, activeSlice, onSliceClick }: {
+  allocations: BudgetAllocation[];
+  size?: number;
+  activeSlice: string | null;
+  onSliceClick: (id: string | null) => void;
+}) {
   const cx = size / 2, cy = size / 2;
   const outerR = size * 0.44, innerR = size * 0.27;
   const active = allocations.filter(a => a.percentage > 0);
@@ -103,44 +107,31 @@ function MiniDonut({ allocations, size = 140 }: { allocations: BudgetAllocation[
     return path;
   });
 
-  const selected = active.find(a => a.categoryId === activeSlice) || null;
-
   if (active.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2">
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          <circle cx={cx} cy={cy} r={(outerR + innerR) / 2} fill="none" stroke="#e5e7eb" strokeWidth={outerR - innerR} />
-        </svg>
-      </div>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={cx} cy={cy} r={(outerR + innerR) / 2} fill="none" stroke="#e5e7eb" strokeWidth={outerR - innerR} />
+      </svg>
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {active.length === 1 ? (
-          <circle cx={cx} cy={cy} r={(outerR + innerR) / 2} fill="none" stroke={active[0].color} strokeWidth={outerR - innerR} />
-        ) : (
-          arcs.map((arc, i) => (
-            <path
-              key={arc.category}
-              d={arc.d}
-              fill={arc.color}
-              opacity={activeSlice && activeSlice !== arc.category ? 0.4 : 1}
-              style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
-              onClick={() => setActiveSlice(activeSlice === arc.category ? null : arc.category)}
-            />
-          ))
-        )}
-      </svg>
-      {selected && (
-        <div className="flex items-center gap-2 glass rounded-full px-3 py-1">
-          <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: selected.color }} />
-          <span className="text-xs text-white font-medium">{selected.label}</span>
-          <span className="text-xs text-white/80">{selected.percentage}%</span>
-        </div>
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {active.length === 1 ? (
+        <circle cx={cx} cy={cy} r={(outerR + innerR) / 2} fill="none" stroke={active[0].color} strokeWidth={outerR - innerR} />
+      ) : (
+        arcs.map(arc => (
+          <path
+            key={arc.category}
+            d={arc.d}
+            fill={arc.color}
+            opacity={activeSlice && activeSlice !== arc.category ? 0.4 : 1}
+            style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
+            onClick={() => onSliceClick(activeSlice === arc.category ? null : arc.category)}
+          />
+        ))
       )}
-    </div>
+    </svg>
   );
 }
 
@@ -164,6 +155,7 @@ export default function BudgetPage() {
 
   const [incomeFixed, setIncomeFixed] = useState(budget.incomeFixed ?? false);
   const [showGoals, setShowGoals] = useState(true);
+  const [activeSlice, setActiveSlice] = useState<string | null>(null);
 
   const [savingsEnabled, setSavingsEnabled] = useState(false);
   const [savingsMode, setSavingsMode] = useState<'pct' | 'fixed'>('pct');
@@ -359,11 +351,11 @@ export default function BudgetPage() {
                   </button>
                   <button type="button" onClick={() => setSavingsMode('fixed')}
                     className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors ${savingsMode === 'fixed' ? 'bg-green-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
-                    Fixed $
+                    Fixed {getCurrencySymbol()}
                   </button>
                 </div>
                 <div className="flex items-center border border-gray-100 dark:border-gray-700 rounded-xl px-3 py-2 gap-2 bg-gray-50 dark:bg-gray-800">
-                  <span className="text-gray-400 text-sm">{savingsMode === 'pct' ? '%' : '$'}</span>
+                  <span className="text-gray-400 text-sm">{savingsMode === 'pct' ? '%' : getCurrencySymbol()}</span>
                   <input type="number" placeholder={savingsMode === 'pct' ? '20' : '1000'} value={savingsValue}
                     onChange={e => setSavingsValue(e.target.value)}
                     className="flex-1 bg-transparent text-sm font-bold outline-none dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-600"
@@ -405,11 +397,11 @@ export default function BudgetPage() {
                   </button>
                   <button type="button" onClick={() => setInvestMode('fixed')}
                     className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors ${investMode === 'fixed' ? 'bg-purple-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
-                    Fixed $
+                    Fixed {getCurrencySymbol()}
                   </button>
                 </div>
                 <div className="flex items-center border border-gray-100 dark:border-gray-700 rounded-xl px-3 py-2 gap-2 bg-gray-50 dark:bg-gray-800">
-                  <span className="text-gray-400 text-sm">{investMode === 'pct' ? '%' : '$'}</span>
+                  <span className="text-gray-400 text-sm">{investMode === 'pct' ? '%' : getCurrencySymbol()}</span>
                   <input type="number" placeholder={investMode === 'pct' ? '10' : '500'} value={investValue}
                     onChange={e => setInvestValue(e.target.value)}
                     className="flex-1 bg-transparent text-sm font-bold outline-none dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-600"
@@ -442,15 +434,33 @@ export default function BudgetPage() {
                 <span className="text-[10px] text-gray-400">/ {formatCurrency(Math.round(income))}</span>
               </div>
             )}
-            <div className="flex flex-col items-center">
-              <div className="relative">
-                <MiniDonut allocations={displayAllocations} size={140} />
+            <div className="flex flex-col items-center gap-2">
+              {/* Fixed-size wrapper so inset-0 always aligns with the SVG circle */}
+              <div className="relative" style={{ width: 140, height: 140 }}>
+                <MiniDonut
+                  allocations={displayAllocations}
+                  size={140}
+                  activeSlice={activeSlice}
+                  onSliceClick={setActiveSlice}
+                />
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-[10px] text-gray-400 font-medium">Spendable</span>
                   <span className="text-base font-black dark:text-white">{formatCurrency(Math.round(chartAmount))}</span>
                 </div>
               </div>
-              <p className="text-[11px] text-gray-400 mt-3">Tap a slice to view category details</p>
+              {/* Tooltip rendered outside the fixed container so it never shifts center text */}
+              {(() => {
+                const sel = displayAllocations.find(a => a.categoryId === activeSlice);
+                return sel ? (
+                  <div className="flex items-center gap-2 glass rounded-full px-3 py-1">
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: sel.color }} />
+                    <span className="text-xs text-white font-medium">{sel.label}</span>
+                    <span className="text-xs text-white/80">{sel.percentage}%</span>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-gray-400">Tap a slice to view category details</p>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -570,12 +580,6 @@ export default function BudgetPage() {
             )}
           </div>
         )}
-
-        {/* Save button also inside scroll area so it's always reachable */}
-        <button type="button" onClick={handleSave}
-          className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base shadow-lg shadow-green-600/30 active:scale-[0.98] transition-transform mb-2">
-          Save Budget Plan
-        </button>
 
       </div>
 
