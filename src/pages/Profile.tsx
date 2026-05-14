@@ -72,7 +72,7 @@ function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: n
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { transactions, userProfile, darkMode, toggleDarkMode, updateUserProfile, getCurrencySymbol, signOut } = useApp();
+  const { transactions, userProfile, darkMode, toggleDarkMode, updateUserProfile, getCurrencySymbol, formatCurrency, signOut } = useApp();
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(userProfile.name);
   const [editingEmail, setEditingEmail] = useState(false);
@@ -192,14 +192,14 @@ export default function Profile() {
     ctx.fillStyle = '#16a34a'; ctx.font = 'bold 11px -apple-system, sans-serif'; ctx.textAlign = 'left';
     ctx.fillText('INCOME THIS YEAR', PAD + 14, y + 22);
     ctx.fillStyle = '#15803d'; ctx.font = 'bold 22px -apple-system, system-ui, sans-serif';
-    ctx.fillText(`$${yearIncome.toLocaleString()}`, PAD + 14, y + 52);
+    ctx.fillText(formatCurrency(yearIncome), PAD + 14, y + 52);
 
     drawRoundRect(ctx, PAD + boxW + 12, y, boxW, 72, 14);
     ctx.fillStyle = '#fef2f2'; ctx.fill();
     ctx.fillStyle = '#ef4444'; ctx.font = 'bold 11px -apple-system, sans-serif'; ctx.textAlign = 'left';
     ctx.fillText('EXPENSES THIS YEAR', PAD + boxW + 26, y + 22);
     ctx.fillStyle = '#dc2626'; ctx.font = 'bold 22px -apple-system, system-ui, sans-serif';
-    ctx.fillText(`$${yearExpenses.toLocaleString()}`, PAD + boxW + 26, y + 52);
+    ctx.fillText(formatCurrency(yearExpenses), PAD + boxW + 26, y + 52);
 
     y += 90;
 
@@ -210,9 +210,9 @@ export default function Profile() {
     ctx.fillStyle = '#6b7280'; ctx.font = 'bold 11px -apple-system, sans-serif'; ctx.textAlign = 'left';
     ctx.fillText('NET SAVINGS', PAD + 14, y + 20);
     ctx.fillStyle = savings >= 0 ? '#16a34a' : '#dc2626'; ctx.font = 'bold 18px -apple-system, system-ui, sans-serif';
-    ctx.fillText(`${savings >= 0 ? '+' : '-'}$${Math.abs(savings).toLocaleString()}`, PAD + 14, y + 42);
+    ctx.fillText(`${savings >= 0 ? '+' : ''}${formatCurrency(savings)}`, PAD + 14, y + 42);
     ctx.textAlign = 'right'; ctx.fillStyle = '#9ca3af'; ctx.font = '11px -apple-system, sans-serif';
-    ctx.fillText(`Avg income: $${Math.round(avgIncome).toLocaleString()}/mo  ·  Avg expenses: $${Math.round(avgExpenses).toLocaleString()}/mo`, W - PAD, y + 42);
+    ctx.fillText(`Avg income: ${formatCurrency(Math.round(avgIncome))}/mo  ·  Avg expenses: ${formatCurrency(Math.round(avgExpenses))}/mo`, W - PAD, y + 42);
 
     y += 68;
 
@@ -236,7 +236,7 @@ export default function Profile() {
         ctx.fillStyle = cat.color; ctx.font = 'bold 12px -apple-system, system-ui, sans-serif'; ctx.textAlign = 'left';
         ctx.fillText(cat.label, PAD + 10, y + (rowH - 6) / 2 + 4);
         ctx.fillStyle = '#111827'; ctx.font = 'bold 13px -apple-system, system-ui, sans-serif'; ctx.textAlign = 'right';
-        ctx.fillText(`$${cat.amount.toLocaleString()}`, W - PAD - 8, y + (rowH - 6) / 2 + 4);
+        ctx.fillText(formatCurrency(cat.amount), W - PAD - 8, y + (rowH - 6) / 2 + 4);
         y += rowH;
       });
     }
@@ -260,7 +260,7 @@ export default function Profile() {
     const catTotals: Record<string, number> = {};
     yearTxs.filter(t => t.type === 'expense').forEach(t => { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
     const catRows = Object.entries(catTotals).sort((a, b) => b[1] - a[1])
-      .map(([id, amt]) => `<tr><td style="padding:6px 12px;font-size:13px;text-transform:capitalize">${id}</td><td style="padding:6px 12px;font-size:13px;text-align:right;font-weight:600">$${amt.toLocaleString()}</td></tr>`).join('');
+      .map(([id, amt]) => `<tr><td style="padding:6px 12px;font-size:13px;text-transform:capitalize">${id}</td><td style="padding:6px 12px;font-size:13px;text-align:right;font-weight:600">${formatCurrency(amt)}</td></tr>`).join('');
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>ledgr Financial Report</title>
 <style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:0;background:#fff;color:#111}
 .header{background:linear-gradient(135deg,#16a34a,#14532d);color:white;padding:32px;display:flex;justify-content:space-between;align-items:flex-start}
@@ -292,9 +292,9 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
     <div class="score-desc"><h3>${scoreLabel}</h3><p>${score >= 80 ? "You're saving a healthy portion of your income. Keep it up!" : score >= 60 ? "You're managing well but there's room to save more." : "Your expenses are high relative to income. Try cutting discretionary spending."}</p><p style="margin-top:8px;font-size:12px;color:#9ca3af">Based on ${currentYear} transactions · ${yearTxs.length} total records</p></div>
   </div>
   <div class="stats">
-    <div class="stat inc"><div class="stat-label">INCOME ${currentYear}</div><div class="stat-val">$${yearIncome.toLocaleString()}</div><div style="font-size:12px;color:#16a34a;margin-top:4px">~$${Math.round(avgIncome).toLocaleString()}/mo avg</div></div>
-    <div class="stat exp"><div class="stat-label">EXPENSES ${currentYear}</div><div class="stat-val">$${yearExpenses.toLocaleString()}</div><div style="font-size:12px;color:#ef4444;margin-top:4px">~$${Math.round(avgExpenses).toLocaleString()}/mo avg</div></div>
-    <div class="stat sav"><div class="stat-label">NET SAVINGS</div><div class="stat-val">${yearIncome - yearExpenses >= 0 ? '+' : '-'}$${Math.abs(yearIncome - yearExpenses).toLocaleString()}</div><div style="font-size:12px;color:#6b7280;margin-top:4px">${yearIncome > 0 ? Math.round((1 - yearExpenses / yearIncome) * 100) : 0}% saving rate</div></div>
+    <div class="stat inc"><div class="stat-label">INCOME ${currentYear}</div><div class="stat-val">${formatCurrency(yearIncome)}</div><div style="font-size:12px;color:#16a34a;margin-top:4px">~${formatCurrency(Math.round(avgIncome))}/mo avg</div></div>
+    <div class="stat exp"><div class="stat-label">EXPENSES ${currentYear}</div><div class="stat-val">${formatCurrency(yearExpenses)}</div><div style="font-size:12px;color:#ef4444;margin-top:4px">~${formatCurrency(Math.round(avgExpenses))}/mo avg</div></div>
+    <div class="stat sav"><div class="stat-label">NET SAVINGS</div><div class="stat-val">${yearIncome - yearExpenses >= 0 ? '+' : ''}${formatCurrency(yearIncome - yearExpenses)}</div><div style="font-size:12px;color:#6b7280;margin-top:4px">${yearIncome > 0 ? Math.round((1 - yearExpenses / yearIncome) * 100) : 0}% saving rate</div></div>
   </div>
   ${catRows ? `<h3 style="font-size:12px;font-weight:700;letter-spacing:.05em;color:#6b7280;margin-bottom:10px">EXPENSE BREAKDOWN</h3>
   <table><thead><tr><th>Category</th><th style="text-align:right">Amount</th></tr></thead><tbody>${catRows}</tbody></table>` : ''}
@@ -367,18 +367,18 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
               <TrendingUp size={14} className="text-green-600" />
               <span className="text-[11px] text-green-600 font-semibold uppercase tracking-wide">Income</span>
             </div>
-            <p className="text-xl font-black text-green-700 dark:text-green-400">${yearIncome.toLocaleString()}</p>
+            <p className="text-xl font-black text-green-700 dark:text-green-400">{formatCurrency(yearIncome)}</p>
             <p className="text-[11px] text-green-600/70 mt-0.5">This year</p>
-            <p className="text-[11px] text-green-600 mt-1 font-medium">~${Math.round(avgIncome).toLocaleString()}/mo avg</p>
+            <p className="text-[11px] text-green-600 mt-1 font-medium">~{formatCurrency(Math.round(avgIncome))}/mo avg</p>
           </div>
           <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-4 border border-red-100 dark:border-red-900/30">
             <div className="flex items-center gap-1.5 mb-2">
               <TrendingDown size={14} className="text-red-500" />
               <span className="text-[11px] text-red-500 font-semibold uppercase tracking-wide">Expenses</span>
             </div>
-            <p className="text-xl font-black text-red-600 dark:text-red-400">${yearExpenses.toLocaleString()}</p>
+            <p className="text-xl font-black text-red-600 dark:text-red-400">{formatCurrency(yearExpenses)}</p>
             <p className="text-[11px] text-red-500/70 mt-0.5">This year</p>
-            <p className="text-[11px] text-red-500 mt-1 font-medium">~${Math.round(avgExpenses).toLocaleString()}/mo avg</p>
+            <p className="text-[11px] text-red-500 mt-1 font-medium">~{formatCurrency(Math.round(avgExpenses))}/mo avg</p>
           </div>
         </div>
 

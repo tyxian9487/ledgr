@@ -182,13 +182,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [getMonthTransactions]);
 
   const formatCurrency = useCallback((amount: number) => {
+    const code = userProfile.currency || 'USD';
     try {
-      return new Intl.NumberFormat('en-US', {
+      const s = new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: userProfile.currency || 'USD',
+        currency: code,
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(amount);
+      // Intl outputs "CN¥" for CNY in en-US locale; normalise to "¥"
+      return code === 'CNY' ? s.replace('CN¥', '¥') : s;
     } catch {
       return `$${Math.round(amount).toLocaleString()}`;
     }
@@ -207,13 +210,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const getCurrencySymbol = useCallback(() => {
+    const code = userProfile.currency || 'USD';
+    if (code === 'CNY') return '¥';
     try {
       const s = new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: userProfile.currency || 'USD',
+        currency: code,
         minimumFractionDigits: 0,
       }).format(0).replace(/[\d,.\s]/g, '').trim();
-      return s || (userProfile.currency || 'USD');
+      return s || code;
     } catch {
       return '$';
     }
