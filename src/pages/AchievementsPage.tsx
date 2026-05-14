@@ -1,6 +1,16 @@
 import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronDown, Trophy } from 'lucide-react';
+import { ChevronLeft, ChevronDown, Trophy, Share2 } from 'lucide-react';
+
+function rrPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
 import { useApp } from '../context/AppContext';
 import { computeStreaks, BADGES, tipsForScore, BadgeDef } from '../utils/achievements';
 import BadgeCelebration from '../components/BadgeCelebration';
@@ -81,6 +91,94 @@ export default function AchievementsPage() {
   const nextLabel  = score >= 80 ? 'keep it up' : score >= 60 ? 'Excellent' : 'Fair';
 
   const tips = tipsForScore(score);
+  const [sharing, setSharing] = useState(false);
+
+  async function shareStreak() {
+    setSharing(true);
+    try {
+      const SCALE = 2, W = 750, H = 330, PAD = 28;
+      const canvas = document.createElement('canvas');
+      canvas.width = W * SCALE; canvas.height = H * SCALE;
+      const ctx = canvas.getContext('2d')!;
+      ctx.scale(SCALE, SCALE);
+
+      // Background
+      const grad = ctx.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, '#052e16'); grad.addColorStop(0.5, '#166534'); grad.addColorStop(1, '#16a34a');
+      ctx.fillStyle = grad;
+      rrPath(ctx, 0, 0, W, H, 24); ctx.fill();
+
+      // Header
+      ctx.fillStyle = 'rgba(134,239,172,0.7)';
+      ctx.font = 'bold 11px -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('BUDGET STREAK', PAD, 34);
+
+      // Big streak number
+      ctx.font = 'bold 72px -apple-system, sans-serif';
+      ctx.fillStyle = 'white';
+      ctx.textAlign = 'left';
+      const numStr = String(currentStreak);
+      ctx.fillText(numStr, PAD, 106);
+      const numW = ctx.measureText(numStr).width;
+
+      // "months" suffix
+      ctx.font = '20px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(187,247,208,0.8)';
+      ctx.fillText('month' + (currentStreak !== 1 ? 's' : ''), PAD + numW + 10, 97);
+
+      // Description
+      ctx.font = '13px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(209,250,229,0.6)';
+      ctx.fillText('consecutive months spending less than income', PAD, 134);
+
+      // Best streak
+      ctx.font = '13px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(209,250,229,0.7)';
+      ctx.fillText('Best: ', PAD, 160);
+      const bestLabel = `${bestStreak} month${bestStreak !== 1 ? 's' : ''}`;
+      ctx.font = 'bold 13px -apple-system, sans-serif';
+      ctx.fillStyle = 'white';
+      ctx.fillText(bestLabel, PAD + ctx.measureText('Best: ').width, 160);
+
+      // 12-dot progress bar
+      const gap = 6;
+      const dotW = (W - 2 * PAD - 11 * gap) / 12;
+      const dotY = 186;
+      for (let i = 0; i < 12; i++) {
+        const dx = PAD + i * (dotW + gap);
+        ctx.fillStyle = i < currentStreak ? '#86efac' : 'rgba(255,255,255,0.15)';
+        rrPath(ctx, dx, dotY, dotW, 8, 4); ctx.fill();
+      }
+      ctx.fillStyle = 'rgba(187,247,208,0.4)';
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('12-month track', W - PAD, 210);
+
+      // Footer
+      const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`Generated with ledgr · ${today}`, W / 2, H - 16);
+
+      const dataUrl = canvas.toDataURL('image/png');
+      const filename = `ledgr-streak-${currentStreak}-months.png`;
+      if (navigator.share) {
+        try {
+          const blob = await fetch(dataUrl).then(r => r.blob());
+          const file = new File([blob], filename, { type: 'image/png' });
+          if (navigator.canShare?.({ files: [file] })) {
+            await navigator.share({ files: [file], title: `${currentStreak}-month budget streak – ledgr` });
+            return;
+          }
+        } catch { /* fall through to download */ }
+      }
+      const a = document.createElement('a'); a.download = filename; a.href = dataUrl; a.click();
+    } finally {
+      setSharing(false);
+    }
+  }
 
   return (
     <>
@@ -105,9 +203,24 @@ export default function AchievementsPage() {
         style={{ background: 'linear-gradient(135deg, #052e16 0%, #166534 50%, #16a34a 100%)' }}
       >
         <div className="p-5">
-          <p className="text-green-300/70 text-[11px] font-bold uppercase tracking-widest mb-3">
-            Budget Streak
-          </p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-green-300/70 text-[11px] font-bold uppercase tracking-widest">
+              Budget Streak
+            </p>
+            <button
+              type="button"
+              onClick={shareStreak}
+              disabled={sharing}
+              className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-50 active:scale-90 transition-transform"
+              style={{ background: 'rgba(255,255,255,0.15)' }}
+              title="Share streak"
+            >
+              {sharing
+                ? <div className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" />
+                : <Share2 size={13} className="text-white" />
+              }
+            </button>
+          </div>
 
           <div className="flex items-center gap-4">
             <div className="flex-1">

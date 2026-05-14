@@ -6,7 +6,8 @@ export function computeStreaks(transactions: Transaction[]): { current: number; 
   const now = new Date();
   const results: boolean[] = [];
 
-  for (let i = 0; i < 24; i++) {
+  // Start from i=1 — current month is ongoing and never counts until it ends
+  for (let i = 1; i <= 24; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const txs = transactions.filter(t => {
       const td = new Date(t.date);
@@ -45,10 +46,13 @@ export interface BadgeDef {
 }
 
 function peakSavingRate(transactions: Transaction[]): number {
+  const now = new Date();
+  const currentKey = `${now.getFullYear()}-${now.getMonth()}`;
   const map = new Map<string, { inc: number; exp: number }>();
   transactions.forEach(t => {
     const d = new Date(t.date);
     const key = `${d.getFullYear()}-${d.getMonth()}`;
+    if (key === currentKey) return; // current month not yet complete
     const m = map.get(key) ?? { inc: 0, exp: 0 };
     t.type === 'income' ? (m.inc += t.amount) : (m.exp += t.amount);
     map.set(key, m);
