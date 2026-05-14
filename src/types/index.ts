@@ -200,6 +200,7 @@ export const EXPENSE_CATEGORIES = [
   { id: 'subscriptions', label: 'Subscriptions', icon: 'RefreshCw', color: '#64748b' },
   { id: 'insurance', label: 'Insurance', icon: 'Shield', color: '#0ea5e9' },
   { id: 'savings', label: 'Savings', icon: 'PiggyBank', color: '#22c55e' },
+  { id: 'investment', label: 'Investment', icon: 'TrendingUp', color: '#15803d' },
   { id: 'others', label: 'Others', icon: 'MoreHorizontal', color: '#94a3b8' },
 ];
 

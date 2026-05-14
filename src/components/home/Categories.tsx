@@ -24,7 +24,10 @@ export default function Categories({ year, month, filterFn }: Props) {
 
   const allTxs = getMonthTransactions(year, month);
   const txs = filterFn ? allTxs.filter(filterFn) : allTxs;
-  const allCategories = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
+  const allCategories = [
+    ...EXPENSE_CATEGORIES,
+    ...INCOME_CATEGORIES.filter(c => !EXPENSE_CATEGORIES.some(e => e.id === c.id)),
+  ];
 
   const rows = allCategories
     .map(cat => {

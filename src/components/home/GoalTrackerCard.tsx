@@ -77,7 +77,7 @@ export default function GoalTrackerCard({ year, month }: Props) {
 
   const monthName = new Date(year, month).toLocaleDateString('en-US', { month: 'long' });
   const goalTitle = `${monthName} ${actualCurrentGoal === 'savings' ? 'Savings' : 'Investment'} Goal`;
-  const goalIcon = actualCurrentGoal === 'savings' ? PiggyBank : TrendingUp;
+  const GoalIcon = actualCurrentGoal === 'savings' ? PiggyBank : TrendingUp;
   const goalColor = actualCurrentGoal === 'savings' ? 'green' : 'purple';
 
   return (
@@ -87,7 +87,7 @@ export default function GoalTrackerCard({ year, month }: Props) {
         <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
           goalColor === 'green' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-purple-100 dark:bg-purple-900/30'
         }`}>
-          <goalIcon size={20} className={goalColor === 'green' ? 'text-green-600' : 'text-purple-600'} />
+          <GoalIcon size={20} className={goalColor === 'green' ? 'text-green-600' : 'text-purple-600'} />
         </div>
 
         {/* Goal Content */}
