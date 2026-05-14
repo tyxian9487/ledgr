@@ -8,6 +8,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CURRENCIES } from '../types';
+import LegalSheet from '../components/LegalSheet';
 
 const PW_KEY = 'ledgr_password';
 const DEFAULT_PW = 'ledgr123';
@@ -78,6 +79,7 @@ export default function Profile() {
   const [editingEmail, setEditingEmail] = useState(false);
   const [emailInput, setEmailInput] = useState(userProfile.email);
   const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFAQ, setShowFAQ] = useState(false);
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
@@ -462,6 +464,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
         <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
           <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-4 pt-3 pb-1">Legal & Support</p>
           <SettingsRow icon={<FileText size={16} />} label="Terms & Conditions" onClick={() => setShowTerms(true)} />
+          <SettingsRow icon={<FileText size={16} />} label="Privacy Policy" onClick={() => setShowPrivacy(true)} />
           <SettingsRow icon={<HelpCircle size={16} />} label="Help & FAQ" onClick={() => setShowFAQ(true)} />
         </div>
 
@@ -643,30 +646,8 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
         </div>
       )}
 
-      {/* ── Terms modal ── */}
-      {showTerms && (
-        <div className="fixed inset-0 z-[100] bg-black/60 flex items-end justify-center" onClick={() => setShowTerms(false)}>
-          <div className="w-full max-w-[430px] bg-white dark:bg-gray-900 rounded-t-3xl animate-slide-up flex flex-col overflow-hidden" style={{ maxHeight: '80vh' }} onClick={e => e.stopPropagation()}>
-            <div className="flex-shrink-0 px-6 pt-6 pb-3 border-b border-gray-100 dark:border-gray-800">
-              <h2 className="text-lg font-bold dark:text-white">Terms & Conditions</h2>
-            </div>
-            <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
-              <div className="text-sm text-gray-600 dark:text-gray-300 space-y-3 leading-relaxed">
-                <p><strong>1. Acceptance of Terms</strong><br />By using ledgr, you agree to these terms and conditions.</p>
-                <p><strong>2. Data Storage</strong><br />All financial data is stored locally on your device. We do not transmit your personal financial information to our servers.</p>
-                <p><strong>3. Privacy</strong><br />Your privacy is important to us. We collect minimal data necessary for app functionality.</p>
-                <p><strong>4. AI Receipt Capture</strong><br />The AI receipt scanning feature is provided as-is. Always verify captured data before confirming.</p>
-                <p><strong>5. Financial Advice Disclaimer</strong><br />ledgr is a tracking tool only. It does not provide financial advice. Consult a qualified financial advisor for personal finance decisions.</p>
-                <p><strong>6. Limitation of Liability</strong><br />We are not liable for any financial decisions made based on information displayed in the app.</p>
-                <p><strong>7. Updates</strong><br />We reserve the right to update these terms at any time.</p>
-              </div>
-            </div>
-            <div className="flex-shrink-0 px-6 pt-3 pb-8 border-t border-gray-100 dark:border-gray-800">
-              <button type="button" onClick={() => setShowTerms(false)} className="w-full py-3 rounded-2xl bg-green-600 text-white font-bold">I Understand</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {showTerms && <LegalSheet type="terms" onClose={() => setShowTerms(false)} />}
+      {showPrivacy && <LegalSheet type="privacy" onClose={() => setShowPrivacy(false)} />}
 
       {/* ── Notifications modal ── */}
       {showNotifications && (

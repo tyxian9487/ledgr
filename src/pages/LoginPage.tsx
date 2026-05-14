@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { TrendingUp, Target, PiggyBank } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
+import LegalSheet from '../components/LegalSheet';
 
 function GoogleIcon() {
   return (
@@ -32,6 +33,7 @@ export default function LoginPage() {
   const { signIn } = useApp();
   const navigate = useNavigate();
   const [loading, setLoading] = useState<'google' | 'apple' | null>(null);
+  const [legal, setLegal] = useState<'terms' | 'privacy' | null>(null);
 
   async function handleSignIn(provider: 'google' | 'apple') {
     setLoading(provider);
@@ -116,11 +118,25 @@ export default function LoginPage() {
 
         <p className="text-center text-[11px] text-gray-400 mt-5 leading-relaxed">
           By continuing you agree to our{' '}
-          <span className="text-green-600 font-medium">Terms of Service</span>
+          <button
+            type="button"
+            onClick={() => setLegal('terms')}
+            className="text-green-600 font-medium underline underline-offset-2"
+          >
+            Terms of Service
+          </button>
           {' '}and{' '}
-          <span className="text-green-600 font-medium">Privacy Policy</span>
+          <button
+            type="button"
+            onClick={() => setLegal('privacy')}
+            className="text-green-600 font-medium underline underline-offset-2"
+          >
+            Privacy Policy
+          </button>
         </p>
       </div>
+
+      {legal && <LegalSheet type={legal} onClose={() => setLegal(null)} />}
     </div>
   );
 }

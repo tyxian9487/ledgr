@@ -27,8 +27,13 @@ export default function OnboardingPage() {
     reader.readAsDataURL(file);
   }
 
+  const [touched, setTouched] = useState(false);
+  const hasName = name.trim().length > 0;
+
   function handleGetStarted() {
-    updateUserProfile({ name: name.trim() || 'User', currency });
+    setTouched(true);
+    if (!hasName) return;
+    updateUserProfile({ name: name.trim(), currency });
     completeOnboarding();
     navigate('/');
   }
@@ -77,10 +82,14 @@ export default function OnboardingPage() {
           </label>
           <input
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={e => { setName(e.target.value); setTouched(false); }}
+            onBlur={() => setTouched(true)}
             placeholder="Enter your name"
-            className="w-full bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-4 text-sm font-medium dark:text-white outline-none focus:border-green-500 transition-colors placeholder:text-gray-300 dark:placeholder:text-gray-600"
+            className={`w-full bg-white dark:bg-gray-900 border-2 rounded-2xl px-4 py-4 text-sm font-medium dark:text-white outline-none transition-colors placeholder:text-gray-300 dark:placeholder:text-gray-600 ${touched && !hasName ? 'border-red-400 focus:border-red-400' : 'border-gray-100 dark:border-gray-800 focus:border-green-500'}`}
           />
+          {touched && !hasName && (
+            <p className="text-xs text-red-500 mt-1.5 ml-1">Please enter your name to continue</p>
+          )}
         </div>
 
         {/* Currency */}
@@ -122,7 +131,7 @@ export default function OnboardingPage() {
         <button
           type="button"
           onClick={handleGetStarted}
-          className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base active:scale-[0.98] transition-transform shadow-lg shadow-green-600/30"
+          className={`w-full py-4 rounded-2xl font-bold text-base transition-all ${hasName ? 'bg-green-600 text-white active:scale-[0.98] shadow-lg shadow-green-600/30' : 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'}`}
         >
           Get Started
         </button>
