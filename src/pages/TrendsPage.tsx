@@ -66,8 +66,8 @@ function LinePath({ points, W, H, color, formatCurrency }: { points: DataPoint[]
         const val = max * (1 - frac);
         return (
           <text key={frac}
-            x={pad.left - 5} y={pad.top + frac * chartH + 4}
-            textAnchor="end" fontSize={9} fill="#9ca3af">
+            x={pad.left - 8} y={pad.top + frac * chartH + 4}
+            textAnchor="end" fontSize={8} fill="#9ca3af">
             {formatCurrency(val)}
           </text>
         );
@@ -79,13 +79,16 @@ function LinePath({ points, W, H, color, formatCurrency }: { points: DataPoint[]
 
       {/* Points + labels */}
       {coords.map((c, i) => {
-        // clamp value label so it never goes above the SVG top
-        const labelY = Math.max(c.y - 9, 12);
+        // Position labels above points, but ensure they stay within chart bounds
+        // For very low values, position label above the point; for high values, below
+        const isNearBottom = c.y > pad.top + chartH * 0.7;
+        const labelOffset = isNearBottom ? -12 : 12;
+        const labelY = Math.max(Math.min(c.y + labelOffset, pad.top + chartH - 8), 16);
         return (
           <g key={i}>
             <circle cx={c.x} cy={c.y} r={4} fill={color} stroke="white" strokeWidth={2} />
             {c.value > 0 && (
-              <text x={c.x} y={labelY} textAnchor="middle" fontSize={8.5} fontWeight="600" fill={color}>
+              <text x={c.x} y={labelY} textAnchor="middle" fontSize={8} fontWeight="600" fill={color}>
                 {formatCurrency(c.value)}
               </text>
             )}
