@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { EXPENSE_CATEGORIES, FinancialStatus } from '../../types';
 import DonutChart from './DonutChart';
 import type { Slice } from './DonutChart';
+import StatusCelebration from '../StatusCelebration';
 
 interface Props {
   year: number;
@@ -100,6 +101,7 @@ function drawDonutOnCanvas(
 export default function GreenCard({ year, month, onPrev, onNext, onYearChange }: Props) {
   const { getMonthTransactions, getMonthIncome, getMonthExpenses, formatCurrency } = useApp();
   const [sharing, setSharing] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   const txs = getMonthTransactions(year, month);
   const totalIncome = getMonthIncome(year, month);
@@ -307,6 +309,7 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
   }
 
   return (
+    <>
     <div
       className="mx-4 mt-4 rounded-3xl overflow-hidden"
       style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 40%, #166534 100%)' }}
@@ -351,8 +354,11 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
         </div>
       </div>
 
-      {/* Financial status glass box */}
-      <div className="mx-4 mb-3 rounded-2xl glass p-3 flex items-center gap-3">
+      {/* Financial status glass box — tap to see celebration */}
+      <div
+        className="mx-4 mb-3 rounded-2xl glass p-3 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform"
+        onClick={() => setShowCelebration(true)}
+      >
         <Coin />
         <div>
           <p className="text-white/60 text-[10px] uppercase tracking-wider font-medium">Financial Status</p>
@@ -365,17 +371,19 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
               {status === 'excellent' ? '90+' : status === 'sustained' ? '60–79' : '<60'}
             </p>
           </div>
-          <button
-            onClick={handleShare}
-            disabled={sharing}
-            className="w-9 h-9 rounded-full glass flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
-            title="Share financial status"
-          >
-            {sharing
-              ? <div className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" />
-              : <Share2 size={14} className="text-white" />
-            }
-          </button>
+          <div onClick={e => e.stopPropagation()}>
+            <button
+              onClick={handleShare}
+              disabled={sharing}
+              className="w-9 h-9 rounded-full glass flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
+              title="Share financial status"
+            >
+              {sharing
+                ? <div className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" />
+                : <Share2 size={14} className="text-white" />
+              }
+            </button>
+          </div>
         </div>
       </div>
 
@@ -399,5 +407,9 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
         </div>
       </div>
     </div>
+    {showCelebration && (
+      <StatusCelebration status={status} onClose={() => setShowCelebration(false)} />
+    )}
+    </>
   );
 }

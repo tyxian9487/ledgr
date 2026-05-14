@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronDown, Trophy } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { computeStreaks, BADGES, tipsForScore } from '../utils/achievements';
+import { computeStreaks, BADGES, tipsForScore, BadgeDef } from '../utils/achievements';
+import BadgeCelebration from '../components/BadgeCelebration';
 
 function streakEmoji(n: number) {
   if (n >= 12) return '💎';
@@ -23,6 +24,9 @@ export default function AchievementsPage() {
   const navigate = useNavigate();
   const { transactions, budget } = useApp();
   const [expandedTip, setExpandedTip] = useState<number | null>(null);
+  const [currentBadge, setCurrentBadge] = useState<(BadgeDef & { unlocked: boolean }) | null>(null);
+  const [badgeQueue, setBadgeQueue] = useState<Array<BadgeDef & { unlocked: boolean }>>([]);
+  const initRef = useRef(false);
 
   const now = new Date();
   const yearTxs = useMemo(
@@ -45,6 +49,33 @@ export default function AchievementsPage() {
   );
   const unlockedCount = badges.filter(b => b.unlocked).length;
 
+  // Show newly earned badges once per session
+  if (!initRef.current && badges.length > 0) {
+    initRef.current = true;
+    const seen: string[] = JSON.parse(localStorage.getItem('ledgr_seen_badges') ?? '[]');
+    const newOnes = badges.filter(b => b.unlocked && !seen.includes(b.id));
+    if (newOnes.length > 0) {
+      // defer to avoid setState during render
+      setTimeout(() => {
+        setCurrentBadge(newOnes[0]);
+        setBadgeQueue(newOnes.slice(1));
+      }, 400);
+    }
+  }
+
+  function dismissBadge() {
+    if (!currentBadge) return;
+    const seen: string[] = JSON.parse(localStorage.getItem('ledgr_seen_badges') ?? '[]');
+    if (!seen.includes(currentBadge.id)) seen.push(currentBadge.id);
+    localStorage.setItem('ledgr_seen_badges', JSON.stringify(seen));
+    if (badgeQueue.length > 0) {
+      setCurrentBadge(badgeQueue[0]);
+      setBadgeQueue(badgeQueue.slice(1));
+    } else {
+      setCurrentBadge(null);
+    }
+  }
+
   const scoreColor = score >= 80 ? '#22c55e' : score >= 60 ? '#eab308' : '#ef4444';
   const scoreLabel = score >= 80 ? 'Excellent' : score >= 60 ? 'Fair' : 'Critical';
   const nextLabel  = score >= 80 ? 'keep it up' : score >= 60 ? 'Excellent' : 'Fair';
@@ -52,6 +83,7 @@ export default function AchievementsPage() {
   const tips = tipsForScore(score);
 
   return (
+    <>
     <div className="pb-28 overflow-y-auto min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
       <div className="px-5 pt-12 pb-4 flex items-center gap-3">
@@ -202,5 +234,14 @@ export default function AchievementsPage() {
         </div>
       </div>
     </div>
+
+    {currentBadge && (
+      <BadgeCelebration
+        badge={currentBadge}
+        remaining={badgeQueue.length}
+        onClose={dismissBadge}
+      />
+    )}
+    </>
   );
 }
