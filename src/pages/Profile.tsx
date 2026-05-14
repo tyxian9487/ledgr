@@ -443,7 +443,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
         <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3">Achievements</h2>
 
         {/* Budget Streak Card — inline */}
-        <div className="rounded-3xl overflow-hidden shadow-lg mb-3"
+        <div data-tour="profile-streak" className="rounded-3xl overflow-hidden shadow-lg mb-3"
           style={{ background: 'linear-gradient(135deg, #052e16 0%, #166534 50%, #16a34a 100%)' }}>
           <div className="p-5">
             <div className="flex items-center justify-between mb-3">
@@ -528,7 +528,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 flex flex-col items-center gap-3 shadow-sm border border-gray-50 dark:border-gray-800">
+        <div data-tour="profile-assessment" className="bg-white dark:bg-gray-900 rounded-2xl p-5 flex flex-col items-center gap-3 shadow-sm border border-gray-50 dark:border-gray-800">
           <ScoreRing score={score} />
           <div className="text-center">
             <p className="font-bold text-base dark:text-white">{scoreLabel}</p>

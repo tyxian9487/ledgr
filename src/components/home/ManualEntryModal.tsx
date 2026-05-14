@@ -59,6 +59,8 @@ function todayString() {
 export default function ManualEntryModal({ onClose, transactionId, prefill }: Props) {
   const { addTransaction, updateTransaction, getCurrencySymbol, expenseCategories, incomeCategories } = useApp();
 
+  const [showAddTxHint, setShowAddTxHint] = useState(() => !localStorage.getItem('ledgr_addtx_hint_seen'));
+
   const [type, setType] = useState<TransactionType>(prefill?.type || 'expense');
   const [amount, setAmount] = useState(prefill?.amount ? String(prefill.amount) : '');
   const [date, setDate] = useState(prefill?.date || todayString());
@@ -129,6 +131,26 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
 
           {/* Scrollable form body */}
           <div className="flex-1 min-h-0 overflow-y-auto px-5 space-y-4 pb-2" style={{ overscrollBehavior: 'contain' }}>
+
+            {/* First-time hint */}
+            {showAddTxHint && (
+              <div className="mt-3 mb-1 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-900/40 rounded-2xl p-3 flex gap-3 items-start">
+                <span className="text-lg flex-shrink-0">💡</span>
+                <div className="flex-1">
+                  <p className="text-xs font-bold text-green-800 dark:text-green-300 mb-0.5">Quick tip</p>
+                  <p className="text-[11px] text-green-700 dark:text-green-400 leading-relaxed">
+                    Choose a <strong>category</strong> to keep your transactions organised. Enable <strong>Auto Debit</strong> for recurring bills like rent or subscriptions!
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setShowAddTxHint(false); localStorage.setItem('ledgr_addtx_hint_seen', '1'); }}
+                  className="text-green-500 flex-shrink-0"
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                </button>
+              </div>
+            )}
 
             {/* Receipt thumbnail (from capture) */}
             {prefill?.receiptImage && (
