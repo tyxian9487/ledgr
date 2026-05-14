@@ -109,12 +109,17 @@ export default function Categories({ year, month, filterFn }: Props) {
                               <span className="text-[9px] text-green-500 font-medium">receipt</span>
                             </div>
                           )}
-                          {tx.isAutoDebit && (
-                            <div className="flex items-center gap-0.5">
-                              <RefreshCw size={9} className="text-blue-500" />
-                              <span className="text-[9px] text-blue-500 font-medium">auto</span>
-                            </div>
-                          )}
+                          {tx.isAutoDebit && (() => {
+                            const isGenerated = tx.id.includes('_auto_');
+                            return (
+                              <div className="flex items-center gap-0.5">
+                                <RefreshCw size={9} className={isGenerated ? 'text-purple-400' : 'text-blue-500'} />
+                                <span className={`text-[9px] font-medium ${isGenerated ? 'text-purple-400' : 'text-blue-500'}`}>
+                                  {isGenerated ? 'auto' : (tx.autoDebitPeriod ?? 'recurring')}
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
 

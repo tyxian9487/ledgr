@@ -138,56 +138,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [transactions, userProfile, darkMode, budget, isAuthenticated, hasCompletedOnboarding]);
 
   const addTransaction = useCallback((t: Omit<Transaction, 'id'>) => {
-    const transactionsToAdd: Transaction[] = [];
     const baseId = Date.now().toString();
-    
-    // Add the original transaction
-    transactionsToAdd.push({ ...t, id: baseId });
-    
-    // If auto debit is enabled, create recurring transactions
+    const transactionsToAdd: Transaction[] = [{ ...t, id: baseId }];
+
     if (t.isAutoDebit && t.autoDebitPeriod) {
       const baseDate = new Date(t.date);
-      const periods = 12; // Create transactions for next 12 periods
-      
+      const periods = 12;
       for (let i = 1; i <= periods; i++) {
         const newDate = new Date(baseDate);
-        
         switch (t.autoDebitPeriod) {
-          case 'daily':
-            newDate.setDate(baseDate.getDate() + i);
-            break;
-          case 'weekly':
-            newDate.setDate(baseDate.getDate() + i * 7);
-            break;
-          case 'biweekly':
-            newDate.setDate(baseDate.getDate() + i * 14);
-            break;
-          case 'monthly':
-            newDate.setMonth(baseDate.getMonth() + i);
-            break;
-          case 'yearly':
-            newDate.setFullYear(baseDate.getFullYear() + i);
-            break;
+          case 'daily': newDate.setDate(baseDate.getDate() + i); break;
+          case 'weekly': newDate.setDate(baseDate.getDate() + i * 7); break;
+          case 'biweekly': newDate.setDate(baseDate.getDate() + i * 14); break;
+          case 'monthly': newDate.setMonth(baseDate.getMonth() + i); break;
+          case 'yearly': newDate.setFullYear(baseDate.getFullYear() + i); break;
         }
-        
-        transactionsToAdd.push({
-          ...t,
-          id: `${baseId}_${i}`,
-          date: newDate.toISOString(),
-        });
+        transactionsToAdd.push({ ...t, id: `${baseId}_auto_${i}`, date: newDate.toISOString() });
       }
     }
-    
+
     setTransactions(prev => [...transactionsToAdd, ...prev]);
   }, []);
 
   const removeTransaction = useCallback((id: string) => {
     setTransactions(prev => {
-      const transactionToRemove = prev.find(t => t.id === id);
-      if (transactionToRemove?.isAutoDebit) {
-        // Remove all transactions with the same base ID
-        const baseId = id.split('_')[0];
-        return prev.filter(t => !t.id.startsWith(baseId));
+      const tx = prev.find(t => t.id === id);
+      if (tx?.isAutoDebit) {
+        const baseId = id.includes('_auto_') ? id.split('_auto_')[0] : id;
+        return prev.filter(t => t.id !== baseId && !t.id.startsWith(`${baseId}_auto_`));
       }
       return prev.filter(t => t.id !== id);
     });
@@ -195,22 +173,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateTransaction = useCallback((id: string, data: Omit<Transaction, 'id'>) => {
     setTransactions(prev => {
-      const transactionToUpdate = prev.find(t => t.id === id);
-      if (transactionToUpdate?.isAutoDebit && data.isAutoDebit) {
-        // Update all transactions with the same base ID
-        const baseId = id.split('_')[0];
+      const tx = prev.find(t => t.id === id);
+      if (tx?.isAutoDebit && data.isAutoDebit) {
+        const baseId = id.includes('_auto_') ? id.split('_auto_')[0] : id;
         return prev.map(t => {
-          if (t.id.startsWith(baseId)) {
-            // For recurring transactions, only update certain fields, keep original date
-            if (t.id !== baseId) {
-              return {
-                ...data,
-                id: t.id,
-                date: t.date, // Keep original date for recurring transactions
-              };
-            }
-            return { ...data, id };
-          }
+          if (t.id === baseId) return { ...data, id: baseId };
+          if (t.id.startsWith(`${baseId}_auto_`)) return { ...data, id: t.id, date: t.date };
           return t;
         });
       }
