@@ -618,15 +618,12 @@ export default function BudgetPage() {
           </div>
         )}
 
-      </div>
-
-      {/* Save button fixed above the bottom nav so it is always visible */}
-      <div className="fixed left-0 right-0 mx-auto max-w-[430px] z-70 px-5 py-3 bg-gray-50 dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 backdrop-blur-md"
-        style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}>
-        <button type="button" onClick={handleSave}
-          className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base shadow-lg shadow-green-600/30 active:scale-[0.98] transition-transform">
-          Save Budget Plan
-        </button>
+        <div className="px-0 pb-8">
+          <button type="button" onClick={handleSave}
+            className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base shadow-lg shadow-green-600/30 active:scale-[0.98] transition-transform">
+            Save Budget Plan
+          </button>
+        </div>
       </div>
     </div>
   );
