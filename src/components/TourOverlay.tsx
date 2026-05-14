@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useTour, TOUR_STEPS } from '../context/TourContext';
 
 export default function TourOverlay() {
   const { tourActive, currentStep, tourStepIndex, nextStep, skipTour } = useTour();
+  const location = useLocation();
   const [rect, setRect] = useState<DOMRect | null>(null);
   const rafRef = useRef<number>();
 
+  const onCorrectPage = currentStep ? location.pathname === currentStep.page : false;
+
   useEffect(() => {
-    if (!tourActive || !currentStep) {
+    if (!tourActive || !currentStep || !onCorrectPage) {
       setRect(null);
       return;
     }
@@ -23,9 +27,9 @@ export default function TourOverlay() {
     }
     rafRef.current = requestAnimationFrame(update);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [tourActive, currentStep]);
+  }, [tourActive, currentStep, onCorrectPage]);
 
-  if (!tourActive || !currentStep) return null;
+  if (!tourActive || !currentStep || !onCorrectPage) return null;
 
   const isLastStep = tourStepIndex === TOUR_STEPS.length - 1;
   const pad = 10;

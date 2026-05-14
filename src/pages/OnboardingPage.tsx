@@ -125,10 +125,10 @@ export default function OnboardingPage() {
       return;
     }
     if (step < TOTAL_STEPS) { setStep(s => s + 1); return; }
-    // Final step
+    // Final step — save reco but don't complete onboarding yet so the
+    // tour offer screen can render (completeOnboarding redirects the route)
     const reco = computeReco(satisfaction!, disciplined!);
     localStorage.setItem('ledgr_onboarding_reco', JSON.stringify(reco));
-    completeOnboarding();
     setShowTourOffer(true);
   }
 
@@ -174,14 +174,14 @@ export default function OnboardingPage() {
           </p>
           <button
             type="button"
-            onClick={() => { startTour(); navigate('/subscription', { state: { fromOnboarding: true } }); }}
+            onClick={() => { startTour(); completeOnboarding(); navigate('/subscription', { state: { fromOnboarding: true } }); }}
             className="w-full mt-4 py-4 rounded-2xl bg-green-600 text-white font-bold text-base active:scale-[0.98] shadow-lg shadow-green-600/30 transition-all"
           >
-            Show me around!
+            Show me around! 🗺️
           </button>
           <button
             type="button"
-            onClick={() => navigate('/subscription', { state: { fromOnboarding: true } })}
+            onClick={() => { completeOnboarding(); navigate('/subscription', { state: { fromOnboarding: true } }); }}
             className="w-full py-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-semibold text-base transition-all"
           >
             Skip for now
