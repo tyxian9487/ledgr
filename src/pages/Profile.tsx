@@ -433,9 +433,36 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
             <Edit3 size={14} className="text-gray-400" />
           </button>
         )}
-        <span className="text-xs px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-semibold capitalize">
-          {userProfile.plan} plan
-        </span>
+        {(() => {
+          if (userProfile.plan === 'premium' && userProfile.trialStartDate) {
+            const trialEnd = new Date(userProfile.trialStartDate);
+            trialEnd.setDate(trialEnd.getDate() + 7);
+            const daysLeft = Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / 86400000));
+            if (daysLeft > 0) {
+              return (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40">
+                    <span className="text-xs font-bold text-amber-700 dark:text-amber-400">Free Trial</span>
+                    <span className="w-1 h-1 rounded-full bg-amber-400" />
+                    <span className="text-xs text-amber-600 dark:text-amber-500 font-medium">{daysLeft} day{daysLeft !== 1 ? 's' : ''} left</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/subscription')}
+                    className="text-xs font-bold text-green-600 dark:text-green-400 px-4 py-1.5 rounded-full bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 active:scale-95 transition-transform"
+                  >
+                    Upgrade Now →
+                  </button>
+                </div>
+              );
+            }
+          }
+          return (
+            <span className="text-xs px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-semibold capitalize">
+              {userProfile.plan} plan
+            </span>
+          );
+        })()}
       </div>
 
       {/* Achievements */}

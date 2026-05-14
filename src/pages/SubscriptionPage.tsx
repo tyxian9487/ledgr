@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft, Check, Sparkles, Shield, RefreshCw } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useTour } from '../context/TourContext';
 
 // RevenueCat product identifiers — replace with your actual offering IDs
 // import Purchases from '@revenuecat/purchases-js';
@@ -29,8 +30,10 @@ export default function SubscriptionPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { userProfile, updateUserProfile } = useApp();
+  const { startTour } = useTour();
   const [selected, setSelected] = useState<'monthly' | 'yearly'>('yearly');
   const [loading, setLoading] = useState(false);
+  const [showTourOffer, setShowTourOffer] = useState(false);
 
   const fromOnboarding = (location.state as { fromOnboarding?: boolean } | null)?.fromOnboarding;
 
@@ -42,19 +45,14 @@ export default function SubscriptionPage() {
   async function handleStartTrial() {
     setLoading(true);
     try {
-      // RevenueCat integration:
-      // await Purchases.configure({ apiKey: RC_API_KEY });
-      // const offerings = await Purchases.getOfferings();
-      // const pkg = selected === 'yearly'
-      //   ? offerings.current?.annual
-      //   : offerings.current?.monthly;
-      // const { customerInfo } = await Purchases.purchasePackage(pkg!);
-      // const isPremium = customerInfo.entitlements.active['premium'] !== undefined;
-
       // Demo simulation:
       await new Promise(r => setTimeout(r, 1300));
-      updateUserProfile({ plan: 'premium' });
-      navigate('/', { replace: true });
+      updateUserProfile({ plan: 'premium', trialStartDate: new Date().toISOString() });
+      if (fromOnboarding) {
+        setShowTourOffer(true);
+      } else {
+        navigate('/', { replace: true });
+      }
     } finally {
       setLoading(false);
     }
@@ -68,6 +66,36 @@ export default function SubscriptionPage() {
   }
 
   const isPremium = userProfile.plan === 'premium';
+
+  if (showTourOffer) {
+    return (
+      <div className="flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-6" style={{ height: '100dvh' }}>
+        <div className="flex flex-col items-center gap-4 w-full max-w-[360px]">
+          <div className="w-20 h-20 rounded-3xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+            <span className="text-5xl">🗺️</span>
+          </div>
+          <h1 className="text-2xl font-bold dark:text-white text-center">Ready for a quick tour?</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center leading-relaxed">
+            Let us guide you through ledgr's key features. It takes about 2 minutes and you can skip at any time.
+          </p>
+          <button
+            type="button"
+            onClick={() => { startTour(); navigate('/', { replace: true }); }}
+            className="w-full mt-2 py-4 rounded-2xl bg-green-600 text-white font-bold text-base active:scale-[0.98] shadow-lg shadow-green-600/30 transition-all"
+          >
+            Show me around! 🗺️
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/', { replace: true })}
+            className="w-full py-3.5 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-semibold text-sm transition-all"
+          >
+            Skip for now
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -83,15 +111,6 @@ export default function SubscriptionPage() {
         >
           <ArrowLeft size={18} className="text-white" />
         </button>
-        {fromOnboarding && (
-          <button
-            type="button"
-            onClick={() => navigate('/', { replace: true })}
-            className="text-white/60 text-sm font-medium px-2"
-          >
-            Skip
-          </button>
-        )}
       </div>
 
       {/* Hero */}

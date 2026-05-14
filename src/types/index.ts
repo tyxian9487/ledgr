@@ -22,6 +22,7 @@ export interface UserProfile {
   avatar: string | null;
   plan: 'free' | 'premium';
   currency?: string;
+  trialStartDate?: string;
 }
 
 export const CURRENCIES: { code: string; name: string }[] = [

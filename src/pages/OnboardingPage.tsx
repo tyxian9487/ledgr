@@ -3,7 +3,6 @@ import { Camera, ChevronRight, Search, X, Check, ChevronLeft } from 'lucide-reac
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { CURRENCIES } from '../types';
-import { useTour } from '../context/TourContext';
 
 const SPEND_ON_OPTIONS = [
   { id: 'self',     label: 'Myself',   emoji: '🙋' },
@@ -75,11 +74,9 @@ const STEP_SUBS = [
 export default function OnboardingPage() {
   const { updateUserProfile, completeOnboarding, userProfile } = useApp();
   const navigate = useNavigate();
-  const { startTour } = useTour();
 
   const [step, setStep] = useState(1);
   const [showWelcome, setShowWelcome] = useState(false);
-  const [showTourOffer, setShowTourOffer] = useState(false);
 
   // Step 1
   const [name, setName] = useState('');
@@ -125,11 +122,11 @@ export default function OnboardingPage() {
       return;
     }
     if (step < TOTAL_STEPS) { setStep(s => s + 1); return; }
-    // Final step — save reco but don't complete onboarding yet so the
-    // tour offer screen can render (completeOnboarding redirects the route)
+    // Final step
     const reco = computeReco(satisfaction!, disciplined!);
     localStorage.setItem('ledgr_onboarding_reco', JSON.stringify(reco));
-    setShowTourOffer(true);
+    completeOnboarding();
+    navigate('/subscription', { state: { fromOnboarding: true } });
   }
 
   const initial = name.trim() ? name.trim().charAt(0).toUpperCase() : '?';
@@ -156,35 +153,6 @@ export default function OnboardingPage() {
             className="w-full mt-4 py-4 rounded-2xl bg-green-600 text-white font-bold text-base active:scale-[0.98] shadow-lg shadow-green-600/30 transition-all flex items-center justify-center gap-2"
           >
             Let's Go <ChevronRight size={18} />
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Tour offer screen (shown after onboarding completes)
-  if (showTourOffer) {
-    return (
-      <div className="flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-6" style={{ height: '100dvh' }}>
-        <div className="flex flex-col items-center gap-4 w-full max-w-[360px]">
-          <span className="text-6xl">🗺️</span>
-          <h1 className="text-2xl font-bold dark:text-white text-center">Ready for a quick tour?</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center leading-relaxed">
-            Let us guide you through ledgr's key features. It takes about 2 minutes.
-          </p>
-          <button
-            type="button"
-            onClick={() => { startTour(); completeOnboarding(); navigate('/subscription', { state: { fromOnboarding: true } }); }}
-            className="w-full mt-4 py-4 rounded-2xl bg-green-600 text-white font-bold text-base active:scale-[0.98] shadow-lg shadow-green-600/30 transition-all"
-          >
-            Show me around! 🗺️
-          </button>
-          <button
-            type="button"
-            onClick={() => { completeOnboarding(); navigate('/subscription', { state: { fromOnboarding: true } }); }}
-            className="w-full py-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-semibold text-base transition-all"
-          >
-            Skip for now
           </button>
         </div>
       </div>
