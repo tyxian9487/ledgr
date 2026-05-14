@@ -146,7 +146,7 @@ function MiniDonut({ allocations, size = 140 }: { allocations: BudgetAllocation[
 
 export default function BudgetPage() {
   const navigate = useNavigate();
-  const { budget, updateBudget, getMonthTransactions, getMonthIncome } = useApp();
+  const { budget, updateBudget, getMonthTransactions, getMonthIncome, formatCurrency, getCurrencySymbol } = useApp();
 
   const actualIncome = getMonthIncome(NOW.getFullYear(), NOW.getMonth());
 
@@ -289,7 +289,7 @@ export default function BudgetPage() {
             </p>
           )}
           <div className="flex items-center border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 focus-within:border-green-500 transition-colors bg-gray-50 dark:bg-gray-800 gap-2 mb-4">
-            <span className="text-gray-400 font-semibold text-lg">$</span>
+            <span className="text-gray-400 font-semibold text-lg">{getCurrencySymbol()}</span>
             <input
               type="number"
               placeholder="e.g. 5000"
@@ -325,9 +325,9 @@ export default function BudgetPage() {
               <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">Savings & Investment Goals</p>
               {!showGoals && (savingsAmt > 0 || investAmt > 0) ? (
                 <p className="text-xs text-green-600 dark:text-green-400 mt-0.5 font-medium">
-                  {savingsEnabled && savingsAmt > 0 ? `Savings $${Math.round(savingsAmt).toLocaleString()}/mo` : ''}
+                  {savingsEnabled && savingsAmt > 0 ? `Savings ${formatCurrency(Math.round(savingsAmt))}/mo` : ''}
                   {savingsEnabled && savingsAmt > 0 && investEnabled && investAmt > 0 ? ' · ' : ''}
-                  {investEnabled && investAmt > 0 ? `Invest $${Math.round(investAmt).toLocaleString()}/mo` : ''}
+                  {investEnabled && investAmt > 0 ? `Invest ${formatCurrency(Math.round(investAmt))}/mo` : ''}
                 </p>
               ) : (
                 <p className="text-xs text-gray-400 mt-0.5">Optional — set a personal target</p>
@@ -371,12 +371,12 @@ export default function BudgetPage() {
                 </div>
                 {savingsAmt > 0 && (
                   <p className="text-xs text-green-600 dark:text-green-400 font-semibold mt-1.5 text-right">
-                    = ${Math.round(savingsAmt).toLocaleString()} / mo
+                    = {formatCurrency(Math.round(savingsAmt))} / mo
                   </p>
                 )}
                 {analyzed && savingsPct > 0 && (
                   <p className="text-xs text-gray-400 mt-2 text-left">
-                    AI suggests <span className="text-green-600 font-semibold">{savingsPct}%</span> (${Math.round(income * savingsPct / 100).toLocaleString()}/mo) for savings
+                    AI suggests <span className="text-green-600 font-semibold">{savingsPct}%</span> ({formatCurrency(Math.round(income * savingsPct / 100))}/mo) for savings
                   </p>
                 )}
               </>
@@ -417,7 +417,7 @@ export default function BudgetPage() {
                 </div>
                 {investAmt > 0 && (
                   <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold mt-1.5 text-right">
-                    = ${Math.round(investAmt).toLocaleString()} / mo
+                    = {formatCurrency(Math.round(investAmt))} / mo
                   </p>
                 )}
               </>
@@ -438,8 +438,8 @@ export default function BudgetPage() {
             {(savingsAmt > 0 || investAmt > 0) && income > 0 && (
               <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-xl">
                 <span className="text-xs text-gray-500 dark:text-gray-400 flex-1">Spendable after goals</span>
-                <span className="text-xs font-bold text-green-700 dark:text-green-400">${Math.round(netIncome).toLocaleString()}</span>
-                <span className="text-[10px] text-gray-400">/ ${Math.round(income).toLocaleString()}</span>
+                <span className="text-xs font-bold text-green-700 dark:text-green-400">{formatCurrency(Math.round(netIncome))}</span>
+                <span className="text-[10px] text-gray-400">/ {formatCurrency(Math.round(income))}</span>
               </div>
             )}
             <div className="flex flex-col items-center">
@@ -447,7 +447,7 @@ export default function BudgetPage() {
                 <MiniDonut allocations={displayAllocations} size={140} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-[10px] text-gray-400 font-medium">Spendable</span>
-                  <span className="text-base font-black dark:text-white">${Math.round(chartAmount).toLocaleString()}</span>
+                  <span className="text-base font-black dark:text-white">{formatCurrency(Math.round(chartAmount))}</span>
                 </div>
               </div>
               <p className="text-[11px] text-gray-400 mt-3">Tap a slice to view category details</p>
@@ -488,7 +488,7 @@ export default function BudgetPage() {
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-bold" style={{ color: alloc.color }}>{alloc.percentage}%</span>
                           {budgetAmt > 0 && (
-                            <span className="text-xs text-gray-400">${budgetAmt.toLocaleString()}</span>
+                            <span className="text-xs text-gray-400">{formatCurrency(budgetAmt)}</span>
                           )}
                         </div>
                       </div>
@@ -515,9 +515,9 @@ export default function BudgetPage() {
                       </div>
                       {budgetAmt > 0 && (
                         <div className="flex justify-between text-xs mt-2">
-                          <span className="text-gray-400">Budget: <span className="font-semibold dark:text-white">${budgetAmt.toLocaleString()}</span></span>
+                          <span className="text-gray-400">Budget: <span className="font-semibold dark:text-white">{formatCurrency(budgetAmt)}</span></span>
                           <span className={over ? 'text-red-500 font-semibold' : 'text-green-600 font-semibold'}>
-                            Actual: ${actual.toLocaleString()} {over ? '▲ Over' : '✓ OK'}
+                            Actual: {formatCurrency(actual)} {over ? '▲ Over' : '✓ OK'}
                           </span>
                         </div>
                       )}
@@ -555,7 +555,7 @@ export default function BudgetPage() {
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-medium dark:text-white">{a.label}</span>
                     <span className={`text-xs font-bold ${over ? 'text-red-500' : 'text-green-600'}`}>
-                      ${actual} / ${budgetAmt}
+                      {formatCurrency(actual)} / {formatCurrency(budgetAmt)}
                     </span>
                   </div>
                   <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">

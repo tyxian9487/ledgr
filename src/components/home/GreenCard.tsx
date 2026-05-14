@@ -98,7 +98,7 @@ function drawDonutOnCanvas(
 }
 
 export default function GreenCard({ year, month, onPrev, onNext, onYearChange }: Props) {
-  const { getMonthTransactions, getMonthIncome, getMonthExpenses } = useApp();
+  const { getMonthTransactions, getMonthIncome, getMonthExpenses, formatCurrency } = useApp();
   const [sharing, setSharing] = useState(false);
 
   const txs = getMonthTransactions(year, month);
@@ -211,7 +211,7 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
       ctx.fillText('Expenses', chartCX, chartCY - 11);
       ctx.fillStyle = 'white';
       ctx.font = 'bold 17px -apple-system, system-ui, sans-serif';
-      ctx.fillText(`$${totalExpenses.toLocaleString()}`, chartCX, chartCY + 10);
+      ctx.fillText(formatCurrency(totalExpenses), chartCX, chartCY + 10);
 
       // Category list
       const catStartX = chartCX + outerR + 30;
@@ -238,7 +238,7 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
         ctx.fillStyle = 'white';
         ctx.font = 'bold 14px -apple-system, system-ui, sans-serif';
         ctx.textAlign = 'right';
-        ctx.fillText(`$${slice.amount.toLocaleString()}`, W - PAD, rowY + 13);
+        ctx.fillText(formatCurrency(slice.amount), W - PAD, rowY + 13);
       });
 
       if (slices.length === 0) {
@@ -262,7 +262,7 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
       ctx.fillText('INCOME', PAD + 14, boxY + 24);
       ctx.fillStyle = 'white';
       ctx.font = 'bold 22px -apple-system, system-ui, sans-serif';
-      ctx.fillText(`$${totalIncome.toLocaleString()}`, PAD + 14, boxY + 54);
+      ctx.fillText(formatCurrency(totalIncome), PAD + 14, boxY + 54);
 
       const remX = PAD + boxW + 12;
       ctx.fillStyle = 'rgba(255,255,255,0.15)';
@@ -274,7 +274,7 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
       ctx.fillText('REMAINING', remX + 14, boxY + 24);
       ctx.fillStyle = remaining >= 0 ? 'white' : '#fca5a5';
       ctx.font = 'bold 22px -apple-system, system-ui, sans-serif';
-      ctx.fillText(`$${Math.abs(remaining).toLocaleString()}`, remX + 14, boxY + 54);
+      ctx.fillText(formatCurrency(Math.abs(remaining)), remX + 14, boxY + 54);
 
       // ── Footer ──
       ctx.fillStyle = 'rgba(255,255,255,0.3)';
@@ -388,12 +388,12 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
       <div className="mx-4 mb-4 grid grid-cols-2 gap-3">
         <div className="glass rounded-2xl p-3">
           <p className="text-white/60 text-[10px] uppercase tracking-wider mb-1">Income</p>
-          <p className="text-white font-bold text-base">${totalIncome.toLocaleString()}</p>
+          <p className="text-white font-bold text-base">{formatCurrency(totalIncome)}</p>
         </div>
         <div className="glass rounded-2xl p-3">
           <p className="text-white/60 text-[10px] uppercase tracking-wider mb-1">Remaining</p>
           <p className={`font-bold text-base ${remaining >= 0 ? 'text-white' : 'text-red-300'}`}>
-            ${Math.abs(remaining).toLocaleString()}
+            {formatCurrency(Math.abs(remaining))}
             {remaining < 0 && <span className="text-[10px] ml-1">deficit</span>}
           </p>
         </div>

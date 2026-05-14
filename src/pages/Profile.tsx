@@ -3,10 +3,11 @@ import {
   Moon, Sun, ChevronRight, Camera, Bell, Lock, HelpCircle,
   FileText, LogOut, Star, Trash2, Edit3, TrendingUp, TrendingDown,
   ChevronDown, X, Download, Eye, EyeOff, FileImage, FileType2,
+  Globe, Search,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../types';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CURRENCIES } from '../types';
 
 const PW_KEY = 'ledgr_password';
 const DEFAULT_PW = 'ledgr123';
@@ -71,7 +72,7 @@ function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: n
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { transactions, userProfile, darkMode, toggleDarkMode, updateUserProfile } = useApp();
+  const { transactions, userProfile, darkMode, toggleDarkMode, updateUserProfile, getCurrencySymbol } = useApp();
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(userProfile.name);
   const [editingEmail, setEditingEmail] = useState(false);
@@ -83,6 +84,8 @@ export default function Profile() {
   const [showReport, setShowReport] = useState(false);
   const [showChangePw, setShowChangePw] = useState(false);
   const [showCSV, setShowCSV] = useState(false);
+  const [showCurrency, setShowCurrency] = useState(false);
+  const [currencySearch, setCurrencySearch] = useState('');
 
   const [notifEnabled, setNotifEnabled] = useState(true);
   const [notifTransactions, setNotifTransactions] = useState(true);
@@ -441,6 +444,12 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
               <span className={`absolute top-0.5 h-5 w-5 bg-white rounded-full shadow-md transition-all duration-200 ${darkMode ? 'left-[26px]' : 'left-0.5'}`} />
             </div>
           </button>
+          <SettingsRow
+            icon={<Globe size={16} />}
+            label="Currency"
+            value={`${userProfile.currency || 'USD'} · ${getCurrencySymbol()}`}
+            onClick={() => setShowCurrency(true)}
+          />
         </div>
 
         {/* Data */}
@@ -464,6 +473,64 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
       </div>
 
       <p className="text-center text-[11px] text-gray-300 dark:text-gray-700 pb-4">ledgr v1.0.0</p>
+
+      {/* ── Currency picker modal ── */}
+      {showCurrency && (
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-end justify-center" onClick={() => setShowCurrency(false)}>
+          <div
+            className="w-full max-w-[430px] bg-white dark:bg-gray-900 rounded-t-3xl animate-slide-up flex flex-col overflow-hidden"
+            style={{ maxHeight: '85vh' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100 dark:border-gray-800">
+              <h2 className="text-lg font-bold dark:text-white">Select Currency</h2>
+              <button type="button" onClick={() => setShowCurrency(false)} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                <X size={16} className="text-gray-500 dark:text-gray-400" />
+              </button>
+            </div>
+            <div className="flex-shrink-0 px-5 py-3 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5">
+                <Search size={14} className="text-gray-400 flex-shrink-0" />
+                <input
+                  placeholder="Search currency..."
+                  value={currencySearch}
+                  onChange={e => setCurrencySearch(e.target.value)}
+                  className="flex-1 bg-transparent text-sm outline-none dark:text-white placeholder:text-gray-400"
+                  autoFocus
+                />
+                {currencySearch && (
+                  <button type="button" onClick={() => setCurrencySearch('')}>
+                    <X size={14} className="text-gray-400" />
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              {CURRENCIES
+                .filter(c =>
+                  !currencySearch ||
+                  c.code.toLowerCase().includes(currencySearch.toLowerCase()) ||
+                  c.name.toLowerCase().includes(currencySearch.toLowerCase())
+                )
+                .map(c => {
+                  const isSelected = (userProfile.currency || 'USD') === c.code;
+                  return (
+                    <button
+                      key={c.code}
+                      type="button"
+                      onClick={() => { updateUserProfile({ currency: c.code }); setShowCurrency(false); setCurrencySearch(''); }}
+                      className={`w-full flex items-center gap-3 px-5 py-3.5 border-b border-gray-50 dark:border-gray-800 last:border-0 transition-colors ${isSelected ? 'bg-green-50 dark:bg-green-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                    >
+                      <span className="w-12 text-xs font-bold text-gray-500 dark:text-gray-400 flex-shrink-0">{c.code}</span>
+                      <span className={`flex-1 text-sm text-left ${isSelected ? 'font-semibold text-green-700 dark:text-green-400' : 'dark:text-white'}`}>{c.name}</span>
+                      {isSelected && <span className="text-green-600 text-sm">✓</span>}
+                    </button>
+                  );
+                })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── CSV Export modal ── */}
       {showCSV && (

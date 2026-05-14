@@ -50,6 +50,8 @@ interface AppContextType {
   getMonthTransactions: (year: number, month: number) => Transaction[];
   getMonthIncome: (year: number, month: number) => number;
   getMonthExpenses: (year: number, month: number) => number;
+  formatCurrency: (amount: number) => string;
+  getCurrencySymbol: () => string;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -61,6 +63,7 @@ const DEFAULT_PROFILE: UserProfile = {
   email: 'user@example.com',
   avatar: null,
   plan: 'free',
+  currency: 'USD',
 };
 
 const DEFAULT_BUDGET: BudgetSettings = {
@@ -168,6 +171,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .reduce((sum, t) => sum + t.amount, 0);
   }, [getMonthTransactions]);
 
+  const formatCurrency = useCallback((amount: number) => {
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: userProfile.currency || 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(amount);
+    } catch {
+      return `$${Math.round(amount).toLocaleString()}`;
+    }
+  }, [userProfile.currency]);
+
+  const getCurrencySymbol = useCallback(() => {
+    try {
+      const s = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: userProfile.currency || 'USD',
+        minimumFractionDigits: 0,
+      }).format(0).replace(/[\d,.\s]/g, '').trim();
+      return s || (userProfile.currency || 'USD');
+    } catch {
+      return '$';
+    }
+  }, [userProfile.currency]);
+
   return (
     <AppContext.Provider value={{
       transactions,
@@ -183,6 +212,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       getMonthTransactions,
       getMonthIncome,
       getMonthExpenses,
+      formatCurrency,
+      getCurrencySymbol,
     }}>
       {children}
     </AppContext.Provider>

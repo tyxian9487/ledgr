@@ -17,7 +17,7 @@ function formatDate(iso: string) {
 }
 
 export default function Categories({ year, month, filterFn }: Props) {
-  const { getMonthTransactions, removeTransaction } = useApp();
+  const { getMonthTransactions, removeTransaction, formatCurrency } = useApp();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
@@ -65,7 +65,7 @@ export default function Categories({ year, month, filterFn }: Props) {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`font-bold text-sm ${isIncome ? 'text-green-600' : 'text-gray-800 dark:text-gray-200'}`}>
-                    {isIncome ? '+' : '-'}${row.total.toLocaleString()}
+                    {isIncome ? '+' : '-'}{formatCurrency(row.total)}
                   </span>
                   <ChevronDown
                     size={16}
@@ -110,7 +110,7 @@ export default function Categories({ year, month, filterFn }: Props) {
                       </div>
 
                       <span className={`text-xs font-semibold flex-shrink-0 ${isIncome ? 'text-green-600' : 'text-gray-700 dark:text-gray-300'}`}>
-                        {isIncome ? '+' : '-'}${tx.amount.toLocaleString()}
+                        {isIncome ? '+' : '-'}{formatCurrency(tx.amount)}
                       </span>
 
                       <button
