@@ -457,18 +457,18 @@ export default function BudgetPage() {
 
         {/* Donut + total */}
         {analyzed && (
-          <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800">
+          <div className="bg-gradient-to-br from-green-600 via-emerald-600 to-green-700 rounded-3xl p-5 border border-green-700 shadow-lg shadow-green-500/20 text-white">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">Budget Allocation</p>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${Math.abs(totalPct - 100) < 1 ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-orange-100 dark:bg-orange-900/30 text-orange-500'}`}>
+              <p className="text-xs font-bold text-green-100 uppercase tracking-wider">Budget Allocation</p>
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${Math.abs(totalPct - 100) < 1 ? 'bg-white/20 text-white' : 'bg-orange-100 dark:bg-orange-900/30 text-orange-500'}`}>
                 {totalPct.toFixed(0)}% allocated
               </span>
             </div>
             {(savingsAmt > 0 || investAmt > 0) && income > 0 && (
-              <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-xl">
-                <span className="text-xs text-gray-500 dark:text-gray-400 flex-1">Spendable after goals</span>
-                <span className="text-xs font-bold text-green-700 dark:text-green-400">{formatCurrency(Math.round(netIncome))}</span>
-                <span className="text-[10px] text-gray-400">/ {formatCurrency(Math.round(income))}</span>
+              <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-white/10 rounded-xl">
+                <span className="text-xs text-green-100/90 flex-1">Spendable after goals</span>
+                <span className="text-xs font-bold text-white">{formatCurrency(Math.round(netIncome))}</span>
+                <span className="text-[10px] text-green-100/80">/ {formatCurrency(Math.round(income))}</span>
               </div>
             )}
             <div className="flex flex-col items-center gap-2">
@@ -495,7 +495,7 @@ export default function BudgetPage() {
                     <span className="text-xs text-white/80">{sel.percentage}%</span>
                   </div>
                 ) : (
-                  <p className="text-[11px] text-gray-400">Tap a slice to view category details</p>
+                  <p className="text-[11px] text-green-100/80">Tap a slice to view category details</p>
                 );
               })()}
             </div>
