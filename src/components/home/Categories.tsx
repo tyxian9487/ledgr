@@ -49,8 +49,14 @@ function CalendarOverlay({
   formatCurrency: (n: number) => string;
   onClose: () => void;
 }) {
+  const { expenseCategories, incomeCategories, stopAutoDebit, restartAutoDebit } = useApp();
+  const allCategories = [...expenseCategories, ...incomeCategories];
+
   const [calYear, setCalYear] = useState(year);
   const [calMonth, setCalMonth] = useState(month);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+
+  const now = new Date();
 
   const firstDay = new Date(calYear, calMonth, 1).getDay();
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
@@ -73,28 +79,32 @@ function CalendarOverlay({
   });
 
   const maxSpend = Math.max(...Object.values(spendByDay), 1);
-  const today = new Date();
 
   function prevMonth() {
     if (calMonth === 0) { setCalYear(y => y - 1); setCalMonth(11); }
     else setCalMonth(m => m - 1);
+    setSelectedDay(null);
   }
   function nextMonth() {
     if (calMonth === 11) { setCalYear(y => y + 1); setCalMonth(0); }
     else setCalMonth(m => m + 1);
+    setSelectedDay(null);
   }
 
-  // Build calendar grid (leading nulls + days)
   const cells: (number | null)[] = [
     ...Array.from({ length: firstDay }, () => null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
-  // Pad end to complete last row
   while (cells.length % 7 !== 0) cells.push(null);
+
+  const selectedDayTxs = selectedDay !== null
+    ? monthTxs.filter(t => new Date(t.date).getDate() === selectedDay)
+    : [];
 
   return (
     <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/60 animate-fade-in" onClick={onClose}>
-      <div className="w-full max-w-[430px] bg-white dark:bg-gray-900 rounded-t-3xl animate-slide-up pb-10"
+      <div className="w-full max-w-[430px] bg-white dark:bg-gray-900 rounded-t-3xl animate-slide-up overflow-y-auto"
+        style={{ maxHeight: '88vh' }}
         onClick={e => e.stopPropagation()}>
 
         {/* Drag pill */}
@@ -126,14 +136,18 @@ function CalendarOverlay({
             if (!day) return <div key={`e-${i}`} />;
             const spend = spendByDay[day] || 0;
             const income = incomeByDay[day] || 0;
+            const hasTxs = spend > 0 || income > 0;
             const intensity = spend > 0 ? Math.max(0.12, spend / maxSpend) : 0;
-            const isToday = day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
+            const isToday = day === now.getDate() && calMonth === now.getMonth() && calYear === now.getFullYear();
             const incomeOnly = income > 0 && spend === 0;
+            const isSelected = selectedDay === day;
 
             return (
               <div key={day} className="flex flex-col items-center py-1">
-                <div
-                  className={`w-9 h-9 rounded-2xl flex flex-col items-center justify-center ${isToday ? 'ring-2 ring-green-500' : ''}`}
+                <button
+                  type="button"
+                  onClick={() => hasTxs && setSelectedDay(isSelected ? null : day)}
+                  className={`w-9 h-9 rounded-2xl flex flex-col items-center justify-center transition-all ${isToday ? 'ring-2 ring-green-500' : ''} ${isSelected ? 'ring-2 ring-blue-400 ring-offset-1' : ''} ${hasTxs ? 'active:scale-95' : ''}`}
                   style={incomeOnly
                     ? { background: `rgba(34,197,94,0.18)` }
                     : spend > 0 ? { background: `rgba(239,68,68,${intensity})` } : {}}
@@ -151,8 +165,7 @@ function CalendarOverlay({
                       {formatCurrency(income)}
                     </span>
                   )}
-                </div>
-                {/* Green dot when both income and expense exist */}
+                </button>
                 {income > 0 && spend > 0 && (
                   <div className="w-1 h-1 rounded-full bg-green-500 mt-0.5" />
                 )}
@@ -177,6 +190,55 @@ function CalendarOverlay({
             <X size={13} className="text-gray-500" />
           </button>
         </div>
+
+        {/* Selected day detail */}
+        {selectedDay !== null && selectedDayTxs.length > 0 && (
+          <div className="px-5 pt-4">
+            <p className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider mb-3">
+              {MONTH_NAMES[calMonth]} {selectedDay}
+            </p>
+            <div className="space-y-2">
+              {selectedDayTxs.map(tx => {
+                const cat = allCategories.find(c => c.id === tx.category);
+                const isIncome = tx.type === 'income';
+                const baseId = tx.id.includes('_auto_') ? tx.id.split('_auto_')[0] : tx.id;
+                const template = transactions.find(t => t.id === baseId);
+                const autoEnabled = template?.isAutoDebit ?? false;
+
+                return (
+                  <div key={tx.id} className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 rounded-2xl px-4 py-3">
+                    {cat && <CategoryIcon icon={cat.icon} color={cat.color} size={14} />}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold dark:text-white truncate">
+                        {tx.description || cat?.label || tx.category}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isIncome ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-red-100 dark:bg-red-900/30 text-red-500'}`}>
+                          {isIncome ? 'Income' : 'Expense'}
+                        </span>
+                        {cat && <span className="text-[10px] text-gray-400">{cat.label}</span>}
+                      </div>
+                    </div>
+                    <span className={`text-sm font-bold flex-shrink-0 mr-1 ${isIncome ? 'text-green-600' : 'text-gray-700 dark:text-gray-200'}`}>
+                      {isIncome ? '+' : '-'}{formatCurrency(tx.amount)}
+                    </span>
+                    {tx.isAutoDebit && (
+                      <button
+                        type="button"
+                        onClick={() => autoEnabled ? stopAutoDebit(tx.id) : restartAutoDebit(baseId)}
+                        className={`w-11 h-6 rounded-full transition-colors duration-200 relative flex-shrink-0 ${autoEnabled ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'}`}
+                      >
+                        <span className={`absolute top-0.5 h-5 w-5 bg-white rounded-full shadow-md transition-all duration-200 ${autoEnabled ? 'left-[22px]' : 'left-0.5'}`} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="h-10" />
       </div>
     </div>
   );
@@ -301,7 +363,7 @@ export default function Categories({ year, month, filterFn, view = 'category', s
                 {/* Date circle */}
                 <div className="w-10 h-10 rounded-2xl bg-gray-100 dark:bg-gray-800 flex flex-col items-center justify-center flex-shrink-0">
                   <span className="text-[10px] font-bold text-gray-400 uppercase leading-none">
-                    {new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'short' })}
+                    {new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' })}
                   </span>
                   <span className="text-base font-black text-gray-700 dark:text-gray-200 leading-tight">
                     {new Date(dateStr + 'T12:00:00').getDate()}

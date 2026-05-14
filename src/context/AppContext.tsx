@@ -69,6 +69,7 @@ interface AppContextType {
   toggleCategoryEnabled: (id: string) => void;
   stopAutoDebit: (id: string) => void;
   endAutoDebitAt: (id: string) => void;
+  restartAutoDebit: (templateId: string) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -335,6 +336,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const restartAutoDebit = useCallback((templateId: string) => {
+    setTransactions(prev => {
+      const updated = prev.map(t => t.id === templateId ? { ...t, isAutoDebit: true } : t);
+      return processAutoDebits(updated);
+    });
+  }, []);
+
   return (
     <AppContext.Provider value={{
       transactions,
@@ -367,6 +375,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       toggleCategoryEnabled,
       stopAutoDebit,
       endAutoDebitAt,
+      restartAutoDebit,
     }}>
       {children}
     </AppContext.Provider>
