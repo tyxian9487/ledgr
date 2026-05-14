@@ -16,7 +16,7 @@ type Period = 'monthly' | 'quarterly' | 'annually';
 
 interface DataPoint { label: string; value: number; }
 
-function LinePath({ points, W, H, color }: { points: DataPoint[]; W: number; H: number; color: string }) {
+function LinePath({ points, W, H, color, formatCurrency }: { points: DataPoint[]; W: number; H: number; color: string; formatCurrency: (n: number) => string }) {
   if (points.length < 2) return null;
   const max = Math.max(...points.map(p => p.value), 1);
   // generous padding so labels never escape the SVG boundary
@@ -68,7 +68,7 @@ function LinePath({ points, W, H, color }: { points: DataPoint[]; W: number; H: 
           <text key={frac}
             x={pad.left - 5} y={pad.top + frac * chartH + 4}
             textAnchor="end" fontSize={9} fill="#9ca3af">
-            {val >= 1000 ? `$${(val / 1000).toFixed(1)}k` : `$${Math.round(val)}`}
+            {formatCurrency(Math.round(val))}
           </text>
         );
       })}
@@ -86,7 +86,7 @@ function LinePath({ points, W, H, color }: { points: DataPoint[]; W: number; H: 
             <circle cx={c.x} cy={c.y} r={4} fill={color} stroke="white" strokeWidth={2} />
             {c.value > 0 && (
               <text x={c.x} y={labelY} textAnchor="middle" fontSize={8.5} fontWeight="600" fill={color}>
-                {c.value >= 1000 ? `$${(c.value / 1000).toFixed(1)}k` : `$${Math.round(c.value)}`}
+                {formatCurrency(Math.round(c.value))}
               </text>
             )}
             {/* x-label sits inside the bottom pad */}
@@ -99,11 +99,12 @@ function LinePath({ points, W, H, color }: { points: DataPoint[]; W: number; H: 
 }
 
 function CategoryModal({
-  categoryId, onClose, transactions,
+  categoryId, onClose, transactions, formatCurrency,
 }: {
   categoryId: string;
   onClose: () => void;
   transactions: ReturnType<typeof useApp>['transactions'];
+  formatCurrency: (n: number) => string;
 }) {
   const [period, setPeriod] = useState<Period>('monthly');
   const color = CATEGORY_COLORS[categoryId] || '#94a3b8';
@@ -197,16 +198,16 @@ function CategoryModal({
               <p className="text-sm text-gray-400">No data for this period</p>
             </div>
           ) : (
-            <LinePath points={points} W={390} H={160} color={color} />
+            <LinePath points={points} W={390} H={160} color={color} formatCurrency={formatCurrency} />
           )}
         </div>
 
         {/* Stats row */}
         <div className="flex-shrink-0 px-5 mt-2 grid grid-cols-3 gap-3 pb-4">
           {[
-            { label: 'Total', value: `$${total.toLocaleString()}` },
-            { label: 'Avg / period', value: `$${Math.round(avg).toLocaleString()}` },
-            { label: 'Highest', value: highest && highest.value > 0 ? `$${Math.round(highest.value).toLocaleString()} (${highest.label})` : '—' },
+            { label: 'Total', value: formatCurrency(total) },
+            { label: 'Avg / period', value: formatCurrency(Math.round(avg)) },
+            { label: 'Highest', value: highest && highest.value > 0 ? `${formatCurrency(Math.round(highest.value))} (${highest.label})` : '—' },
           ].map(s => (
             <div key={s.label} className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-3">
               <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-1">{s.label}</p>
@@ -228,7 +229,7 @@ function CategoryModal({
                     <p className="text-sm font-medium dark:text-white">{t.description}</p>
                     <p className="text-[11px] text-gray-400">{new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                   </div>
-                  <span className="text-sm font-bold text-red-500">-${t.amount.toLocaleString()}</span>
+                  <span className="text-sm font-bold text-red-500">-{formatCurrency(t.amount)}</span>
                 </div>
               ))}
             </div>
@@ -240,7 +241,7 @@ function CategoryModal({
 }
 
 export default function TrendsPage() {
-  const { transactions } = useApp();
+  const { transactions, formatCurrency } = useApp();
   const [view, setView] = useState<'spending' | 'income'>('spending');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showAllCats, setShowAllCats] = useState(false);
@@ -297,7 +298,7 @@ export default function TrendsPage() {
       <div className="px-4 mt-3 grid grid-cols-2 gap-3">
         <div className="bg-red-500 rounded-2xl p-4 shadow-sm">
           <p className="text-[11px] text-red-100 font-semibold uppercase tracking-wide mb-1">This Month</p>
-          <p className="text-xl font-black text-white">${currentMonth.expenses.toLocaleString()}</p>
+          <p className="text-xl font-black text-white">{formatCurrency(currentMonth.expenses)}</p>
           <p className="text-[11px] text-red-100 mt-0.5">spent</p>
           {prevMonth.expenses > 0 && (
             <div className="flex items-center gap-1 mt-2 text-red-100">
@@ -308,13 +309,13 @@ export default function TrendsPage() {
         </div>
         <div className="bg-green-600 rounded-2xl p-4 shadow-sm">
           <p className="text-[11px] text-green-100 font-semibold uppercase tracking-wide mb-1">This Month</p>
-          <p className="text-xl font-black text-white">${currentMonth.income.toLocaleString()}</p>
+          <p className="text-xl font-black text-white">{formatCurrency(currentMonth.income)}</p>
           <p className="text-[11px] text-green-100 mt-0.5">earned</p>
           {currentMonth.income > 0 && (
             <div className="flex items-center gap-1 mt-2 text-green-100">
               {currentMonth.income >= currentMonth.expenses ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
               <span className="text-[11px] font-semibold">
-                {currentMonth.income >= currentMonth.expenses ? 'Surplus' : 'Deficit'} ${Math.abs(currentMonth.income - currentMonth.expenses).toLocaleString()}
+                {currentMonth.income >= currentMonth.expenses ? 'Surplus' : 'Deficit'} {formatCurrency(Math.abs(currentMonth.income - currentMonth.expenses))}
               </span>
             </div>
           )}
@@ -344,7 +345,7 @@ export default function TrendsPage() {
             return (
               <div key={`${m.year}-${m.month}`} className="flex-1 flex flex-col items-center gap-1">
                 <span className="text-[9px] text-gray-400 font-medium">
-                  {val > 0 ? `$${val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val}` : ''}
+                  {val > 0 ? formatCurrency(val) : ''}
                 </span>
                 <div className="w-full flex flex-col justify-end" style={{ height: 96 }}>
                   <div style={{ height: `${Math.max(heightPct, val > 0 ? 4 : 0)}%` }}>
@@ -388,7 +389,7 @@ export default function TrendsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[11px] text-gray-400">{pct.toFixed(0)}%</span>
-                      <span className="text-sm font-bold dark:text-white">${amount.toLocaleString()}</span>
+                      <span className="text-sm font-bold dark:text-white">{formatCurrency(amount)}</span>
                       <ChevronRight size={13} className="text-gray-300 dark:text-gray-600" />
                     </div>
                   </div>
@@ -438,7 +439,7 @@ export default function TrendsPage() {
                     </div>
                   </div>
                   <span className={`text-[11px] font-bold w-16 text-right ${surplus > 0 ? 'text-green-600' : surplus < 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                    {surplus === 0 ? '–' : `${surplus > 0 ? '+' : '-'}$${Math.abs(surplus).toLocaleString()}`}
+                    {surplus === 0 ? '–' : `${surplus > 0 ? '+' : '-'}${formatCurrency(Math.abs(surplus))}`}
                   </span>
                 </div>
               </div>
@@ -457,6 +458,7 @@ export default function TrendsPage() {
           categoryId={selectedCategory}
           onClose={() => setSelectedCategory(null)}
           transactions={transactions}
+          formatCurrency={formatCurrency}
         />
       )}
     </div>

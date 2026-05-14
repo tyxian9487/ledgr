@@ -381,7 +381,7 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
 
       {/* Donut chart */}
       <div className="flex justify-center pb-2">
-        <DonutChart slices={slices} total={totalExpenses} />
+        <DonutChart slices={slices} total={totalExpenses} formatCurrency={formatCurrency} />
       </div>
 
       {/* Income / Remaining row */}
