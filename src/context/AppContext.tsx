@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Transaction, UserProfile, BudgetSettings, AutoDebitPeriod } from '../types';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { Transaction, UserProfile, BudgetSettings, AutoDebitPeriod, CustomCategory, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../types';
 
 function advanceDate(date: Date, period: AutoDebitPeriod): Date {
   const d = new Date(date);
@@ -36,6 +36,8 @@ function processAutoDebits(txs: Transaction[]): Transaction[] {
   return additions.length > 0 ? [...txs, ...additions] : txs;
 }
 
+export type Category = { id: string; label: string; icon: string; color: string };
+
 interface AppContextType {
   transactions: Transaction[];
   userProfile: UserProfile;
@@ -43,6 +45,10 @@ interface AppContextType {
   budget: BudgetSettings;
   isAuthenticated: boolean;
   hasCompletedOnboarding: boolean;
+  customCategories: CustomCategory[];
+  disabledCategories: string[];
+  expenseCategories: Category[];
+  incomeCategories: Category[];
   addTransaction: (t: Omit<Transaction, 'id'>) => void;
   removeTransaction: (id: string) => void;
   updateTransaction: (id: string, data: Omit<Transaction, 'id'>) => void;
@@ -57,6 +63,10 @@ interface AppContextType {
   signIn: (provider: 'google' | 'apple') => void;
   signOut: () => void;
   completeOnboarding: () => void;
+  addCustomCategory: (cat: Omit<CustomCategory, 'id'>) => CustomCategory;
+  updateCustomCategory: (id: string, data: Partial<Omit<CustomCategory, 'id'>>) => void;
+  removeCustomCategory: (id: string) => void;
+  toggleCategoryEnabled: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -104,6 +114,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [budget, setBudget] = useState<BudgetSettings>(DEFAULT_BUDGET);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
+  const [disabledCategories, setDisabledCategories] = useState<string[]>([]);
 
   useEffect(() => {
     try {
@@ -114,9 +126,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setUserProfile(data.userProfile || DEFAULT_PROFILE);
         setDarkMode(data.darkMode || false);
         setBudget(data.budget || DEFAULT_BUDGET);
-        // Existing users (data pre-dates auth) are treated as signed in
         setIsAuthenticated(data.isAuthenticated ?? true);
         setHasCompletedOnboarding(data.hasCompletedOnboarding ?? true);
+        setCustomCategories(data.customCategories || []);
+        setDisabledCategories(data.disabledCategories || []);
       } else {
         setTransactions(processAutoDebits(generateSampleData()));
       }
@@ -134,8 +147,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [darkMode]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ transactions, userProfile, darkMode, budget, isAuthenticated, hasCompletedOnboarding }));
-  }, [transactions, userProfile, darkMode, budget, isAuthenticated, hasCompletedOnboarding]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      transactions, userProfile, darkMode, budget,
+      isAuthenticated, hasCompletedOnboarding,
+      customCategories, disabledCategories,
+    }));
+  }, [transactions, userProfile, darkMode, budget, isAuthenticated, hasCompletedOnboarding, customCategories, disabledCategories]);
+
+  const expenseCategories = useMemo<Category[]>(() => [
+    ...EXPENSE_CATEGORIES.filter(c => !disabledCategories.includes(c.id)),
+    ...customCategories.filter(c => c.type === 'expense'),
+  ], [disabledCategories, customCategories]);
+
+  const incomeCategories = useMemo<Category[]>(() => [
+    ...INCOME_CATEGORIES.filter(c => !disabledCategories.includes(c.id)),
+    ...customCategories.filter(c => c.type === 'income'),
+  ], [disabledCategories, customCategories]);
 
   const addTransaction = useCallback((t: Omit<Transaction, 'id'>) => {
     const baseId = Date.now().toString();
@@ -227,7 +254,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         minimumFractionDigits: hasCents ? 2 : 0,
         maximumFractionDigits: 2,
       }).format(amount);
-      // Intl outputs "CN¥" for CNY in en-US locale; normalise to "¥"
       return code === 'CNY' ? s.replace('CN¥', '¥') : s;
     } catch {
       const fallback = amount.toLocaleString(undefined, {
@@ -265,6 +291,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [userProfile.currency]);
 
+  const addCustomCategory = useCallback((cat: Omit<CustomCategory, 'id'>) => {
+    const newCat: CustomCategory = { ...cat, id: `custom_${Date.now()}` };
+    setCustomCategories(prev => [...prev, newCat]);
+    return newCat;
+  }, []);
+
+  const updateCustomCategory = useCallback((id: string, data: Partial<Omit<CustomCategory, 'id'>>) => {
+    setCustomCategories(prev => prev.map(c => c.id === id ? { ...c, ...data } : c));
+  }, []);
+
+  const removeCustomCategory = useCallback((id: string) => {
+    setCustomCategories(prev => prev.filter(c => c.id !== id));
+  }, []);
+
+  const toggleCategoryEnabled = useCallback((id: string) => {
+    setDisabledCategories(prev =>
+      prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]
+    );
+  }, []);
+
   return (
     <AppContext.Provider value={{
       transactions,
@@ -273,6 +319,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       budget,
       isAuthenticated,
       hasCompletedOnboarding,
+      customCategories,
+      disabledCategories,
+      expenseCategories,
+      incomeCategories,
       addTransaction,
       removeTransaction,
       updateTransaction,
@@ -287,6 +337,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       signIn,
       signOut,
       completeOnboarding,
+      addCustomCategory,
+      updateCustomCategory,
+      removeCustomCategory,
+      toggleCategoryEnabled,
     }}>
       {children}
     </AppContext.Provider>

@@ -3,13 +3,14 @@ import {
   Moon, Sun, ChevronRight, Camera, Bell, Lock, HelpCircle,
   FileText, LogOut, Star, Trash2, Edit3, TrendingUp, TrendingDown,
   ChevronDown, X, Download, Eye, EyeOff, FileImage, FileType2,
-  Globe, Search,
+  Globe, Search, Tag,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CURRENCIES } from '../types';
 import LegalSheet from '../components/LegalSheet';
 import { computeStreaks, BADGES } from '../utils/achievements';
+import CategoryManagerSheet from '../components/CategoryManagerSheet';
 
 const PW_KEY = 'ledgr_password';
 const DEFAULT_PW = 'ledgr123';
@@ -89,6 +90,7 @@ export default function Profile() {
   const [showCSV, setShowCSV] = useState(false);
   const [showCurrency, setShowCurrency] = useState(false);
   const [currencySearch, setCurrencySearch] = useState('');
+  const [showCategories, setShowCategories] = useState(false);
 
   const [notifEnabled, setNotifEnabled] = useState(true);
   const [notifTransactions, setNotifTransactions] = useState(true);
@@ -467,6 +469,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
         {/* Preferences */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
           <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-4 pt-3 pb-1">Preferences</p>
+          <SettingsRow icon={<Tag size={16} />} label="Categories" onClick={() => setShowCategories(true)} />
           <SettingsRow icon={<Bell size={16} />} label="Notifications" onClick={() => setShowNotifications(true)} />
           <button type="button" onClick={toggleDarkMode}
             className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left">
@@ -680,6 +683,8 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
 
       {showTerms && <LegalSheet type="terms" onClose={() => setShowTerms(false)} />}
       {showPrivacy && <LegalSheet type="privacy" onClose={() => setShowPrivacy(false)} />}
+
+      {showCategories && <CategoryManagerSheet onClose={() => setShowCategories(false)} />}
 
       {/* ── Notifications modal ── */}
       {showNotifications && (

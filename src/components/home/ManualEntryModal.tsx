@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { X, ChevronDown, RefreshCw, Calendar, ImageIcon } from 'lucide-react';
+import { X, ChevronDown, RefreshCw, Calendar, ImageIcon, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, TransactionType, AutoDebitPeriod } from '../../types';
+import { TransactionType, AutoDebitPeriod, CustomCategory } from '../../types';
 import { playCoinSound } from '../../utils/sounds';
+import { QuickAddCategorySheet } from '../CategoryManagerSheet';
 
 interface Props {
   onClose: () => void;
@@ -19,6 +20,29 @@ interface Props {
   };
 }
 
+const DESCRIPTION_SUGGESTIONS: Record<string, string[]> = {
+  food:          ['Breakfast', 'Lunch', 'Dinner', 'Coffee', 'Brunch', 'Snack', 'Takeaway', 'Groceries', 'Meal prep'],
+  transport:     ['Fuel', 'Bus', 'Train', 'Subway', 'Taxi', 'Rideshare', 'Parking', 'Toll', 'Airplane', 'Ferry'],
+  shopping:      ['Clothing', 'Electronics', 'Home goods', 'Online order', 'Department store', 'Gift purchase'],
+  entertainment: ['Movie', 'Concert', 'Sports event', 'Gaming', 'Streaming', 'Books', 'Museum', 'Night out'],
+  health:        ['Gym', 'Doctor visit', 'Pharmacy', 'Dentist', 'Vitamins', 'Therapy', 'Optician', 'Lab test'],
+  housing:       ['Rent', 'Mortgage', 'Repairs', 'Furniture', 'Cleaning', 'HOA fee', 'Renovation'],
+  utilities:     ['Electricity', 'Water', 'Gas', 'Internet', 'Phone bill', 'Trash', 'Cable'],
+  education:     ['Tuition', 'Course', 'Books', 'Stationery', 'Workshop', 'Online class', 'Exam fee'],
+  travel:        ['Flight', 'Hotel', 'Hostel', 'Car rental', 'Visa fee', 'Travel insurance', 'Activities'],
+  personal:      ['Haircut', 'Salon', 'Skincare', 'Spa', 'Gym wear', 'Personal care', 'Grooming'],
+  subscriptions: ['Netflix', 'Spotify', 'Software', 'Cloud storage', 'Magazine', 'App subscription'],
+  insurance:     ['Health insurance', 'Car insurance', 'Life insurance', 'Home insurance', 'Travel insurance'],
+  savings:       ['Emergency fund', 'Retirement', 'Holiday fund', 'Education fund', 'House deposit'],
+  investment:    ['Stocks', 'ETF', 'Crypto', 'Bonds', 'Real estate', 'Index fund'],
+  others:        ['Miscellaneous', 'Gift', 'Charity', 'Fees', 'Other expense'],
+  salary:        ['Monthly salary', 'Base pay', 'Paycheck', 'Wages'],
+  freelance:     ['Design project', 'Consulting', 'Writing', 'Development', 'Photography', 'Contract work'],
+  business:      ['Revenue', 'Sales', 'Invoice payment', 'Client payment', 'Product sale'],
+  gift:          ['Birthday gift', 'Holiday gift', 'Cash gift', 'Gift card'],
+  other_income:  ['Bonus', 'Refund', 'Cashback', 'Side hustle', 'Rental income', 'Dividend'],
+};
+
 const PERIODS: { value: AutoDebitPeriod; label: string }[] = [
   { value: 'daily', label: 'Daily' },
   { value: 'weekly', label: 'Weekly' },
@@ -33,7 +57,7 @@ function todayString() {
 }
 
 export default function ManualEntryModal({ onClose, transactionId, prefill }: Props) {
-  const { addTransaction, updateTransaction, getCurrencySymbol } = useApp();
+  const { addTransaction, updateTransaction, getCurrencySymbol, expenseCategories, incomeCategories } = useApp();
 
   const [type, setType] = useState<TransactionType>(prefill?.type || 'expense');
   const [amount, setAmount] = useState(prefill?.amount ? String(prefill.amount) : '');
@@ -44,9 +68,10 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
   const [period, setPeriod] = useState<AutoDebitPeriod>(prefill?.autoDebitPeriod || 'monthly');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
+  const [showAddCategory, setShowAddCategory] = useState(false);
   const [viewReceipt, setViewReceipt] = useState(false);
 
-  const categories = type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+  const categories = type === 'expense' ? expenseCategories : incomeCategories;
   const selectedCategory = categories.find(c => c.id === category);
 
   function handleSubmit() {
@@ -70,6 +95,12 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
     onClose();
   }
 
+  function handleNewCategoryCreated(cat: CustomCategory) {
+    setShowAddCategory(false);
+    setCategory(cat.id);
+    setShowCategoryDropdown(false);
+  }
+
   return (
     <>
       {/* Backdrop */}
@@ -78,12 +109,12 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
         style={{ background: 'rgba(0,0,0,0.5)' }}
         onClick={(e) => e.target === e.currentTarget && onClose()}
       >
-        {/* Sheet — flex column so header+footer never scroll away */}
+        {/* Sheet */}
         <div
           className="w-full max-w-[430px] bg-white dark:bg-gray-900 rounded-t-3xl animate-slide-up flex flex-col overflow-hidden"
           style={{ maxHeight: '92vh' }}
         >
-          {/* ── Non-scrolling header ── */}
+          {/* Non-scrolling header */}
           <div className="flex-shrink-0">
             <div className="flex justify-center pt-3 pb-1">
               <div className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
@@ -96,7 +127,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
             </div>
           </div>
 
-          {/* ── Scrollable form body — min-h-0 is required so flex-1 can shrink below content size ── */}
+          {/* Scrollable form body */}
           <div className="flex-1 min-h-0 overflow-y-auto px-5 space-y-4 pb-2" style={{ overscrollBehavior: 'contain' }}>
 
             {/* Receipt thumbnail (from capture) */}
@@ -185,7 +216,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
               </button>
 
               {showCategoryDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden z-20 max-h-48 overflow-y-auto scrollbar-hide">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden z-20 max-h-52 overflow-y-auto scrollbar-hide">
                   {categories.map(cat => (
                     <button
                       key={cat.id}
@@ -197,6 +228,16 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
                       {category === cat.id && <span className="ml-auto text-green-600 text-sm">✓</span>}
                     </button>
                   ))}
+                  {/* Add new category */}
+                  <button
+                    onClick={() => { setShowCategoryDropdown(false); setShowAddCategory(true); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 border-t border-gray-100 dark:border-gray-700 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+                  >
+                    <div className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                      <Plus size={11} className="text-green-600" strokeWidth={3} />
+                    </div>
+                    <span className="text-sm font-semibold text-green-600 dark:text-green-400">Add new category</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -213,6 +254,22 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
                 rows={2}
                 className="w-full border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 text-sm bg-gray-50 dark:bg-gray-800 dark:text-white outline-none focus:border-green-500 transition-colors resize-none placeholder:text-gray-300 dark:placeholder:text-gray-600"
               />
+              {/* Category-based quick labels */}
+              {category && DESCRIPTION_SUGGESTIONS[category] && (
+                <div className="flex gap-1.5 flex-wrap mt-2">
+                  {DESCRIPTION_SUGGESTIONS[category].map(label => (
+                    <button key={label} type="button"
+                      onClick={() => setDescription(label)}
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
+                        description === label
+                          ? 'bg-green-600 text-white border-green-600'
+                          : 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-green-400 hover:text-green-600'
+                      }`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Auto debit toggle */}
@@ -262,11 +319,10 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
               )}
             </div>
 
-            {/* Spacer so last field isn't right at the confirm button border */}
             <div className="h-1" />
           </div>
 
-          {/* ── Non-scrolling confirm button ── */}
+          {/* Non-scrolling confirm button */}
           <div className="flex-shrink-0 px-5 pt-3 pb-8 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
             <button
               type="button"
@@ -291,6 +347,15 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
             <X size={20} className="text-white" />
           </button>
         </div>
+      )}
+
+      {/* Quick add category sheet */}
+      {showAddCategory && (
+        <QuickAddCategorySheet
+          defaultType={type}
+          onSave={handleNewCategoryCreated}
+          onCancel={() => setShowAddCategory(false)}
+        />
       )}
     </>
   );

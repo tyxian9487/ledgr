@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Target, TrendingUp, TrendingDown, Search, SlidersHorizontal, X } from 'lucide-react';
+import { Plus, Target, TrendingUp, TrendingDown, Search, SlidersHorizontal, X, CalendarDays, LayoutList, CalendarRange } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import GreenCard from '../components/home/GreenCard';
 import Categories from '../components/home/Categories';
@@ -9,6 +9,8 @@ import { useApp } from '../context/AppContext';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, Transaction } from '../types';
 
 const ALL_CATEGORIES = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
+
+type TxView = 'category' | 'date';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -29,6 +31,8 @@ export default function Home() {
   const [filterMin, setFilterMin] = useState('');
   const [filterMax, setFilterMax] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
+  const [txView, setTxView] = useState<TxView>('category');
+  const [showCalendar, setShowCalendar] = useState(false);
 
   function handlePrev() {
     if (month === 0) { setYear(y => y - 1); setMonth(11); }
@@ -299,17 +303,36 @@ export default function Home() {
         </div>
       )}
 
-      {/* Categories */}
-      <div className="mx-4 mt-5 mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-          {activeFilterCount > 0 ? 'Filtered Results' : 'Categories'}
+      {/* Categories / Transactions header */}
+      <div className="mx-4 mt-5 mb-3 flex items-center gap-2">
+        <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex-1">
+          {activeFilterCount > 0 ? 'Filtered Results' : (txView === 'category' ? 'Categories' : 'By Date')}
         </h2>
         {activeFilterCount > 0 && (
-          <button type="button" onClick={clearFilters} className="text-xs text-green-600 font-semibold">Clear</button>
+          <button type="button" onClick={clearFilters} className="text-xs text-green-600 font-semibold mr-1">Clear</button>
+        )}
+        {/* View toggle */}
+        <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-0.5 gap-0.5">
+          <button type="button" onClick={() => setTxView('category')}
+            className={`w-8 h-7 rounded-[9px] flex items-center justify-center transition-all ${txView === 'category' ? 'bg-white dark:bg-gray-700 shadow-sm' : ''}`}>
+            <LayoutList size={14} className={txView === 'category' ? 'text-green-600' : 'text-gray-400'} />
+          </button>
+          <button type="button" onClick={() => setTxView('date')}
+            className={`w-8 h-7 rounded-[9px] flex items-center justify-center transition-all ${txView === 'date' ? 'bg-white dark:bg-gray-700 shadow-sm' : ''}`}>
+            <CalendarDays size={14} className={txView === 'date' ? 'text-green-600' : 'text-gray-400'} />
+          </button>
+        </div>
+        {/* Calendar icon — only in date view */}
+        {txView === 'date' && (
+          <button type="button" onClick={() => setShowCalendar(true)}
+            className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+            <CalendarRange size={14} className="text-gray-500 dark:text-gray-400" />
+          </button>
         )}
       </div>
 
-      <Categories year={year} month={month} filterFn={filterFn} />
+      <Categories year={year} month={month} filterFn={filterFn} view={txView}
+        showCalendar={showCalendar} onCloseCalendar={() => setShowCalendar(false)} />
 
       {showEntry && <ManualEntryModal onClose={() => setShowEntry(false)} />}
     </div>

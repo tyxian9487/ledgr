@@ -211,3 +211,31 @@ export const INCOME_CATEGORIES = [
   { id: 'gift', label: 'Gift', icon: 'Gift', color: '#4ade80' },
   { id: 'other_income', label: 'Other Income', icon: 'Plus', color: '#86efac' },
 ];
+
+export interface CustomCategory {
+  id: string;
+  label: string;
+  icon: string;
+  color: string;
+  type: 'expense' | 'income';
+}
+
+export const ICON_OPTIONS = [
+  'Coffee', 'Utensils', 'UtensilsCrossed', 'Wine', 'Pizza',
+  'ShoppingCart', 'ShoppingBag', 'Package', 'Tag', 'Box',
+  'Car', 'Bike', 'Bus', 'Train', 'Plane', 'Ship',
+  'Music', 'Headphones', 'Gamepad2', 'Film', 'Tv', 'BookOpen',
+  'Heart', 'Activity', 'Dumbbell', 'Pill',
+  'Home', 'Wifi', 'Wrench', 'Zap', 'Lamp',
+  'Briefcase', 'Laptop', 'Building2', 'Phone', 'CreditCard', 'Wallet', 'TrendingUp', 'PiggyBank',
+  'Sparkles', 'Star', 'Smile', 'Camera', 'Watch', 'Gift',
+  'Sun', 'Moon', 'Globe', 'Leaf', 'Bell', 'Bookmark', 'Shield',
+  'GraduationCap', 'DollarSign', 'MoreHorizontal', 'RefreshCw', 'Plus',
+];
+
+export const COLOR_OPTIONS = [
+  '#f97316', '#ef4444', '#ec4899', '#a855f7', '#8b5cf6',
+  '#3b82f6', '#0ea5e9', '#06b6d4', '#14b8a6', '#22c55e',
+  '#16a34a', '#eab308', '#d97706', '#f43f5e', '#64748b',
+  '#94a3b8', '#1d4ed8', '#7c3aed', '#be185d', '#15803d',
+];
