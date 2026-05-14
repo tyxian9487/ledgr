@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ArrowLeft, Sparkles, RotateCcw, ChevronDown, ChevronUp,
   Home, UtensilsCrossed, Car, Heart, Zap, Tv, ShoppingBag,
@@ -179,6 +179,12 @@ export default function BudgetPage() {
   const [investMode, setInvestMode] = useState<'pct' | 'fixed'>(budget.investmentGoal?.mode ?? 'pct');
   const [investValue, setInvestValue] = useState(initialInvestValue);
 
+  const [recoIsHighGoal, setRecoIsHighGoal] = useState(false);
+  const [showRecoTooltip, setShowRecoTooltip] = useState(
+    () => !!localStorage.getItem('ledgr_onboarding_reco') && !localStorage.getItem('ledgr_reco_tooltip_seen')
+  );
+  const recoApplied = useRef(false);
+
   const currentSavingsValue = savingsValue;
   const currentInvestValue = investValue;
 
@@ -219,12 +225,40 @@ export default function BudgetPage() {
 
   useEffect(() => {
     if (budget.investmentGoal && income > 0) {
-      const value = budget.investmentGoal.mode === 'pct' 
-        ? (budget.investmentGoal.amount / income) * 100 
+      const value = budget.investmentGoal.mode === 'pct'
+        ? (budget.investmentGoal.amount / income) * 100
         : budget.investmentGoal.amount;
       setInvestValue(String(Math.round(value)));
     }
   }, [budget.investmentGoal, income]);
+
+  useEffect(() => {
+    if (recoApplied.current) return;
+    recoApplied.current = true;
+    const raw = localStorage.getItem('ledgr_onboarding_reco');
+    if (!raw) return;
+    try {
+      const reco = JSON.parse(raw);
+      setRecoIsHighGoal(reco.isHighGoal ?? false);
+      if (budget.allocations.length > 0) return;
+      setSavingsEnabled(reco.enableSavings ?? false);
+      if (reco.enableSavings) {
+        setSavingsMode('pct');
+        setSavingsValue(String(reco.savingsPct ?? ''));
+      }
+      setInvestEnabled(reco.enableInvestment ?? false);
+      if (reco.enableInvestment) {
+        setInvestMode('pct');
+        setInvestValue(String(reco.investPct ?? ''));
+      }
+    } catch { /* malformed reco data */ }
+  }, [budget.allocations.length]);
+
+  function dismissRecoTooltip() {
+    localStorage.setItem('ledgr_reco_tooltip_seen', '1');
+    setShowRecoTooltip(false);
+  }
+
   const totalPct = allocations.reduce((s, a) => s + a.percentage, 0);
 
   const txs = getMonthTransactions(NOW.getFullYear(), NOW.getMonth());
@@ -672,6 +706,42 @@ export default function BudgetPage() {
           </div>
         )}
       </div>
+
+      {showRecoTooltip && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          onClick={dismissRecoTooltip}
+        >
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div
+            className="relative w-full max-w-[430px] px-4 pb-8"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Upward arrow pointing at the goals section above */}
+            <div className="flex justify-center">
+              <div className="w-5 h-5 bg-white dark:bg-gray-900 border-l border-t border-gray-100 dark:border-gray-800 rotate-45 translate-y-2.5" />
+            </div>
+            <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-2xl border border-gray-100 dark:border-gray-800">
+              <div className="text-3xl mb-2 text-center">{recoIsHighGoal ? '🎯' : '🌱'}</div>
+              <p className="text-sm font-bold dark:text-white mb-1.5 text-center">
+                {recoIsHighGoal ? 'High Achiever Detected!' : 'Starting Your Journey?'}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mb-4 text-center">
+                {recoIsHighGoal
+                  ? "You're very disciplined, so we've set higher savings & investment goals for you. You have what it takes — don't hold back on ambitious targets!"
+                  : "We recommend starting slowly with a conservative savings goal. Building the habit first matters more than the amount — you can always increase it later!"}
+              </p>
+              <button
+                type="button"
+                onClick={dismissRecoTooltip}
+                className="w-full py-3 rounded-2xl bg-green-600 text-white font-bold text-sm active:scale-[0.98] transition-all shadow-md shadow-green-600/20"
+              >
+                Got it!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
