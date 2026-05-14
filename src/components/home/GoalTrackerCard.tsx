@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowRightLeft, PiggyBank, TrendingUp } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import StatusCelebration from './StatusCelebration';
+import StatusCelebration from '../StatusCelebration';
 
 interface Props {
   year: number;
@@ -53,7 +53,7 @@ export default function GoalTrackerCard({ year, month }: Props) {
   const currentGoalData = actualCurrentGoal === 'savings' ? savingsGoal : investmentGoal;
   const goalAmount = currentGoalData?.amount || 0;
   const progress = goalAmount > 0 ? Math.min((actualAmount / goalAmount) * 100, 100) : 0;
-  const isCompleted = progress >= 100;
+  const isCompleted = progress >= 100 && goalAmount > 0;
 
   // Trigger celebration when goal is reached
   useEffect(() => {

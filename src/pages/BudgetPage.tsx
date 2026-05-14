@@ -157,6 +157,8 @@ export default function BudgetPage() {
   const [showGoals, setShowGoals] = useState(true);
   const [activeSlice, setActiveSlice] = useState<string | null>(null);
 
+  const income = parseFloat(incomeInput) || 0;
+
   const [savingsEnabled, setSavingsEnabled] = useState(budget.savingsGoal?.enabled ?? false);
   const [savingsMode, setSavingsMode] = useState<'pct' | 'fixed'>(budget.savingsGoal?.mode ?? 'pct');
   const [savingsValue, setSavingsValue] = useState('');
@@ -182,8 +184,6 @@ export default function BudgetPage() {
       setInvestValue(String(Math.round(value)));
     }
   }, [budget.investmentGoal, income]);
-
-  const income = parseFloat(incomeInput) || 0;
   const totalPct = allocations.reduce((s, a) => s + a.percentage, 0);
 
   const txs = getMonthTransactions(NOW.getFullYear(), NOW.getMonth());
