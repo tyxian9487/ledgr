@@ -10,6 +10,7 @@ interface Slice {
 interface Props {
   slices: Slice[];
   total: number;
+  formatCurrency?: (n: number) => string;
 }
 
 function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
@@ -24,7 +25,8 @@ function arcPath(cx: number, cy: number, r: number, startAngle: number, endAngle
   return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 0 ${end.x} ${end.y}`;
 }
 
-export default function DonutChart({ slices, total }: Props) {
+export default function DonutChart({ slices, total, formatCurrency }: Props) {
+  const fmt = formatCurrency ?? ((n: number) => `$${n.toLocaleString()}`);
   const [activeSlice, setActiveSlice] = useState<string | null>(null);
 
   const cx = 80, cy = 80, outerR = 68, innerR = 44;
@@ -77,7 +79,7 @@ export default function DonutChart({ slices, total }: Props) {
           <span className="text-[9px] text-white/70 font-medium leading-tight">Total</span>
           <span className="text-[9px] text-white/70 font-medium leading-tight">Expenses</span>
           <span className="text-white font-bold text-sm leading-tight mt-0.5">
-            ${total.toLocaleString()}
+            {fmt(total)}
           </span>
         </div>
       </div>
@@ -88,7 +90,7 @@ export default function DonutChart({ slices, total }: Props) {
           <div className="flex items-center gap-2 glass rounded-full px-3 py-1">
             <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: active.color }} />
             <span className="text-white text-xs font-medium">{active.label}</span>
-            <span className="text-white/80 text-xs">${active.amount.toLocaleString()}</span>
+            <span className="text-white/80 text-xs">{fmt(active.amount)}</span>
           </div>
         )}
       </div>

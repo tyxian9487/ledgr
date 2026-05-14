@@ -77,3 +77,30 @@
 .animate-fade-in {
   animation: fade-in 0.2s ease-out;
 }
+
+@keyframes coin-float {
+  0%, 100% { transform: translateY(0px) rotate(-3deg) scale(1); }
+  50% { transform: translateY(-18px) rotate(3deg) scale(1.04); }
+}
+
+@keyframes sparkle-twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.3) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+
+@keyframes badge-pop {
+  0% { transform: scale(0) rotate(-15deg); opacity: 0; }
+  65% { transform: scale(1.25) rotate(6deg); opacity: 1; }
+  82% { transform: scale(0.92) rotate(-2deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes celebration-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.animate-coin-float         { animation: coin-float 2.8s ease-in-out infinite; }
+.animate-sparkle            { animation: sparkle-twinkle 2s ease-in-out infinite; }
+.animate-badge-pop          { animation: badge-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.animate-celebration-in     { animation: celebration-in 0.3s ease-out; }

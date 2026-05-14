@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { EXPENSE_CATEGORIES, FinancialStatus } from '../../types';
 import DonutChart from './DonutChart';
 import type { Slice } from './DonutChart';
+import StatusCelebration from '../StatusCelebration';
 
 interface Props {
   year: number;
@@ -97,9 +98,10 @@ function drawDonutOnCanvas(
   }
 }
 
-export default function GreenCard({ year, month, onPrev, onNext }: Props) {
-  const { getMonthTransactions, getMonthIncome, getMonthExpenses } = useApp();
+export default function GreenCard({ year, month, onPrev, onNext, onYearChange }: Props) {
+  const { getMonthTransactions, getMonthIncome, getMonthExpenses, formatCurrency } = useApp();
   const [sharing, setSharing] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   const txs = getMonthTransactions(year, month);
   const totalIncome = getMonthIncome(year, month);
@@ -211,7 +213,7 @@ export default function GreenCard({ year, month, onPrev, onNext }: Props) {
       ctx.fillText('Expenses', chartCX, chartCY - 11);
       ctx.fillStyle = 'white';
       ctx.font = 'bold 17px -apple-system, system-ui, sans-serif';
-      ctx.fillText(`$${totalExpenses.toLocaleString()}`, chartCX, chartCY + 10);
+      ctx.fillText(formatCurrency(totalExpenses), chartCX, chartCY + 10);
 
       // Category list
       const catStartX = chartCX + outerR + 30;
@@ -238,7 +240,7 @@ export default function GreenCard({ year, month, onPrev, onNext }: Props) {
         ctx.fillStyle = 'white';
         ctx.font = 'bold 14px -apple-system, system-ui, sans-serif';
         ctx.textAlign = 'right';
-        ctx.fillText(`$${slice.amount.toLocaleString()}`, W - PAD, rowY + 13);
+        ctx.fillText(formatCurrency(slice.amount), W - PAD, rowY + 13);
       });
 
       if (slices.length === 0) {
@@ -262,7 +264,7 @@ export default function GreenCard({ year, month, onPrev, onNext }: Props) {
       ctx.fillText('INCOME', PAD + 14, boxY + 24);
       ctx.fillStyle = 'white';
       ctx.font = 'bold 22px -apple-system, system-ui, sans-serif';
-      ctx.fillText(`$${totalIncome.toLocaleString()}`, PAD + 14, boxY + 54);
+      ctx.fillText(formatCurrency(totalIncome), PAD + 14, boxY + 54);
 
       const remX = PAD + boxW + 12;
       ctx.fillStyle = 'rgba(255,255,255,0.15)';
@@ -274,7 +276,7 @@ export default function GreenCard({ year, month, onPrev, onNext }: Props) {
       ctx.fillText('REMAINING', remX + 14, boxY + 24);
       ctx.fillStyle = remaining >= 0 ? 'white' : '#fca5a5';
       ctx.font = 'bold 22px -apple-system, system-ui, sans-serif';
-      ctx.fillText(`$${Math.abs(remaining).toLocaleString()}`, remX + 14, boxY + 54);
+      ctx.fillText(formatCurrency(Math.abs(remaining)), remX + 14, boxY + 54);
 
       // ── Footer ──
       ctx.fillStyle = 'rgba(255,255,255,0.3)';
@@ -307,21 +309,25 @@ export default function GreenCard({ year, month, onPrev, onNext }: Props) {
   }
 
   return (
+    <>
     <div
       className="mx-4 mt-4 rounded-3xl overflow-hidden"
       style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 40%, #166534 100%)' }}
     >
-      {/* Header: fixed date, centered month navigation, year dropdown arrow */}
-      <div className="relative flex items-center justify-between px-5 pt-4 pb-2">
-        <div className="rounded-2xl border border-white/25 bg-white/10 px-4 py-2 text-white text-sm font-semibold tracking-wide shadow-sm">
+      {/* Header: date pill | centered month nav | year dropdown — all in one flex row */}
+      <div className="flex items-center px-5 pt-4 pb-2 gap-2">
+        {/* Left — today's date pill */}
+        <div className="rounded-2xl border border-white/25 bg-white/10 px-4 py-2 text-white text-sm font-semibold tracking-wide shadow-sm flex-shrink-0">
           {todayLabel}
         </div>
-        <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2">
+
+        {/* Center — month navigation, takes remaining space and centers content */}
+        <div className="flex flex-1 items-center justify-center gap-2">
           <button onClick={onPrev} className="w-7 h-7 rounded-full glass flex items-center justify-center active:scale-90 transition-transform">
             <ChevronLeft size={16} className="text-white" />
           </button>
-          <span className="text-white font-semibold text-sm tracking-wide uppercase">
-            {MONTHS[month]}
+          <span className="text-white font-semibold text-sm tracking-wide uppercase w-10 text-center">
+            {MONTHS[month].slice(0, 3)}
           </span>
           <button
             onClick={onNext}
@@ -331,7 +337,9 @@ export default function GreenCard({ year, month, onPrev, onNext }: Props) {
             <ChevronRight size={16} className="text-white" />
           </button>
         </div>
-        <div className="relative rounded-2xl border border-white/25 bg-white/10 shadow-sm">
+
+        {/* Right — year dropdown */}
+        <div className="relative rounded-2xl border border-white/25 bg-white/10 shadow-sm flex-shrink-0">
           <select
             value={year}
             onChange={e => onYearChange(Number(e.target.value))}
@@ -346,8 +354,11 @@ export default function GreenCard({ year, month, onPrev, onNext }: Props) {
         </div>
       </div>
 
-      {/* Financial status glass box */}
-      <div className="mx-4 mb-3 rounded-2xl glass p-3 flex items-center gap-3">
+      {/* Financial status glass box — tap to see celebration */}
+      <div
+        className="mx-4 mb-3 rounded-2xl glass p-3 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform"
+        onClick={() => setShowCelebration(true)}
+      >
         <Coin />
         <div>
           <p className="text-white/60 text-[10px] uppercase tracking-wider font-medium">Financial Status</p>
@@ -360,39 +371,45 @@ export default function GreenCard({ year, month, onPrev, onNext }: Props) {
               {status === 'excellent' ? '90+' : status === 'sustained' ? '60–79' : '<60'}
             </p>
           </div>
-          <button
-            onClick={handleShare}
-            disabled={sharing}
-            className="w-9 h-9 rounded-full glass flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
-            title="Share financial status"
-          >
-            {sharing
-              ? <div className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" />
-              : <Share2 size={14} className="text-white" />
-            }
-          </button>
+          <div onClick={e => e.stopPropagation()}>
+            <button
+              onClick={handleShare}
+              disabled={sharing}
+              className="w-9 h-9 rounded-full glass flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
+              title="Share financial status"
+            >
+              {sharing
+                ? <div className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" />
+                : <Share2 size={14} className="text-white" />
+              }
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Donut chart */}
       <div className="flex justify-center pb-2">
-        <DonutChart slices={slices} total={totalExpenses} />
+        <DonutChart slices={slices} total={totalExpenses} formatCurrency={formatCurrency} />
       </div>
 
       {/* Income / Remaining row */}
       <div className="mx-4 mb-4 grid grid-cols-2 gap-3">
         <div className="glass rounded-2xl p-3">
           <p className="text-white/60 text-[10px] uppercase tracking-wider mb-1">Income</p>
-          <p className="text-white font-bold text-base">${totalIncome.toLocaleString()}</p>
+          <p className="text-white font-bold text-base">{formatCurrency(totalIncome)}</p>
         </div>
         <div className="glass rounded-2xl p-3">
           <p className="text-white/60 text-[10px] uppercase tracking-wider mb-1">Remaining</p>
           <p className={`font-bold text-base ${remaining >= 0 ? 'text-white' : 'text-red-300'}`}>
-            ${Math.abs(remaining).toLocaleString()}
+            {formatCurrency(Math.abs(remaining))}
             {remaining < 0 && <span className="text-[10px] ml-1">deficit</span>}
           </p>
         </div>
       </div>
     </div>
+    {showCelebration && (
+      <StatusCelebration status={status} onClose={() => setShowCelebration(false)} />
+    )}
+    </>
   );
 }

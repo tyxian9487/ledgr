@@ -19,7 +19,7 @@ export default function Home() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const [showEntry, setShowEntry] = useState(false);
-  const { budget, getMonthExpenses, userProfile, transactions } = useApp();
+  const { budget, getMonthExpenses, userProfile, transactions, formatCurrency } = useApp();
 
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -235,7 +235,7 @@ export default function Home() {
                       <p className="text-[10px] text-gray-400">{cat?.label} · {formatDate(t.date)}</p>
                     </div>
                     <span className={`text-xs font-bold flex-shrink-0 ${t.type === 'income' ? 'text-green-600' : 'text-gray-700 dark:text-gray-300'}`}>
-                      {t.type === 'income' ? '+' : '-'}${t.amount.toLocaleString()}
+                      {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
                     </span>
                   </div>
                 );

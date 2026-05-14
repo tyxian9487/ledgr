@@ -73,8 +73,12 @@ function analyzeAllocations(income: number): BudgetAllocation[] {
   }));
 }
 
-function MiniDonut({ allocations, size = 140 }: { allocations: BudgetAllocation[]; size?: number }) {
-  const [activeSlice, setActiveSlice] = useState<string | null>(null);
+function MiniDonut({ allocations, size = 140, activeSlice, onSliceClick }: {
+  allocations: BudgetAllocation[];
+  size?: number;
+  activeSlice: string | null;
+  onSliceClick: (id: string | null) => void;
+}) {
   const cx = size / 2, cy = size / 2;
   const outerR = size * 0.44, innerR = size * 0.27;
   const active = allocations.filter(a => a.percentage > 0);
@@ -103,50 +107,37 @@ function MiniDonut({ allocations, size = 140 }: { allocations: BudgetAllocation[
     return path;
   });
 
-  const selected = active.find(a => a.category === activeSlice) || null;
-
   if (active.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2">
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          <circle cx={cx} cy={cy} r={(outerR + innerR) / 2} fill="none" stroke="#e5e7eb" strokeWidth={outerR - innerR} />
-        </svg>
-      </div>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={cx} cy={cy} r={(outerR + innerR) / 2} fill="none" stroke="#e5e7eb" strokeWidth={outerR - innerR} />
+      </svg>
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {active.length === 1 ? (
-          <circle cx={cx} cy={cy} r={(outerR + innerR) / 2} fill="none" stroke={active[0].color} strokeWidth={outerR - innerR} />
-        ) : (
-          arcs.map((arc, i) => (
-            <path
-              key={arc.category}
-              d={arc.d}
-              fill={arc.color}
-              opacity={activeSlice && activeSlice !== arc.category ? 0.4 : 1}
-              style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
-              onClick={() => setActiveSlice(activeSlice === arc.category ? null : arc.category)}
-            />
-          ))
-        )}
-      </svg>
-      {selected && (
-        <div className="flex items-center gap-2 glass rounded-full px-3 py-1">
-          <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: selected.color }} />
-          <span className="text-xs text-white font-medium">{selected.label}</span>
-          <span className="text-xs text-white/80">{selected.percentage}%</span>
-        </div>
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {active.length === 1 ? (
+        <circle cx={cx} cy={cy} r={(outerR + innerR) / 2} fill="none" stroke={active[0].color} strokeWidth={outerR - innerR} />
+      ) : (
+        arcs.map(arc => (
+          <path
+            key={arc.category}
+            d={arc.d}
+            fill={arc.color}
+            opacity={activeSlice && activeSlice !== arc.category ? 0.4 : 1}
+            style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
+            onClick={() => onSliceClick(activeSlice === arc.category ? null : arc.category)}
+          />
+        ))
       )}
-    </div>
+    </svg>
   );
 }
 
 export default function BudgetPage() {
   const navigate = useNavigate();
-  const { budget, updateBudget, getMonthTransactions, getMonthIncome } = useApp();
+  const { budget, updateBudget, getMonthTransactions, getMonthIncome, formatCurrency, getCurrencySymbol } = useApp();
 
   const actualIncome = getMonthIncome(NOW.getFullYear(), NOW.getMonth());
 
@@ -160,10 +151,13 @@ export default function BudgetPage() {
   );
   const [analyzed, setAnalyzed] = useState(budget.allocations.length > 0);
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+  const [showAllAdjust, setShowAllAdjust] = useState(false);
 
   const [incomeFixed, setIncomeFixed] = useState(budget.incomeFixed ?? false);
+  const [showGoals, setShowGoals] = useState(true);
+  const [activeSlice, setActiveSlice] = useState<string | null>(null);
 
-  const [savingsEnabled, setSavingsEnabled] = useState(true);
+  const [savingsEnabled, setSavingsEnabled] = useState(false);
   const [savingsMode, setSavingsMode] = useState<'pct' | 'fixed'>('pct');
   const [savingsValue, setSavingsValue] = useState('');
   const [investEnabled, setInvestEnabled] = useState(false);
@@ -248,9 +242,9 @@ export default function BudgetPage() {
   const displayAllocations: BudgetAllocation[] = allocations;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-10">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-900 px-5 pt-12 pb-4 flex items-center gap-3 border-b border-gray-100 dark:border-gray-800">
+    <div className="flex flex-col bg-gray-50 dark:bg-gray-950 overflow-hidden" style={{ height: '100dvh' }}>
+      {/* Header — non-scrolling */}
+      <div className="flex-shrink-0 bg-white dark:bg-gray-900 px-5 pt-12 pb-4 flex items-center gap-3 border-b border-gray-100 dark:border-gray-800">
         <button type="button" onClick={() => navigate('/')}
           className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
           <ArrowLeft size={18} className="text-gray-600 dark:text-gray-300" />
@@ -261,7 +255,8 @@ export default function BudgetPage() {
         </div>
       </div>
 
-      <div className="px-5 pt-5 space-y-4">
+      {/* Scrollable content */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-5 pb-4 space-y-4" style={{ overscrollBehavior: 'contain' }}>
 
         {/* Income input */}
         <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800">
@@ -286,7 +281,7 @@ export default function BudgetPage() {
             </p>
           )}
           <div className="flex items-center border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 focus-within:border-green-500 transition-colors bg-gray-50 dark:bg-gray-800 gap-2 mb-4">
-            <span className="text-gray-400 font-semibold text-lg">$</span>
+            <span className="text-gray-400 font-semibold text-lg">{getCurrencySymbol()}</span>
             <input
               type="number"
               placeholder="e.g. 5000"
@@ -313,11 +308,27 @@ export default function BudgetPage() {
 
         {/* Savings & Investment Goal card */}
         <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden">
-          <div className="px-5 pt-4 pb-3 border-b border-gray-50 dark:border-gray-800">
-            <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">Savings & Investment Goals</p>
-            <p className="text-xs text-gray-400 mt-0.5 text-left">Optional — set a personal target alongside your budget</p>
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowGoals(v => !v)}
+            className="w-full px-5 pt-4 pb-3 flex items-center justify-between border-b border-gray-50 dark:border-gray-800"
+          >
+            <div className="text-left">
+              <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">Savings & Investment Goals</p>
+              {!showGoals && (savingsAmt > 0 || investAmt > 0) ? (
+                <p className="text-xs text-green-600 dark:text-green-400 mt-0.5 font-medium">
+                  {savingsEnabled && savingsAmt > 0 ? `Savings ${formatCurrency(Math.round(savingsAmt))}/mo` : ''}
+                  {savingsEnabled && savingsAmt > 0 && investEnabled && investAmt > 0 ? ' · ' : ''}
+                  {investEnabled && investAmt > 0 ? `Invest ${formatCurrency(Math.round(investAmt))}/mo` : ''}
+                </p>
+              ) : (
+                <p className="text-xs text-gray-400 mt-0.5">Optional — set a personal target</p>
+              )}
+            </div>
+            <ChevronDown size={16} className={`text-gray-400 flex-shrink-0 ml-2 transition-transform duration-200 ${showGoals ? 'rotate-180' : ''}`} />
+          </button>
 
+          {showGoals && (<>
           {/* Savings goal */}
           <div className="px-5 py-4 border-b border-gray-50 dark:border-gray-800">
             <div className="flex items-center justify-between mb-3">
@@ -340,22 +351,24 @@ export default function BudgetPage() {
                   </button>
                   <button type="button" onClick={() => setSavingsMode('fixed')}
                     className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors ${savingsMode === 'fixed' ? 'bg-green-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
-                    Fixed $
+                    Fixed {getCurrencySymbol()}
                   </button>
                 </div>
                 <div className="flex items-center border border-gray-100 dark:border-gray-700 rounded-xl px-3 py-2 gap-2 bg-gray-50 dark:bg-gray-800">
-                  <span className="text-gray-400 text-sm">{savingsMode === 'pct' ? '%' : '$'}</span>
+                  <span className="text-gray-400 text-sm">{savingsMode === 'pct' ? '%' : getCurrencySymbol()}</span>
                   <input type="number" placeholder={savingsMode === 'pct' ? '20' : '1000'} value={savingsValue}
                     onChange={e => setSavingsValue(e.target.value)}
                     className="flex-1 bg-transparent text-sm font-bold outline-none dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-600"
                     inputMode="decimal" />
-                  {savingsAmt > 0 && (
-                    <span className="text-xs text-green-600 font-semibold">${Math.round(savingsAmt).toLocaleString()}/mo</span>
-                  )}
                 </div>
+                {savingsAmt > 0 && (
+                  <p className="text-xs text-green-600 dark:text-green-400 font-semibold mt-1.5 text-right">
+                    = {formatCurrency(Math.round(savingsAmt))} / mo
+                  </p>
+                )}
                 {analyzed && savingsPct > 0 && (
                   <p className="text-xs text-gray-400 mt-2 text-left">
-                    AI suggests <span className="text-green-600 font-semibold">{savingsPct}%</span> (${Math.round(income * savingsPct / 100).toLocaleString()}/mo) for savings
+                    AI suggests <span className="text-green-600 font-semibold">{savingsPct}%</span> ({formatCurrency(Math.round(income * savingsPct / 100))}/mo) for savings
                   </p>
                 )}
               </>
@@ -384,22 +397,25 @@ export default function BudgetPage() {
                   </button>
                   <button type="button" onClick={() => setInvestMode('fixed')}
                     className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors ${investMode === 'fixed' ? 'bg-purple-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
-                    Fixed $
+                    Fixed {getCurrencySymbol()}
                   </button>
                 </div>
                 <div className="flex items-center border border-gray-100 dark:border-gray-700 rounded-xl px-3 py-2 gap-2 bg-gray-50 dark:bg-gray-800">
-                  <span className="text-gray-400 text-sm">{investMode === 'pct' ? '%' : '$'}</span>
+                  <span className="text-gray-400 text-sm">{investMode === 'pct' ? '%' : getCurrencySymbol()}</span>
                   <input type="number" placeholder={investMode === 'pct' ? '10' : '500'} value={investValue}
                     onChange={e => setInvestValue(e.target.value)}
                     className="flex-1 bg-transparent text-sm font-bold outline-none dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-600"
                     inputMode="decimal" />
-                  {investAmt > 0 && (
-                    <span className="text-xs text-purple-600 font-semibold">${Math.round(investAmt).toLocaleString()}/mo</span>
-                  )}
                 </div>
+                {investAmt > 0 && (
+                  <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold mt-1.5 text-right">
+                    = {formatCurrency(Math.round(investAmt))} / mo
+                  </p>
+                )}
               </>
             )}
           </div>
+          </>)}
         </div>
 
         {/* Donut + total */}
@@ -414,19 +430,37 @@ export default function BudgetPage() {
             {(savingsAmt > 0 || investAmt > 0) && income > 0 && (
               <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-xl">
                 <span className="text-xs text-gray-500 dark:text-gray-400 flex-1">Spendable after goals</span>
-                <span className="text-xs font-bold text-green-700 dark:text-green-400">${Math.round(netIncome).toLocaleString()}</span>
-                <span className="text-[10px] text-gray-400">/ ${Math.round(income).toLocaleString()}</span>
+                <span className="text-xs font-bold text-green-700 dark:text-green-400">{formatCurrency(Math.round(netIncome))}</span>
+                <span className="text-[10px] text-gray-400">/ {formatCurrency(Math.round(income))}</span>
               </div>
             )}
-            <div className="flex flex-col items-center">
-              <div className="relative">
-                <MiniDonut allocations={displayAllocations} size={140} />
+            <div className="flex flex-col items-center gap-2">
+              {/* Fixed-size wrapper so inset-0 always aligns with the SVG circle */}
+              <div className="relative" style={{ width: 140, height: 140 }}>
+                <MiniDonut
+                  allocations={displayAllocations}
+                  size={140}
+                  activeSlice={activeSlice}
+                  onSliceClick={setActiveSlice}
+                />
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-[10px] text-gray-400 font-medium">Spendable</span>
-                  <span className="text-base font-black dark:text-white">${Math.round(chartAmount).toLocaleString()}</span>
+                  <span className="text-base font-black dark:text-white">{formatCurrency(Math.round(chartAmount))}</span>
                 </div>
               </div>
-              <p className="text-[11px] text-gray-400 mt-3">Tap a slice to view category details</p>
+              {/* Tooltip rendered outside the fixed container so it never shifts center text */}
+              {(() => {
+                const sel = displayAllocations.find(a => a.categoryId === activeSlice);
+                return sel ? (
+                  <div className="flex items-center gap-2 glass rounded-full px-3 py-1">
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: sel.color }} />
+                    <span className="text-xs text-white font-medium">{sel.label}</span>
+                    <span className="text-xs text-white/80">{sel.percentage}%</span>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-gray-400">Tap a slice to view category details</p>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -443,7 +477,7 @@ export default function BudgetPage() {
               </button>
             </div>
 
-            {allocations.map((alloc, idx) => {
+            {(showAllAdjust ? allocations : allocations.slice(0, 5)).map((alloc, idx) => {
               const group = BUDGET_GROUPS[idx];
               const { Icon } = group;
               const budgetAmt = netIncome > 0 ? Math.round(netIncome * alloc.percentage / 100) : 0;
@@ -464,7 +498,7 @@ export default function BudgetPage() {
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-bold" style={{ color: alloc.color }}>{alloc.percentage}%</span>
                           {budgetAmt > 0 && (
-                            <span className="text-xs text-gray-400">${budgetAmt.toLocaleString()}</span>
+                            <span className="text-xs text-gray-400">{formatCurrency(budgetAmt)}</span>
                           )}
                         </div>
                       </div>
@@ -491,9 +525,9 @@ export default function BudgetPage() {
                       </div>
                       {budgetAmt > 0 && (
                         <div className="flex justify-between text-xs mt-2">
-                          <span className="text-gray-400">Budget: <span className="font-semibold dark:text-white">${budgetAmt.toLocaleString()}</span></span>
+                          <span className="text-gray-400">Budget: <span className="font-semibold dark:text-white">{formatCurrency(budgetAmt)}</span></span>
                           <span className={over ? 'text-red-500 font-semibold' : 'text-green-600 font-semibold'}>
-                            Actual: ${actual.toLocaleString()} {over ? '▲ Over' : '✓ OK'}
+                            Actual: {formatCurrency(actual)} {over ? '▲ Over' : '✓ OK'}
                           </span>
                         </div>
                       )}
@@ -502,6 +536,18 @@ export default function BudgetPage() {
                 </div>
               );
             })}
+
+            {allocations.length > 5 && (
+              <button
+                type="button"
+                onClick={() => setShowAllAdjust(v => !v)}
+                className="w-full py-3 border-t border-gray-100 dark:border-gray-800 text-[12px] font-semibold text-green-600 dark:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                {showAllAdjust
+                  ? 'Show less'
+                  : `Show ${allocations.length - 5} more categories`}
+              </button>
+            )}
           </div>
         )}
 
@@ -519,7 +565,7 @@ export default function BudgetPage() {
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-medium dark:text-white">{a.label}</span>
                     <span className={`text-xs font-bold ${over ? 'text-red-500' : 'text-green-600'}`}>
-                      ${actual} / ${budgetAmt}
+                      {formatCurrency(actual)} / {formatCurrency(budgetAmt)}
                     </span>
                   </div>
                   <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
@@ -535,7 +581,10 @@ export default function BudgetPage() {
           </div>
         )}
 
-        {/* Save button */}
+      </div>
+
+      {/* Save button pinned at bottom for when flex layout works */}
+      <div className="flex-shrink-0 px-5 py-3 bg-gray-50 dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800">
         <button type="button" onClick={handleSave}
           className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base shadow-lg shadow-green-600/30 active:scale-[0.98] transition-transform">
           Save Budget Plan

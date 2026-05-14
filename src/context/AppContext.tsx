@@ -1,11 +1,48 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Transaction, UserProfile, BudgetSettings } from '../types';
+import { Transaction, UserProfile, BudgetSettings, AutoDebitPeriod } from '../types';
+
+function advanceDate(date: Date, period: AutoDebitPeriod): Date {
+  const d = new Date(date);
+  if (period === 'daily') d.setDate(d.getDate() + 1);
+  else if (period === 'weekly') d.setDate(d.getDate() + 7);
+  else if (period === 'biweekly') d.setDate(d.getDate() + 14);
+  else if (period === 'monthly') d.setMonth(d.getMonth() + 1);
+  else if (period === 'yearly') d.setFullYear(d.getFullYear() + 1);
+  return d;
+}
+
+function processAutoDebits(txs: Transaction[]): Transaction[] {
+  const ceiling = new Date();
+  ceiling.setHours(23, 59, 59, 999);
+  const existingIds = new Set(txs.map(t => t.id));
+  const additions: Transaction[] = [];
+
+  const templates = txs.filter(t => t.isAutoDebit && t.autoDebitPeriod && !t.id.includes('_auto_'));
+
+  for (const tmpl of templates) {
+    const related = txs.filter(t => t.id === tmpl.id || t.id.startsWith(`${tmpl.id}_auto_`));
+    const lastMs = Math.max(...related.map(t => new Date(t.date).getTime()));
+    let next = advanceDate(new Date(lastMs), tmpl.autoDebitPeriod!);
+    while (next <= ceiling) {
+      const nid = `${tmpl.id}_auto_${next.getTime()}`;
+      if (!existingIds.has(nid)) {
+        additions.push({ ...tmpl, id: nid, date: next.toISOString() });
+        existingIds.add(nid);
+      }
+      next = advanceDate(next, tmpl.autoDebitPeriod!);
+    }
+  }
+
+  return additions.length > 0 ? [...txs, ...additions] : txs;
+}
 
 interface AppContextType {
   transactions: Transaction[];
   userProfile: UserProfile;
   darkMode: boolean;
   budget: BudgetSettings;
+  isAuthenticated: boolean;
+  hasCompletedOnboarding: boolean;
   addTransaction: (t: Omit<Transaction, 'id'>) => void;
   removeTransaction: (id: string) => void;
   updateTransaction: (id: string, data: Omit<Transaction, 'id'>) => void;
@@ -15,6 +52,11 @@ interface AppContextType {
   getMonthTransactions: (year: number, month: number) => Transaction[];
   getMonthIncome: (year: number, month: number) => number;
   getMonthExpenses: (year: number, month: number) => number;
+  formatCurrency: (amount: number) => string;
+  getCurrencySymbol: () => string;
+  signIn: (provider: 'google' | 'apple') => void;
+  signOut: () => void;
+  completeOnboarding: () => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -26,6 +68,7 @@ const DEFAULT_PROFILE: UserProfile = {
   email: 'user@example.com',
   avatar: null,
   plan: 'free',
+  currency: 'USD',
 };
 
 const DEFAULT_BUDGET: BudgetSettings = {
@@ -59,21 +102,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [darkMode, setDarkMode] = useState(false);
   const [budget, setBudget] = useState<BudgetSettings>(DEFAULT_BUDGET);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const data = JSON.parse(saved);
-        setTransactions(data.transactions || generateSampleData());
+        setTransactions(processAutoDebits(data.transactions || generateSampleData()));
         setUserProfile(data.userProfile || DEFAULT_PROFILE);
         setDarkMode(data.darkMode || false);
         setBudget(data.budget || DEFAULT_BUDGET);
+        // Existing users (data pre-dates auth) are treated as signed in
+        setIsAuthenticated(data.isAuthenticated ?? true);
+        setHasCompletedOnboarding(data.hasCompletedOnboarding ?? true);
       } else {
-        setTransactions(generateSampleData());
+        setTransactions(processAutoDebits(generateSampleData()));
       }
     } catch {
-      setTransactions(generateSampleData());
+      setTransactions(processAutoDebits(generateSampleData()));
     }
   }, []);
 
@@ -86,8 +134,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [darkMode]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ transactions, userProfile, darkMode, budget }));
-  }, [transactions, userProfile, darkMode, budget]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ transactions, userProfile, darkMode, budget, isAuthenticated, hasCompletedOnboarding }));
+  }, [transactions, userProfile, darkMode, budget, isAuthenticated, hasCompletedOnboarding]);
 
   const addTransaction = useCallback((t: Omit<Transaction, 'id'>) => {
     const transactionsToAdd: Transaction[] = [];
@@ -201,12 +249,57 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .reduce((sum, t) => sum + t.amount, 0);
   }, [getMonthTransactions]);
 
+  const formatCurrency = useCallback((amount: number) => {
+    const code = userProfile.currency || 'USD';
+    try {
+      const s = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: code,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(amount);
+      // Intl outputs "CN¥" for CNY in en-US locale; normalise to "¥"
+      return code === 'CNY' ? s.replace('CN¥', '¥') : s;
+    } catch {
+      return `$${Math.round(amount).toLocaleString()}`;
+    }
+  }, [userProfile.currency]);
+
+  const signIn = useCallback((_provider: 'google' | 'apple') => {
+    setIsAuthenticated(true);
+  }, []);
+
+  const signOut = useCallback(() => {
+    setIsAuthenticated(false);
+  }, []);
+
+  const completeOnboarding = useCallback(() => {
+    setHasCompletedOnboarding(true);
+  }, []);
+
+  const getCurrencySymbol = useCallback(() => {
+    const code = userProfile.currency || 'USD';
+    if (code === 'CNY') return '¥';
+    try {
+      const s = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: code,
+        minimumFractionDigits: 0,
+      }).format(0).replace(/[\d,.\s]/g, '').trim();
+      return s || code;
+    } catch {
+      return '$';
+    }
+  }, [userProfile.currency]);
+
   return (
     <AppContext.Provider value={{
       transactions,
       userProfile,
       darkMode,
       budget,
+      isAuthenticated,
+      hasCompletedOnboarding,
       addTransaction,
       removeTransaction,
       updateTransaction,
@@ -216,6 +309,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       getMonthTransactions,
       getMonthIncome,
       getMonthExpenses,
+      formatCurrency,
+      getCurrencySymbol,
+      signIn,
+      signOut,
+      completeOnboarding,
     }}>
       {children}
     </AppContext.Provider>

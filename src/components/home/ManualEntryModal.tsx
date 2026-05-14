@@ -32,7 +32,7 @@ function todayString() {
 }
 
 export default function ManualEntryModal({ onClose, transactionId, prefill }: Props) {
-  const { addTransaction, updateTransaction } = useApp();
+  const { addTransaction, updateTransaction, getCurrencySymbol } = useApp();
 
   const [type, setType] = useState<TransactionType>(prefill?.type || 'expense');
   const [amount, setAmount] = useState(prefill?.amount ? String(prefill.amount) : '');
@@ -136,7 +136,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
             <div>
               <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">Amount</label>
               <div className="flex items-center border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 focus-within:border-green-500 transition-colors bg-gray-50 dark:bg-gray-800">
-                <span className="text-gray-400 font-semibold mr-2">$</span>
+                <span className="text-gray-400 font-semibold mr-2">{getCurrencySymbol()}</span>
                 <input
                   type="number"
                   placeholder="0.00"

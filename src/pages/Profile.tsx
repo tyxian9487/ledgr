@@ -1,12 +1,15 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import {
   Moon, Sun, ChevronRight, Camera, Bell, Lock, HelpCircle,
   FileText, LogOut, Star, Trash2, Edit3, TrendingUp, TrendingDown,
   ChevronDown, X, Download, Eye, EyeOff, FileImage, FileType2,
+  Globe, Search,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../types';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CURRENCIES } from '../types';
+import LegalSheet from '../components/LegalSheet';
+import { computeStreaks, BADGES } from '../utils/achievements';
 
 const PW_KEY = 'ledgr_password';
 const DEFAULT_PW = 'ledgr123';
@@ -71,18 +74,21 @@ function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: n
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { transactions, userProfile, darkMode, toggleDarkMode, updateUserProfile } = useApp();
+  const { transactions, userProfile, darkMode, toggleDarkMode, updateUserProfile, getCurrencySymbol, formatCurrency, signOut, budget } = useApp();
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(userProfile.name);
   const [editingEmail, setEditingEmail] = useState(false);
   const [emailInput, setEmailInput] = useState(userProfile.email);
   const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFAQ, setShowFAQ] = useState(false);
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
   const [showReport, setShowReport] = useState(false);
   const [showChangePw, setShowChangePw] = useState(false);
   const [showCSV, setShowCSV] = useState(false);
+  const [showCurrency, setShowCurrency] = useState(false);
+  const [currencySearch, setCurrencySearch] = useState('');
 
   const [notifEnabled, setNotifEnabled] = useState(true);
   const [notifTransactions, setNotifTransactions] = useState(true);
@@ -111,6 +117,12 @@ export default function Profile() {
   const score = yearIncome > 0 ? Math.min(100, Math.max(0, Math.round(100 - (yearExpenses / yearIncome) * 100))) : 50;
   const scoreLabel = score >= 80 ? 'Excellent Financial Health' : score >= 60 ? 'Fair Financial Health' : 'Needs Improvement';
   const scoreColor = score >= 80 ? '#22c55e' : score >= 60 ? '#eab308' : '#ef4444';
+
+  const { current: currentStreak, best: bestStreak } = useMemo(() => computeStreaks(transactions), [transactions]);
+  const unlockedBadges = useMemo(
+    () => BADGES.filter(b => b.check({ transactions, budget, score, bestStreak })).length,
+    [transactions, budget, score, bestStreak],
+  );
 
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -189,14 +201,14 @@ export default function Profile() {
     ctx.fillStyle = '#16a34a'; ctx.font = 'bold 11px -apple-system, sans-serif'; ctx.textAlign = 'left';
     ctx.fillText('INCOME THIS YEAR', PAD + 14, y + 22);
     ctx.fillStyle = '#15803d'; ctx.font = 'bold 22px -apple-system, system-ui, sans-serif';
-    ctx.fillText(`$${yearIncome.toLocaleString()}`, PAD + 14, y + 52);
+    ctx.fillText(formatCurrency(yearIncome), PAD + 14, y + 52);
 
     drawRoundRect(ctx, PAD + boxW + 12, y, boxW, 72, 14);
     ctx.fillStyle = '#fef2f2'; ctx.fill();
     ctx.fillStyle = '#ef4444'; ctx.font = 'bold 11px -apple-system, sans-serif'; ctx.textAlign = 'left';
     ctx.fillText('EXPENSES THIS YEAR', PAD + boxW + 26, y + 22);
     ctx.fillStyle = '#dc2626'; ctx.font = 'bold 22px -apple-system, system-ui, sans-serif';
-    ctx.fillText(`$${yearExpenses.toLocaleString()}`, PAD + boxW + 26, y + 52);
+    ctx.fillText(formatCurrency(yearExpenses), PAD + boxW + 26, y + 52);
 
     y += 90;
 
@@ -207,9 +219,9 @@ export default function Profile() {
     ctx.fillStyle = '#6b7280'; ctx.font = 'bold 11px -apple-system, sans-serif'; ctx.textAlign = 'left';
     ctx.fillText('NET SAVINGS', PAD + 14, y + 20);
     ctx.fillStyle = savings >= 0 ? '#16a34a' : '#dc2626'; ctx.font = 'bold 18px -apple-system, system-ui, sans-serif';
-    ctx.fillText(`${savings >= 0 ? '+' : '-'}$${Math.abs(savings).toLocaleString()}`, PAD + 14, y + 42);
+    ctx.fillText(`${savings >= 0 ? '+' : ''}${formatCurrency(savings)}`, PAD + 14, y + 42);
     ctx.textAlign = 'right'; ctx.fillStyle = '#9ca3af'; ctx.font = '11px -apple-system, sans-serif';
-    ctx.fillText(`Avg income: $${Math.round(avgIncome).toLocaleString()}/mo  ·  Avg expenses: $${Math.round(avgExpenses).toLocaleString()}/mo`, W - PAD, y + 42);
+    ctx.fillText(`Avg income: ${formatCurrency(Math.round(avgIncome))}/mo  ·  Avg expenses: ${formatCurrency(Math.round(avgExpenses))}/mo`, W - PAD, y + 42);
 
     y += 68;
 
@@ -233,7 +245,7 @@ export default function Profile() {
         ctx.fillStyle = cat.color; ctx.font = 'bold 12px -apple-system, system-ui, sans-serif'; ctx.textAlign = 'left';
         ctx.fillText(cat.label, PAD + 10, y + (rowH - 6) / 2 + 4);
         ctx.fillStyle = '#111827'; ctx.font = 'bold 13px -apple-system, system-ui, sans-serif'; ctx.textAlign = 'right';
-        ctx.fillText(`$${cat.amount.toLocaleString()}`, W - PAD - 8, y + (rowH - 6) / 2 + 4);
+        ctx.fillText(formatCurrency(cat.amount), W - PAD - 8, y + (rowH - 6) / 2 + 4);
         y += rowH;
       });
     }
@@ -257,7 +269,7 @@ export default function Profile() {
     const catTotals: Record<string, number> = {};
     yearTxs.filter(t => t.type === 'expense').forEach(t => { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
     const catRows = Object.entries(catTotals).sort((a, b) => b[1] - a[1])
-      .map(([id, amt]) => `<tr><td style="padding:6px 12px;font-size:13px;text-transform:capitalize">${id}</td><td style="padding:6px 12px;font-size:13px;text-align:right;font-weight:600">$${amt.toLocaleString()}</td></tr>`).join('');
+      .map(([id, amt]) => `<tr><td style="padding:6px 12px;font-size:13px;text-transform:capitalize">${id}</td><td style="padding:6px 12px;font-size:13px;text-align:right;font-weight:600">${formatCurrency(amt)}</td></tr>`).join('');
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>ledgr Financial Report</title>
 <style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:0;background:#fff;color:#111}
 .header{background:linear-gradient(135deg,#16a34a,#14532d);color:white;padding:32px;display:flex;justify-content:space-between;align-items:flex-start}
@@ -289,9 +301,9 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
     <div class="score-desc"><h3>${scoreLabel}</h3><p>${score >= 80 ? "You're saving a healthy portion of your income. Keep it up!" : score >= 60 ? "You're managing well but there's room to save more." : "Your expenses are high relative to income. Try cutting discretionary spending."}</p><p style="margin-top:8px;font-size:12px;color:#9ca3af">Based on ${currentYear} transactions · ${yearTxs.length} total records</p></div>
   </div>
   <div class="stats">
-    <div class="stat inc"><div class="stat-label">INCOME ${currentYear}</div><div class="stat-val">$${yearIncome.toLocaleString()}</div><div style="font-size:12px;color:#16a34a;margin-top:4px">~$${Math.round(avgIncome).toLocaleString()}/mo avg</div></div>
-    <div class="stat exp"><div class="stat-label">EXPENSES ${currentYear}</div><div class="stat-val">$${yearExpenses.toLocaleString()}</div><div style="font-size:12px;color:#ef4444;margin-top:4px">~$${Math.round(avgExpenses).toLocaleString()}/mo avg</div></div>
-    <div class="stat sav"><div class="stat-label">NET SAVINGS</div><div class="stat-val">${yearIncome - yearExpenses >= 0 ? '+' : '-'}$${Math.abs(yearIncome - yearExpenses).toLocaleString()}</div><div style="font-size:12px;color:#6b7280;margin-top:4px">${yearIncome > 0 ? Math.round((1 - yearExpenses / yearIncome) * 100) : 0}% saving rate</div></div>
+    <div class="stat inc"><div class="stat-label">INCOME ${currentYear}</div><div class="stat-val">${formatCurrency(yearIncome)}</div><div style="font-size:12px;color:#16a34a;margin-top:4px">~${formatCurrency(Math.round(avgIncome))}/mo avg</div></div>
+    <div class="stat exp"><div class="stat-label">EXPENSES ${currentYear}</div><div class="stat-val">${formatCurrency(yearExpenses)}</div><div style="font-size:12px;color:#ef4444;margin-top:4px">~${formatCurrency(Math.round(avgExpenses))}/mo avg</div></div>
+    <div class="stat sav"><div class="stat-label">NET SAVINGS</div><div class="stat-val">${yearIncome - yearExpenses >= 0 ? '+' : ''}${formatCurrency(yearIncome - yearExpenses)}</div><div style="font-size:12px;color:#6b7280;margin-top:4px">${yearIncome > 0 ? Math.round((1 - yearExpenses / yearIncome) * 100) : 0}% saving rate</div></div>
   </div>
   ${catRows ? `<h3 style="font-size:12px;font-weight:700;letter-spacing:.05em;color:#6b7280;margin-bottom:10px">EXPENSE BREAKDOWN</h3>
   <table><thead><tr><th>Category</th><th style="text-align:right">Amount</th></tr></thead><tbody>${catRows}</tbody></table>` : ''}
@@ -364,18 +376,18 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
               <TrendingUp size={14} className="text-green-600" />
               <span className="text-[11px] text-green-600 font-semibold uppercase tracking-wide">Income</span>
             </div>
-            <p className="text-xl font-black text-green-700 dark:text-green-400">${yearIncome.toLocaleString()}</p>
+            <p className="text-xl font-black text-green-700 dark:text-green-400">{formatCurrency(yearIncome)}</p>
             <p className="text-[11px] text-green-600/70 mt-0.5">This year</p>
-            <p className="text-[11px] text-green-600 mt-1 font-medium">~${Math.round(avgIncome).toLocaleString()}/mo avg</p>
+            <p className="text-[11px] text-green-600 mt-1 font-medium">~{formatCurrency(Math.round(avgIncome))}/mo avg</p>
           </div>
           <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-4 border border-red-100 dark:border-red-900/30">
             <div className="flex items-center gap-1.5 mb-2">
               <TrendingDown size={14} className="text-red-500" />
               <span className="text-[11px] text-red-500 font-semibold uppercase tracking-wide">Expenses</span>
             </div>
-            <p className="text-xl font-black text-red-600 dark:text-red-400">${yearExpenses.toLocaleString()}</p>
+            <p className="text-xl font-black text-red-600 dark:text-red-400">{formatCurrency(yearExpenses)}</p>
             <p className="text-[11px] text-red-500/70 mt-0.5">This year</p>
-            <p className="text-[11px] text-red-500 mt-1 font-medium">~${Math.round(avgExpenses).toLocaleString()}/mo avg</p>
+            <p className="text-[11px] text-red-500 mt-1 font-medium">~{formatCurrency(Math.round(avgExpenses))}/mo avg</p>
           </div>
         </div>
 
@@ -403,6 +415,31 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
             Generate Report
           </button>
         </div>
+      </div>
+
+      {/* Achievements teaser */}
+      <div className="mx-4 mb-4">
+        <button
+          type="button"
+          onClick={() => navigate('/achievements')}
+          className="w-full rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800 active:scale-[0.98] transition-all"
+          style={{ background: 'linear-gradient(135deg, #052e16 0%, #166534 55%, #16a34a 100%)' }}
+        >
+          <div className="flex items-center gap-4 px-4 py-4">
+            <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center flex-shrink-0">
+              <span className="text-2xl">{currentStreak >= 6 ? '💎' : currentStreak >= 3 ? '⚡' : currentStreak >= 1 ? '🔥' : '🎯'}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-bold text-sm">
+                {currentStreak > 0 ? `${currentStreak}-month streak` : 'Start your streak'}
+              </p>
+              <p className="text-green-200/70 text-xs mt-0.5">
+                {unlockedBadges} / {BADGES.length} badges earned · tap to view
+              </p>
+            </div>
+            <ChevronRight size={16} className="text-white/50 flex-shrink-0" />
+          </div>
+        </button>
       </div>
 
       {/* Settings sections */}
@@ -441,6 +478,12 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
               <span className={`absolute top-0.5 h-5 w-5 bg-white rounded-full shadow-md transition-all duration-200 ${darkMode ? 'left-[26px]' : 'left-0.5'}`} />
             </div>
           </button>
+          <SettingsRow
+            icon={<Globe size={16} />}
+            label="Currency"
+            value={`${userProfile.currency || 'USD'} · ${getCurrencySymbol()}`}
+            onClick={() => setShowCurrency(true)}
+          />
         </div>
 
         {/* Data */}
@@ -453,17 +496,76 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
         <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
           <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-4 pt-3 pb-1">Legal & Support</p>
           <SettingsRow icon={<FileText size={16} />} label="Terms & Conditions" onClick={() => setShowTerms(true)} />
+          <SettingsRow icon={<FileText size={16} />} label="Privacy Policy" onClick={() => setShowPrivacy(true)} />
           <SettingsRow icon={<HelpCircle size={16} />} label="Help & FAQ" onClick={() => setShowFAQ(true)} />
         </div>
 
         {/* Danger */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
           <SettingsRow icon={<Trash2 size={16} />} label="Clear All Data" danger onClick={() => { if (window.confirm('Clear all transaction data? This cannot be undone.')) { localStorage.clear(); window.location.reload(); } }} />
-          <SettingsRow icon={<LogOut size={16} />} label="Sign Out" danger />
+          <SettingsRow icon={<LogOut size={16} />} label="Sign Out" danger onClick={signOut} />
         </div>
       </div>
 
       <p className="text-center text-[11px] text-gray-300 dark:text-gray-700 pb-4">ledgr v1.0.0</p>
+
+      {/* ── Currency picker modal ── */}
+      {showCurrency && (
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-end justify-center" onClick={() => setShowCurrency(false)}>
+          <div
+            className="w-full max-w-[430px] bg-white dark:bg-gray-900 rounded-t-3xl animate-slide-up flex flex-col overflow-hidden"
+            style={{ maxHeight: '85vh' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100 dark:border-gray-800">
+              <h2 className="text-lg font-bold dark:text-white">Select Currency</h2>
+              <button type="button" onClick={() => setShowCurrency(false)} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                <X size={16} className="text-gray-500 dark:text-gray-400" />
+              </button>
+            </div>
+            <div className="flex-shrink-0 px-5 py-3 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5">
+                <Search size={14} className="text-gray-400 flex-shrink-0" />
+                <input
+                  placeholder="Search currency..."
+                  value={currencySearch}
+                  onChange={e => setCurrencySearch(e.target.value)}
+                  className="flex-1 bg-transparent text-sm outline-none dark:text-white placeholder:text-gray-400"
+                  autoFocus
+                />
+                {currencySearch && (
+                  <button type="button" onClick={() => setCurrencySearch('')}>
+                    <X size={14} className="text-gray-400" />
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              {CURRENCIES
+                .filter(c =>
+                  !currencySearch ||
+                  c.code.toLowerCase().includes(currencySearch.toLowerCase()) ||
+                  c.name.toLowerCase().includes(currencySearch.toLowerCase())
+                )
+                .map(c => {
+                  const isSelected = (userProfile.currency || 'USD') === c.code;
+                  return (
+                    <button
+                      key={c.code}
+                      type="button"
+                      onClick={() => { updateUserProfile({ currency: c.code }); setShowCurrency(false); setCurrencySearch(''); }}
+                      className={`w-full flex items-center gap-3 px-5 py-3.5 border-b border-gray-50 dark:border-gray-800 last:border-0 transition-colors ${isSelected ? 'bg-green-50 dark:bg-green-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                    >
+                      <span className="w-12 text-xs font-bold text-gray-500 dark:text-gray-400 flex-shrink-0">{c.code}</span>
+                      <span className={`flex-1 text-sm text-left ${isSelected ? 'font-semibold text-green-700 dark:text-green-400' : 'dark:text-white'}`}>{c.name}</span>
+                      {isSelected && <span className="text-green-600 text-sm">✓</span>}
+                    </button>
+                  );
+                })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── CSV Export modal ── */}
       {showCSV && (
@@ -576,30 +678,8 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
         </div>
       )}
 
-      {/* ── Terms modal ── */}
-      {showTerms && (
-        <div className="fixed inset-0 z-[100] bg-black/60 flex items-end justify-center" onClick={() => setShowTerms(false)}>
-          <div className="w-full max-w-[430px] bg-white dark:bg-gray-900 rounded-t-3xl animate-slide-up flex flex-col overflow-hidden" style={{ maxHeight: '80vh' }} onClick={e => e.stopPropagation()}>
-            <div className="flex-shrink-0 px-6 pt-6 pb-3 border-b border-gray-100 dark:border-gray-800">
-              <h2 className="text-lg font-bold dark:text-white">Terms & Conditions</h2>
-            </div>
-            <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
-              <div className="text-sm text-gray-600 dark:text-gray-300 space-y-3 leading-relaxed">
-                <p><strong>1. Acceptance of Terms</strong><br />By using ledgr, you agree to these terms and conditions.</p>
-                <p><strong>2. Data Storage</strong><br />All financial data is stored locally on your device. We do not transmit your personal financial information to our servers.</p>
-                <p><strong>3. Privacy</strong><br />Your privacy is important to us. We collect minimal data necessary for app functionality.</p>
-                <p><strong>4. AI Receipt Capture</strong><br />The AI receipt scanning feature is provided as-is. Always verify captured data before confirming.</p>
-                <p><strong>5. Financial Advice Disclaimer</strong><br />ledgr is a tracking tool only. It does not provide financial advice. Consult a qualified financial advisor for personal finance decisions.</p>
-                <p><strong>6. Limitation of Liability</strong><br />We are not liable for any financial decisions made based on information displayed in the app.</p>
-                <p><strong>7. Updates</strong><br />We reserve the right to update these terms at any time.</p>
-              </div>
-            </div>
-            <div className="flex-shrink-0 px-6 pt-3 pb-8 border-t border-gray-100 dark:border-gray-800">
-              <button type="button" onClick={() => setShowTerms(false)} className="w-full py-3 rounded-2xl bg-green-600 text-white font-bold">I Understand</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {showTerms && <LegalSheet type="terms" onClose={() => setShowTerms(false)} />}
+      {showPrivacy && <LegalSheet type="privacy" onClose={() => setShowPrivacy(false)} />}
 
       {/* ── Notifications modal ── */}
       {showNotifications && (
