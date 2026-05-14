@@ -41,6 +41,8 @@ interface AppContextType {
   userProfile: UserProfile;
   darkMode: boolean;
   budget: BudgetSettings;
+  isAuthenticated: boolean;
+  hasCompletedOnboarding: boolean;
   addTransaction: (t: Omit<Transaction, 'id'>) => void;
   removeTransaction: (id: string) => void;
   updateTransaction: (id: string, data: Omit<Transaction, 'id'>) => void;
@@ -52,6 +54,9 @@ interface AppContextType {
   getMonthExpenses: (year: number, month: number) => number;
   formatCurrency: (amount: number) => string;
   getCurrencySymbol: () => string;
+  signIn: (provider: 'google' | 'apple') => void;
+  signOut: () => void;
+  completeOnboarding: () => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -97,6 +102,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [darkMode, setDarkMode] = useState(false);
   const [budget, setBudget] = useState<BudgetSettings>(DEFAULT_BUDGET);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
   useEffect(() => {
     try {
@@ -107,6 +114,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setUserProfile(data.userProfile || DEFAULT_PROFILE);
         setDarkMode(data.darkMode || false);
         setBudget(data.budget || DEFAULT_BUDGET);
+        // Existing users (data pre-dates auth) are treated as signed in
+        setIsAuthenticated(data.isAuthenticated ?? true);
+        setHasCompletedOnboarding(data.hasCompletedOnboarding ?? true);
       } else {
         setTransactions(processAutoDebits(generateSampleData()));
       }
@@ -124,8 +134,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [darkMode]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ transactions, userProfile, darkMode, budget }));
-  }, [transactions, userProfile, darkMode, budget]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ transactions, userProfile, darkMode, budget, isAuthenticated, hasCompletedOnboarding }));
+  }, [transactions, userProfile, darkMode, budget, isAuthenticated, hasCompletedOnboarding]);
 
   const addTransaction = useCallback((t: Omit<Transaction, 'id'>) => {
     const newT: Transaction = { ...t, id: Date.now().toString() };
@@ -184,6 +194,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [userProfile.currency]);
 
+  const signIn = useCallback((_provider: 'google' | 'apple') => {
+    setIsAuthenticated(true);
+  }, []);
+
+  const signOut = useCallback(() => {
+    setIsAuthenticated(false);
+  }, []);
+
+  const completeOnboarding = useCallback(() => {
+    setHasCompletedOnboarding(true);
+  }, []);
+
   const getCurrencySymbol = useCallback(() => {
     try {
       const s = new Intl.NumberFormat('en-US', {
@@ -203,6 +225,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       userProfile,
       darkMode,
       budget,
+      isAuthenticated,
+      hasCompletedOnboarding,
       addTransaction,
       removeTransaction,
       updateTransaction,
@@ -214,6 +238,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       getMonthExpenses,
       formatCurrency,
       getCurrencySymbol,
+      signIn,
+      signOut,
+      completeOnboarding,
     }}>
       {children}
     </AppContext.Provider>

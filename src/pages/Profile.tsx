@@ -72,7 +72,7 @@ function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: n
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { transactions, userProfile, darkMode, toggleDarkMode, updateUserProfile, getCurrencySymbol } = useApp();
+  const { transactions, userProfile, darkMode, toggleDarkMode, updateUserProfile, getCurrencySymbol, signOut } = useApp();
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(userProfile.name);
   const [editingEmail, setEditingEmail] = useState(false);
@@ -468,7 +468,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
         {/* Danger */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
           <SettingsRow icon={<Trash2 size={16} />} label="Clear All Data" danger onClick={() => { if (window.confirm('Clear all transaction data? This cannot be undone.')) { localStorage.clear(); window.location.reload(); } }} />
-          <SettingsRow icon={<LogOut size={16} />} label="Sign Out" danger />
+          <SettingsRow icon={<LogOut size={16} />} label="Sign Out" danger onClick={signOut} />
         </div>
       </div>
 
