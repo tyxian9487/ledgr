@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import {
   Moon, Sun, ChevronRight, Camera, Bell, Lock, HelpCircle,
   FileText, LogOut, Star, Trash2, Edit3, TrendingUp, TrendingDown,
@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CURRENCIES } from '../types';
 import LegalSheet from '../components/LegalSheet';
+import { computeStreaks, BADGES } from '../utils/achievements';
 
 const PW_KEY = 'ledgr_password';
 const DEFAULT_PW = 'ledgr123';
@@ -73,7 +74,7 @@ function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: n
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { transactions, userProfile, darkMode, toggleDarkMode, updateUserProfile, getCurrencySymbol, formatCurrency, signOut } = useApp();
+  const { transactions, userProfile, darkMode, toggleDarkMode, updateUserProfile, getCurrencySymbol, formatCurrency, signOut, budget } = useApp();
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(userProfile.name);
   const [editingEmail, setEditingEmail] = useState(false);
@@ -116,6 +117,12 @@ export default function Profile() {
   const score = yearIncome > 0 ? Math.min(100, Math.max(0, Math.round(100 - (yearExpenses / yearIncome) * 100))) : 50;
   const scoreLabel = score >= 80 ? 'Excellent Financial Health' : score >= 60 ? 'Fair Financial Health' : 'Needs Improvement';
   const scoreColor = score >= 80 ? '#22c55e' : score >= 60 ? '#eab308' : '#ef4444';
+
+  const { current: currentStreak, best: bestStreak } = useMemo(() => computeStreaks(transactions), [transactions]);
+  const unlockedBadges = useMemo(
+    () => BADGES.filter(b => b.check({ transactions, budget, score, bestStreak })).length,
+    [transactions, budget, score, bestStreak],
+  );
 
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -408,6 +415,31 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
             Generate Report
           </button>
         </div>
+      </div>
+
+      {/* Achievements teaser */}
+      <div className="mx-4 mb-4">
+        <button
+          type="button"
+          onClick={() => navigate('/achievements')}
+          className="w-full rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800 active:scale-[0.98] transition-all"
+          style={{ background: 'linear-gradient(135deg, #052e16 0%, #166534 55%, #16a34a 100%)' }}
+        >
+          <div className="flex items-center gap-4 px-4 py-4">
+            <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center flex-shrink-0">
+              <span className="text-2xl">{currentStreak >= 6 ? '💎' : currentStreak >= 3 ? '⚡' : currentStreak >= 1 ? '🔥' : '🎯'}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-bold text-sm">
+                {currentStreak > 0 ? `${currentStreak}-month streak` : 'Start your streak'}
+              </p>
+              <p className="text-green-200/70 text-xs mt-0.5">
+                {unlockedBadges} / {BADGES.length} badges earned · tap to view
+              </p>
+            </div>
+            <ChevronRight size={16} className="text-white/50 flex-shrink-0" />
+          </div>
+        </button>
       </div>
 
       {/* Settings sections */}
