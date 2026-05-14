@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
+import { playRewardSound } from '../utils/sounds';
 
 interface BadgeInfo {
   icon: string;
@@ -14,6 +15,8 @@ interface Props {
 }
 
 export default function BadgeCelebration({ badge, remaining, onClose }: Props) {
+  useEffect(() => { playRewardSound(); }, []); // play once on mount
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
+import { playRewardSound, playWarningSound } from '../utils/sounds';
 
 type Status = 'excellent' | 'sustained' | 'critical';
 
@@ -108,6 +109,11 @@ const CONFIG: Record<Status, {
 export default function StatusCelebration({ status, onClose }: Props) {
   const cfg = CONFIG[status];
   const { Coin } = cfg;
+
+  useEffect(() => {
+    if (status === 'excellent') playRewardSound();
+    else if (status === 'critical') playWarningSound();
+  }, []); // play once on mount
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };

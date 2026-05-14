@@ -237,6 +237,7 @@ export default function AchievementsPage() {
 
     {currentBadge && (
       <BadgeCelebration
+        key={currentBadge.id}
         badge={currentBadge}
         remaining={badgeQueue.length}
         onClose={dismissBadge}

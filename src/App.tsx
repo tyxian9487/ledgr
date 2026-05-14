@@ -2,6 +2,7 @@ import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import BottomNav from './components/BottomNav';
+import NotificationWatcher from './components/NotificationWatcher';
 import Home from './pages/Home';
 import ReceiptCapture from './pages/ReceiptCapture';
 import Profile from './pages/Profile';
@@ -55,6 +56,7 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       {!hideNav && isAuthenticated && hasCompletedOnboarding && <BottomNav />}
+      {isAuthenticated && hasCompletedOnboarding && <NotificationWatcher />}
     </div>
   );
 }
