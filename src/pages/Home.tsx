@@ -116,6 +116,7 @@ export default function Home() {
       {/* Action buttons — side by side, same height */}
       <div className="mx-4 mt-4 grid grid-cols-2 gap-3">
         <button
+          data-tour="add-transaction"
           type="button"
           onClick={() => setShowEntry(true)}
           className="flex items-center gap-2.5 bg-white dark:bg-gray-900 rounded-2xl px-4 py-3.5 shadow-sm border border-gray-50 dark:border-gray-800 active:scale-[0.98] transition-transform"
@@ -127,6 +128,7 @@ export default function Home() {
         </button>
 
         <button
+          data-tour="budget-goals-btn"
           type="button"
           onClick={() => navigate('/budget')}
           className={`flex items-center gap-2.5 rounded-2xl px-4 py-3.5 shadow-sm active:scale-[0.98] transition-all border ${
@@ -319,7 +321,7 @@ export default function Home() {
           </button>
         )}
         {/* View toggle */}
-        <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-0.5 gap-0.5">
+        <div data-tour="view-toggle" className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-0.5 gap-0.5">
           <button type="button" onClick={() => setTxView('category')}
             className={`w-8 h-7 rounded-[9px] flex items-center justify-center transition-all ${txView === 'category' ? 'bg-white dark:bg-gray-700 shadow-sm' : ''}`}>
             <LayoutList size={14} className={txView === 'category' ? 'text-green-600' : 'text-gray-400'} />

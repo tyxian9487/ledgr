@@ -320,6 +320,7 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
   return (
     <>
     <div
+      data-tour="green-card"
       className="mx-4 mt-4 rounded-3xl overflow-hidden"
       style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 40%, #166534 100%)' }}
     >
@@ -402,7 +403,7 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
       </div>
 
       {/* Income / Remaining row */}
-      <div className="mx-4 mb-4 grid grid-cols-2 gap-3">
+      <div data-tour="stats-row" className="mx-4 mb-4 grid grid-cols-2 gap-3">
         <div className="glass rounded-2xl p-3">
           <p className="text-white/60 text-[10px] uppercase tracking-wider mb-1">Income</p>
           <p className="text-white font-bold text-base">{formatCurrency(totalIncome)}</p>

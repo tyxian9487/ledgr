@@ -1,5 +1,7 @@
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
+import { TourProvider } from './context/TourContext';
+import TourOverlay from './components/TourOverlay';
 import ErrorBoundary from './components/ErrorBoundary';
 import BottomNav from './components/BottomNav';
 import NotificationWatcher from './components/NotificationWatcher';
@@ -57,6 +59,7 @@ function AppRoutes() {
       </Routes>
       {!hideNav && isAuthenticated && hasCompletedOnboarding && <BottomNav />}
       {isAuthenticated && hasCompletedOnboarding && <NotificationWatcher />}
+      {isAuthenticated && hasCompletedOnboarding && <TourOverlay />}
     </div>
   );
 }
@@ -65,7 +68,9 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AppProvider>
-        <AppRoutes />
+        <TourProvider>
+          <AppRoutes />
+        </TourProvider>
       </AppProvider>
     </ErrorBoundary>
   );

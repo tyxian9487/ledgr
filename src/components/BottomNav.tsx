@@ -2,13 +2,13 @@ import { Home, Camera, User, LineChart, Target } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const NAV_ITEMS = [
-  { label: 'Home', icon: Home, path: '/' },
-  { label: 'Trends', icon: LineChart, path: '/trends' },
+  { label: 'Home', icon: Home, path: '/', tourId: 'nav-home' },
+  { label: 'Trends', icon: LineChart, path: '/trends', tourId: 'nav-trends' },
 ];
 
 const RIGHT_ITEMS = [
-  { label: 'Budgets', icon: Target, path: '/budget' },
-  { label: 'Profile', icon: User, path: '/profile' },
+  { label: 'Budgets', icon: Target, path: '/budget', tourId: 'nav-budget' },
+  { label: 'Profile', icon: User, path: '/profile', tourId: 'nav-profile' },
 ];
 
 export default function BottomNav() {
@@ -16,10 +16,11 @@ export default function BottomNav() {
   const location = useLocation();
   const active = location.pathname;
 
-  function NavBtn({ label, icon: Icon, path }: { label: string; icon: React.ElementType; path: string }) {
+  function NavBtn({ label, icon: Icon, path, tourId }: { label: string; icon: React.ElementType; path: string; tourId: string }) {
     const isActive = active === path;
     return (
       <button
+        data-tour={tourId}
         onClick={() => navigate(path)}
         className="flex flex-col items-center gap-0.5 min-w-[52px]"
       >
@@ -42,6 +43,7 @@ export default function BottomNav() {
 
         {/* Centre Capture bubble */}
         <button
+          data-tour="nav-capture"
           onClick={() => navigate('/capture')}
           className="flex flex-col items-center gap-0.5 -mt-5"
         >

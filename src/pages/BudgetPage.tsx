@@ -372,7 +372,7 @@ export default function BudgetPage() {
       <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-5 pb-28 space-y-4" style={{ overscrollBehavior: 'contain' }}>
 
         {/* Income input */}
-        <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800">
+        <div data-tour="budget-income" className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">Expected Monthly Income</p>
             <button
@@ -420,7 +420,7 @@ export default function BudgetPage() {
         </div>
 
         {/* Savings & Investment Goal card */}
-        <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+        <div data-tour="budget-goals" className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden">
           <button
             type="button"
             onClick={() => setShowGoals(v => !v)}
@@ -707,21 +707,32 @@ export default function BudgetPage() {
         )}
       </div>
 
-      {showRecoTooltip && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          onClick={dismissRecoTooltip}
-        >
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-          <div
-            className="relative w-full max-w-[430px] px-4 pb-8"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Upward arrow pointing at the goals section above */}
-            <div className="flex justify-center">
-              <div className="w-5 h-5 bg-white dark:bg-gray-900 border-l border-t border-gray-100 dark:border-gray-800 rotate-45 translate-y-2.5" />
-            </div>
-            <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-2xl border border-gray-100 dark:border-gray-800">
+      {showRecoTooltip && (() => {
+        const goalsEl = document.querySelector('[data-tour="budget-goals"]');
+        const r = goalsEl?.getBoundingClientRect();
+        const pad = 10;
+        const vw = window.innerWidth;
+        const tooltipW = Math.min(320, vw - 32);
+        const tooltipLeft = Math.max(16, Math.min(vw - tooltipW - 16, vw / 2 - tooltipW / 2));
+        const tooltipTop = r ? Math.min(window.innerHeight - 240, r.bottom + 14) : window.innerHeight - 260;
+        return (
+          <>
+            {r ? (
+              <>
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: Math.max(0, r.top - pad), background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)', zIndex: 9980 }} onClick={dismissRecoTooltip} />
+                <div style={{ position: 'fixed', top: r.bottom + pad, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)', zIndex: 9980 }} onClick={dismissRecoTooltip} />
+                <div style={{ position: 'fixed', top: r.top - pad, left: 0, width: Math.max(0, r.left - pad), height: r.height + pad * 2, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)', zIndex: 9980 }} onClick={dismissRecoTooltip} />
+                <div style={{ position: 'fixed', top: r.top - pad, left: r.right + pad, right: 0, height: r.height + pad * 2, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)', zIndex: 9980 }} onClick={dismissRecoTooltip} />
+                <div style={{ position: 'fixed', top: r.top - pad, left: r.left - pad, width: r.width + pad * 2, height: r.height + pad * 2, borderRadius: 16, border: '2px solid rgba(255,255,255,0.5)', zIndex: 9981, pointerEvents: 'none' }} />
+              </>
+            ) : (
+              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)', zIndex: 9980 }} onClick={dismissRecoTooltip} />
+            )}
+            <div
+              style={{ position: 'fixed', zIndex: 9985, left: tooltipLeft, top: tooltipTop, width: tooltipW, pointerEvents: 'all' }}
+              className="bg-white dark:bg-gray-900 rounded-2xl p-5 shadow-2xl border border-gray-100 dark:border-gray-700"
+              onClick={e => e.stopPropagation()}
+            >
               <div className="text-3xl mb-2 text-center">{recoIsHighGoal ? '🎯' : '🌱'}</div>
               <p className="text-sm font-bold dark:text-white mb-1.5 text-center">
                 {recoIsHighGoal ? 'High Achiever Detected!' : 'Starting Your Journey?'}
@@ -739,9 +750,9 @@ export default function BudgetPage() {
                 Got it!
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        );
+      })()}
     </div>
   );
 }

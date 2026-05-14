@@ -292,7 +292,7 @@ export default function TrendsPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="px-4 mt-3 grid grid-cols-2 gap-3">
+      <div data-tour="trends-top" className="px-4 mt-3 grid grid-cols-2 gap-3">
         <div className="bg-red-500 rounded-2xl p-4 shadow-sm">
           <p className="text-[11px] text-red-100 font-semibold uppercase tracking-wide mb-1">This Month</p>
           <p className="text-xl font-black text-white">{formatCurrency(currentMonth.expenses)}</p>
@@ -320,7 +320,7 @@ export default function TrendsPage() {
       </div>
 
       {/* Bar chart */}
-      <div className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl p-5 shadow-sm border border-gray-50 dark:border-gray-800">
+      <div data-tour="trends-monthly" className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl p-5 shadow-sm border border-gray-50 dark:border-gray-800">
         <div className="flex items-center justify-between mb-4">
           <p className="text-sm font-bold dark:text-white">Monthly Overview</p>
           <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-0.5 text-[11px] font-semibold">
@@ -360,7 +360,7 @@ export default function TrendsPage() {
       </div>
 
       {/* Top Categories — clickable + expandable */}
-      <div className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
+      <div data-tour="trends-categories" className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
           <p className="text-sm font-bold dark:text-white">Categories</p>
           <span className="text-[11px] text-gray-400">{currentYear} · tap to explore</span>
@@ -411,7 +411,7 @@ export default function TrendsPage() {
       </div>
 
       {/* Income vs Expenses */}
-      <div className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl p-5 shadow-sm border border-gray-50 dark:border-gray-800">
+      <div data-tour="trends-income-vs" className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl p-5 shadow-sm border border-gray-50 dark:border-gray-800">
         <p className="text-sm font-bold dark:text-white mb-4">Income vs Expenses</p>
         <div className="space-y-2.5">
           {[...monthlyData].reverse().map(m => {
