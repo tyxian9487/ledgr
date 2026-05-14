@@ -31,6 +31,16 @@ export function playRewardSound(): void {
   } catch { /* ignore */ }
 }
 
+export function playCoinSound(): void {
+  try {
+    const ac = makeAC();
+    if (!ac) return;
+    // Coin-like shimmer: quick alternating tones around C6 and D6 with short decay
+    const sequence = [1046.5, 1174.66, 987.77, 1108.73, 932.33];
+    sequence.forEach((f, i) => note(ac, f, ac.currentTime + i * 0.08, 0.18, 0.22));
+  } catch { /* ignore */ }
+}
+
 export function playWarningSound(): void {
   try {
     const ac = makeAC();
