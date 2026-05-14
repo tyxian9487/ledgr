@@ -35,9 +35,10 @@ export function playCoinSound(): void {
   try {
     const ac = makeAC();
     if (!ac) return;
-    // Coin-like shimmer: quick alternating tones around C6 and D6 with short decay
-    const sequence = [1046.5, 1174.66, 987.77, 1108.73, 932.33];
-    sequence.forEach((f, i) => note(ac, f, ac.currentTime + i * 0.08, 0.18, 0.22));
+    // Coin-like sparkle with quick cascading bell tones and gentle decay
+    const sequence = [1174.66, 1318.51, 1567.98, 1174.66, 1567.98];
+    sequence.forEach((f, i) => note(ac, f, ac.currentTime + i * 0.07, 0.16, 0.18));
+    note(ac, 784.0, ac.currentTime + sequence.length * 0.07 + 0.02, 0.24, 0.14);
   } catch { /* ignore */ }
 }
 
