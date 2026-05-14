@@ -311,6 +311,13 @@ export default function Home() {
         {activeFilterCount > 0 && (
           <button type="button" onClick={clearFilters} className="text-xs text-green-600 font-semibold mr-1">Clear</button>
         )}
+        {/* Calendar icon — only in date view, left of toggle */}
+        {txView === 'date' && (
+          <button type="button" onClick={() => setShowCalendar(true)}
+            className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+            <CalendarRange size={14} className="text-gray-500 dark:text-gray-400" />
+          </button>
+        )}
         {/* View toggle */}
         <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-0.5 gap-0.5">
           <button type="button" onClick={() => setTxView('category')}
@@ -322,13 +329,6 @@ export default function Home() {
             <CalendarDays size={14} className={txView === 'date' ? 'text-green-600' : 'text-gray-400'} />
           </button>
         </div>
-        {/* Calendar icon — only in date view */}
-        {txView === 'date' && (
-          <button type="button" onClick={() => setShowCalendar(true)}
-            className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-            <CalendarRange size={14} className="text-gray-500 dark:text-gray-400" />
-          </button>
-        )}
       </div>
 
       <Categories year={year} month={month} filterFn={filterFn} view={txView}

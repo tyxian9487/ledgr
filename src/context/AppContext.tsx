@@ -67,6 +67,8 @@ interface AppContextType {
   updateCustomCategory: (id: string, data: Partial<Omit<CustomCategory, 'id'>>) => void;
   removeCustomCategory: (id: string) => void;
   toggleCategoryEnabled: (id: string) => void;
+  stopAutoDebit: (id: string) => void;
+  endAutoDebitAt: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -311,6 +313,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const stopAutoDebit = useCallback((id: string) => {
+    setTransactions(prev => {
+      const baseId = id.includes('_auto_') ? id.split('_auto_')[0] : id;
+      const now = new Date();
+      return prev
+        .filter(t => !t.id.startsWith(`${baseId}_auto_`) || new Date(t.date) <= now)
+        .map(t => t.id === baseId ? { ...t, isAutoDebit: false } : t);
+    });
+  }, []);
+
+  const endAutoDebitAt = useCallback((id: string) => {
+    setTransactions(prev => {
+      const tx = prev.find(t => t.id === id);
+      if (!tx) return prev;
+      const cutoff = new Date(tx.date);
+      const baseId = id.includes('_auto_') ? id.split('_auto_')[0] : id;
+      return prev
+        .filter(t => !t.id.startsWith(`${baseId}_auto_`) || new Date(t.date) <= cutoff)
+        .map(t => t.id === baseId ? { ...t, isAutoDebit: false } : t);
+    });
+  }, []);
+
   return (
     <AppContext.Provider value={{
       transactions,
@@ -341,6 +365,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updateCustomCategory,
       removeCustomCategory,
       toggleCategoryEnabled,
+      stopAutoDebit,
+      endAutoDebitAt,
     }}>
       {children}
     </AppContext.Provider>

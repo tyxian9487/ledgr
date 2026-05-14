@@ -66,6 +66,12 @@ function CalendarOverlay({
     spendByDay[day] = (spendByDay[day] || 0) + t.amount;
   });
 
+  const incomeByDay: Record<number, number> = {};
+  monthTxs.filter(t => t.type === 'income').forEach(t => {
+    const day = new Date(t.date).getDate();
+    incomeByDay[day] = (incomeByDay[day] || 0) + t.amount;
+  });
+
   const maxSpend = Math.max(...Object.values(spendByDay), 1);
   const today = new Date();
 
@@ -119,16 +125,20 @@ function CalendarOverlay({
           {cells.map((day, i) => {
             if (!day) return <div key={`e-${i}`} />;
             const spend = spendByDay[day] || 0;
+            const income = incomeByDay[day] || 0;
             const intensity = spend > 0 ? Math.max(0.12, spend / maxSpend) : 0;
             const isToday = day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
+            const incomeOnly = income > 0 && spend === 0;
 
             return (
               <div key={day} className="flex flex-col items-center py-1">
                 <div
                   className={`w-9 h-9 rounded-2xl flex flex-col items-center justify-center ${isToday ? 'ring-2 ring-green-500' : ''}`}
-                  style={spend > 0 ? { background: `rgba(239,68,68,${intensity})` } : {}}
+                  style={incomeOnly
+                    ? { background: `rgba(34,197,94,0.18)` }
+                    : spend > 0 ? { background: `rgba(239,68,68,${intensity})` } : {}}
                 >
-                  <span className={`text-[11px] font-semibold leading-none ${isToday ? 'text-green-600' : spend > 0 ? (intensity > 0.5 ? 'text-white' : 'text-gray-700 dark:text-gray-200') : 'text-gray-400 dark:text-gray-500'}`}>
+                  <span className={`text-[11px] font-semibold leading-none ${isToday ? 'text-green-600' : incomeOnly ? 'text-green-600' : spend > 0 ? (intensity > 0.5 ? 'text-white' : 'text-gray-700 dark:text-gray-200') : 'text-gray-400 dark:text-gray-500'}`}>
                     {day}
                   </span>
                   {spend > 0 && (
@@ -136,20 +146,33 @@ function CalendarOverlay({
                       {formatCurrency(spend)}
                     </span>
                   )}
+                  {incomeOnly && (
+                    <span className="text-[8px] font-bold leading-none mt-0.5 text-green-600">
+                      {formatCurrency(income)}
+                    </span>
+                  )}
                 </div>
+                {/* Green dot when both income and expense exist */}
+                {income > 0 && spend > 0 && (
+                  <div className="w-1 h-1 rounded-full bg-green-500 mt-0.5" />
+                )}
               </div>
             );
           })}
         </div>
 
         {/* Legend */}
-        <div className="flex items-center gap-2 px-5 pt-4">
+        <div className="flex items-center gap-3 px-5 pt-4">
           <div className="flex gap-1">
             {[0.12, 0.35, 0.6, 0.85].map(o => (
               <div key={o} className="w-4 h-4 rounded-md" style={{ background: `rgba(239,68,68,${o})` }} />
             ))}
           </div>
-          <p className="text-[10px] text-gray-400">Low → High spending</p>
+          <p className="text-[10px] text-gray-400">Low → High spend</p>
+          <div className="flex items-center gap-1">
+            <div className="w-4 h-4 rounded-md" style={{ background: 'rgba(34,197,94,0.18)' }} />
+            <p className="text-[10px] text-gray-400">Income</p>
+          </div>
           <button type="button" onClick={onClose} className="ml-auto w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
             <X size={13} className="text-gray-500" />
           </button>
@@ -222,7 +245,7 @@ export default function Categories({ year, month, filterFn, view = 'category', s
                     {row.txs.map(tx => (
                       <TxRow key={tx.id} tx={tx} isIncome={isIncome} allCategories={allCategories}
                         formatCurrency={formatCurrency} onEdit={setEditTx} onDelete={removeTransaction}
-                        onImageClick={setLightboxImage} />
+                        onImageClick={setLightboxImage} viewYear={year} viewMonth={month} />
                     ))}
                   </div>
                 )}
@@ -310,7 +333,7 @@ export default function Categories({ year, month, filterFn, view = 'category', s
                       return (
                         <TxRow key={tx.id} tx={tx} isIncome={isIncome} allCategories={allCategories}
                           formatCurrency={formatCurrency} onEdit={setEditTx} onDelete={removeTransaction}
-                          onImageClick={setLightboxImage} showCategory />
+                          onImageClick={setLightboxImage} showCategory viewYear={year} viewMonth={month} />
                       );
                     })}
                 </div>
@@ -335,9 +358,60 @@ export default function Categories({ year, month, filterFn, view = 'category', s
   );
 }
 
+// ─── Auto-debit action sheet ─────────────────────────────────────────────────
+function AutoDebitActionSheet({
+  tx,
+  onStop,
+  onEndHere,
+  onCancel,
+}: {
+  tx: Transaction;
+  onStop: () => void;
+  onEndHere: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[140] flex items-end justify-center bg-black/60 animate-fade-in" onClick={onCancel}>
+      <div className="w-full max-w-[430px] bg-white dark:bg-gray-900 rounded-t-3xl animate-slide-up pb-10"
+        onClick={e => e.stopPropagation()}>
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
+        </div>
+        <div className="px-5 py-3">
+          <div className="flex items-center gap-2 mb-1">
+            <RefreshCw size={14} className="text-purple-400" />
+            <p className="text-sm font-bold dark:text-white">{tx.description || 'Auto-debit'}</p>
+          </div>
+          <p className="text-[11px] text-gray-400 mb-5">This is a future recurring transaction. Choose an action:</p>
+          <button
+            type="button"
+            onClick={onEndHere}
+            className="w-full py-3.5 rounded-2xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 text-left px-4 mb-3"
+          >
+            <p className="text-sm font-bold text-orange-600 dark:text-orange-400">End after this period</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">Keep this occurrence and all past ones; cancel future ones</p>
+          </button>
+          <button
+            type="button"
+            onClick={onStop}
+            className="w-full py-3.5 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-left px-4"
+          >
+            <p className="text-sm font-bold text-red-600 dark:text-red-400">Stop recurring entirely</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">Remove all future occurrences of this recurring item</p>
+          </button>
+          <button type="button" onClick={onCancel} className="w-full mt-3 py-3 text-sm text-gray-400 font-medium">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Shared sub-components ───────────────────────────────────────────────────
 function TxRow({
-  tx, isIncome, allCategories, formatCurrency, onEdit, onDelete, onImageClick, showCategory = false,
+  tx, isIncome, allCategories, formatCurrency, onEdit, onDelete, onImageClick,
+  showCategory = false, viewYear, viewMonth,
 }: {
   tx: Transaction;
   isIncome: boolean;
@@ -347,65 +421,103 @@ function TxRow({
   onDelete: (id: string) => void;
   onImageClick: (src: string) => void;
   showCategory?: boolean;
+  viewYear?: number;
+  viewMonth?: number;
 }) {
+  const { stopAutoDebit, endAutoDebitAt } = useApp();
+  const [showAutoAction, setShowAutoAction] = useState(false);
   const cat = allCategories.find(c => c.id === tx.category);
-  return (
-    <div className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-      {tx.receiptImage ? (
-        <button
-          onClick={() => onImageClick(tx.receiptImage!)}
-          className="w-10 h-10 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 flex-shrink-0"
-        >
-          <img src={tx.receiptImage} alt="Receipt" className="w-full h-full object-cover" />
-        </button>
-      ) : showCategory && cat ? (
-        <CategoryIcon icon={cat.icon} color={cat.color} size={14} />
-      ) : (
-        <div className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600 flex-shrink-0 ml-1" />
-      )}
 
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium dark:text-gray-200 truncate">
-          {tx.description || (cat?.label ?? tx.category)}
-        </p>
-        <div className="flex items-center gap-1.5 mt-0.5">
-          <p className="text-[10px] text-gray-400">{formatDate(tx.date)}</p>
-          {showCategory && cat && (
-            <span className="text-[9px] text-gray-400 font-medium">{cat.label}</span>
-          )}
-          {tx.receiptImage && (
-            <div className="flex items-center gap-0.5">
-              <Receipt size={9} className="text-green-500" />
-              <span className="text-[9px] text-green-500 font-medium">receipt</span>
-            </div>
-          )}
-          {tx.isAutoDebit && (() => {
-            const isGenerated = tx.id.includes('_auto_');
-            return (
+  const now = new Date();
+  const isGenerated = tx.id.includes('_auto_');
+  const isFutureMonth = viewYear !== undefined && viewMonth !== undefined && (
+    viewYear > now.getFullYear() ||
+    (viewYear === now.getFullYear() && viewMonth > now.getMonth())
+  );
+  const showAutoAction_trigger = tx.isAutoDebit && isGenerated && isFutureMonth;
+
+  return (
+    <>
+      <div className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+        {tx.receiptImage ? (
+          <button
+            onClick={() => onImageClick(tx.receiptImage!)}
+            className="w-10 h-10 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 flex-shrink-0"
+          >
+            <img src={tx.receiptImage} alt="Receipt" className="w-full h-full object-cover" />
+          </button>
+        ) : showCategory && cat ? (
+          <CategoryIcon icon={cat.icon} color={cat.color} size={14} />
+        ) : (
+          <div className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600 flex-shrink-0 ml-1" />
+        )}
+
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium dark:text-gray-200 truncate">
+            {tx.description || (cat?.label ?? tx.category)}
+          </p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <p className="text-[10px] text-gray-400">{formatDate(tx.date)}</p>
+            {showCategory && cat && (
+              <span className="text-[9px] text-gray-400 font-medium">{cat.label}</span>
+            )}
+            {tx.receiptImage && (
               <div className="flex items-center gap-0.5">
+                <Receipt size={9} className="text-green-500" />
+                <span className="text-[9px] text-green-500 font-medium">receipt</span>
+              </div>
+            )}
+            {tx.isAutoDebit && (
+              <button
+                type="button"
+                onClick={showAutoAction_trigger ? () => setShowAutoAction(true) : undefined}
+                className={`flex items-center gap-0.5 ${showAutoAction_trigger ? 'cursor-pointer active:scale-95' : 'cursor-default'}`}
+              >
                 <RefreshCw size={9} className={isGenerated ? 'text-purple-400' : 'text-blue-500'} />
                 <span className={`text-[9px] font-medium ${isGenerated ? 'text-purple-400' : 'text-blue-500'}`}>
-                  {isGenerated ? 'auto' : (tx.autoDebitPeriod ?? 'recurring')}
+                  {isGenerated ? (showAutoAction_trigger ? 'tap to manage' : 'auto') : (tx.autoDebitPeriod ?? 'recurring')}
                 </span>
-              </div>
-            );
-          })()}
+              </button>
+            )}
+          </div>
         </div>
+
+        <span className={`text-xs font-semibold flex-shrink-0 ${isIncome ? 'text-green-600' : 'text-gray-700 dark:text-gray-300'}`}>
+          {isIncome ? '+' : '-'}{formatCurrency(tx.amount)}
+        </span>
+
+        {!showAutoAction_trigger && (
+          <>
+            <button onClick={() => onEdit(tx)}
+              className="ml-1 w-6 h-6 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity">
+              <Edit2 size={11} className="text-blue-500" />
+            </button>
+            <button onClick={() => onDelete(tx.id)}
+              className="ml-1 w-6 h-6 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity">
+              <Trash2 size={11} className="text-red-500" />
+            </button>
+          </>
+        )}
+        {showAutoAction_trigger && (
+          <button
+            type="button"
+            onClick={() => setShowAutoAction(true)}
+            className="ml-1 w-6 h-6 rounded-full bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity"
+          >
+            <RefreshCw size={11} className="text-purple-400" />
+          </button>
+        )}
       </div>
 
-      <span className={`text-xs font-semibold flex-shrink-0 ${isIncome ? 'text-green-600' : 'text-gray-700 dark:text-gray-300'}`}>
-        {isIncome ? '+' : '-'}{formatCurrency(tx.amount)}
-      </span>
-
-      <button onClick={() => onEdit(tx)}
-        className="ml-1 w-6 h-6 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity">
-        <Edit2 size={11} className="text-blue-500" />
-      </button>
-      <button onClick={() => onDelete(tx.id)}
-        className="ml-1 w-6 h-6 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity">
-        <Trash2 size={11} className="text-red-500" />
-      </button>
-    </div>
+      {showAutoAction && (
+        <AutoDebitActionSheet
+          tx={tx}
+          onStop={() => { stopAutoDebit(tx.id); setShowAutoAction(false); }}
+          onEndHere={() => { endAutoDebitAt(tx.id); setShowAutoAction(false); }}
+          onCancel={() => setShowAutoAction(false)}
+        />
+      )}
+    </>
   );
 }
 
