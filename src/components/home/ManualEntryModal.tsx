@@ -13,6 +13,8 @@ interface Props {
     description?: string;
     receiptImage?: string;
     date?: string;
+    isAutoDebit?: boolean;
+    autoDebitPeriod?: AutoDebitPeriod;
   };
 }
 
@@ -37,8 +39,8 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
   const [date, setDate] = useState(prefill?.date || todayString());
   const [category, setCategory] = useState(prefill?.category || '');
   const [description, setDescription] = useState(prefill?.description || '');
-  const [isAutoDebit, setIsAutoDebit] = useState(false);
-  const [period, setPeriod] = useState<AutoDebitPeriod>('monthly');
+  const [isAutoDebit, setIsAutoDebit] = useState(prefill?.isAutoDebit || false);
+  const [period, setPeriod] = useState<AutoDebitPeriod>(prefill?.autoDebitPeriod || 'monthly');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const [viewReceipt, setViewReceipt] = useState(false);

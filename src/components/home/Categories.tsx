@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, Trash2, X, Receipt, Edit2 } from 'lucide-react';
+import { ChevronDown, Trash2, X, Receipt, Edit2, RefreshCw } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, Transaction } from '../../types';
 import CategoryIcon from './CategoryIcon';
@@ -106,6 +106,12 @@ export default function Categories({ year, month, filterFn }: Props) {
                               <span className="text-[9px] text-green-500 font-medium">receipt</span>
                             </div>
                           )}
+                          {tx.isAutoDebit && (
+                            <div className="flex items-center gap-0.5">
+                              <RefreshCw size={9} className="text-blue-500" />
+                              <span className="text-[9px] text-blue-500 font-medium">auto</span>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -146,6 +152,8 @@ export default function Categories({ year, month, filterFn }: Props) {
             description: editTx.description,
             receiptImage: editTx.receiptImage,
             date: editTx.date.slice(0, 10),
+            isAutoDebit: editTx.isAutoDebit,
+            autoDebitPeriod: editTx.autoDebitPeriod,
           }}
           onClose={() => setEditTx(null)}
         />
