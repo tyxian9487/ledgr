@@ -41,12 +41,9 @@ export default function GoalTrackerCard({ year, month }: Props) {
     // For savings, use transactions in savings category
     actualAmount = txs.filter(t => t.category === 'savings').reduce((sum, t) => sum + t.amount, 0);
   } else {
-    // For investment, use transactions in investment category (assuming it exists)
-    // If no investment category, fall back to net savings
-    const investmentTxs = txs.filter(t => t.category === 'investment' || t.category === 'investments');
-    actualAmount = investmentTxs.length > 0 
-      ? investmentTxs.reduce((sum, t) => sum + t.amount, 0)
-      : totalIncome - totalExpenses;
+    // For investment, only count transactions tagged as investment
+    const investmentTxs = txs.filter(t => t.category === 'investment');
+    actualAmount = investmentTxs.reduce((sum, t) => sum + t.amount, 0);
   }
 
   // Calculate progress

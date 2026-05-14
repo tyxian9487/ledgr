@@ -207,7 +207,6 @@ export const EXPENSE_CATEGORIES = [
 export const INCOME_CATEGORIES = [
   { id: 'salary', label: 'Salary', icon: 'Briefcase', color: '#22c55e' },
   { id: 'freelance', label: 'Freelance', icon: 'Laptop', color: '#16a34a' },
-  { id: 'investment', label: 'Investment', icon: 'TrendingUp', color: '#15803d' },
   { id: 'business', label: 'Business', icon: 'Building2', color: '#166534' },
   { id: 'gift', label: 'Gift', icon: 'Gift', color: '#4ade80' },
   { id: 'other_income', label: 'Other Income', icon: 'Plus', color: '#86efac' },

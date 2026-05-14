@@ -159,12 +159,46 @@ export default function BudgetPage() {
 
   const income = parseFloat(incomeInput) || 0;
 
+  const initialSavingsValue = budget.savingsGoal
+    ? budget.savingsGoal.mode === 'pct'
+      ? income > 0 ? String(Math.round((budget.savingsGoal.amount / income) * 100)) : String(Math.round(budget.savingsGoal.amount))
+      : String(Math.round(budget.savingsGoal.amount))
+    : '';
+
+  const initialInvestValue = budget.investmentGoal
+    ? budget.investmentGoal.mode === 'pct'
+      ? income > 0 ? String(Math.round((budget.investmentGoal.amount / income) * 100)) : String(Math.round(budget.investmentGoal.amount))
+      : String(Math.round(budget.investmentGoal.amount))
+    : '';
+
   const [savingsEnabled, setSavingsEnabled] = useState(budget.savingsGoal?.enabled ?? false);
   const [savingsMode, setSavingsMode] = useState<'pct' | 'fixed'>(budget.savingsGoal?.mode ?? 'pct');
-  const [savingsValue, setSavingsValue] = useState('');
+  const [savingsValue, setSavingsValue] = useState(initialSavingsValue);
   const [investEnabled, setInvestEnabled] = useState(budget.investmentGoal?.enabled ?? false);
   const [investMode, setInvestMode] = useState<'pct' | 'fixed'>(budget.investmentGoal?.mode ?? 'pct');
-  const [investValue, setInvestValue] = useState('');
+  const [investValue, setInvestValue] = useState(initialInvestValue);
+
+  const currentSavingsValue = savingsValue;
+  const currentInvestValue = investValue;
+
+  const budgetSavingsValue = initialSavingsValue;
+  const budgetInvestValue = initialInvestValue;
+
+  const allocationsEqual = (a: BudgetAllocation[], b: BudgetAllocation[]) => {
+    if (a.length !== b.length) return false;
+    return a.every((item, index) => item.categoryId === b[index]?.categoryId && item.percentage === b[index]?.percentage);
+  };
+
+  const isDirty =
+    String(budget.expectedIncome) !== incomeInput.trim() ||
+    (budget.incomeFixed ?? false) !== incomeFixed ||
+    !allocationsEqual(budget.allocations, allocations) ||
+    (budget.savingsGoal?.enabled ?? false) !== savingsEnabled ||
+    (budget.savingsGoal?.mode ?? 'pct') !== savingsMode ||
+    budgetSavingsValue !== currentSavingsValue ||
+    (budget.investmentGoal?.enabled ?? false) !== investEnabled ||
+    (budget.investmentGoal?.mode ?? 'pct') !== investMode ||
+    budgetInvestValue !== currentInvestValue;
 
   // Update display values when income or budget changes
   useEffect(() => {
@@ -293,7 +327,7 @@ export default function BudgetPage() {
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-5 pb-40 space-y-4" style={{ overscrollBehavior: 'contain' }}>
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-5 pb-28 space-y-4" style={{ overscrollBehavior: 'contain' }}>
 
         {/* Income input */}
         <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800">
@@ -588,6 +622,18 @@ export default function BudgetPage() {
           </div>
         )}
 
+        {analyzed && (
+          <div className="px-0 pb-8">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!isDirty}
+              className={`w-full py-4 rounded-2xl font-bold text-base shadow-lg transition-transform ${isDirty ? 'bg-green-600 text-white shadow-green-600/30 active:scale-[0.98]' : 'bg-gray-300 text-gray-700 cursor-not-allowed shadow-none'}`}>
+              Save Budget Plan
+            </button>
+          </div>
+        )}
+
         {/* This Month Summary */}
         {analyzed && income > 0 && (
           <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800">
@@ -617,13 +663,6 @@ export default function BudgetPage() {
             )}
           </div>
         )}
-
-        <div className="px-0 pb-8">
-          <button type="button" onClick={handleSave}
-            className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base shadow-lg shadow-green-600/30 active:scale-[0.98] transition-transform">
-            Save Budget Plan
-          </button>
-        </div>
       </div>
     </div>
   );
