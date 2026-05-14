@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Check, Sparkles, Shield, RefreshCw } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -67,6 +67,14 @@ export default function SubscriptionPage() {
 
   const isPremium = userProfile.plan === 'premium';
 
+  // If user arrives from onboarding but is already premium (repeat tester),
+  // show the tour offer immediately if the tour hasn't been completed yet.
+  useEffect(() => {
+    if (fromOnboarding && isPremium && !localStorage.getItem('ledgr_tour_done')) {
+      setShowTourOffer(true);
+    }
+  }, []);
+
   if (showTourOffer) {
     return (
       <div className="flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-6" style={{ height: '100dvh' }}>
@@ -133,11 +141,11 @@ export default function SubscriptionPage() {
       </div>
 
       {/* Bottom sheet */}
-      <div
-        className="flex-1 min-h-0 overflow-y-auto bg-white dark:bg-gray-950 rounded-t-3xl flex flex-col"
-        style={{ overscrollBehavior: 'contain' }}
-      >
-        <div className="flex-1 px-5 pt-6 space-y-4 pb-2">
+      <div className="flex-1 min-h-0 bg-white dark:bg-gray-950 rounded-t-3xl flex flex-col">
+        <div
+          className="flex-1 min-h-0 overflow-y-auto px-5 pt-6 space-y-4 pb-2"
+          style={{ overscrollBehavior: 'contain' }}
+        >
           {/* Plan toggle */}
           {!isPremium && (
             <div className="flex bg-gray-100 dark:bg-gray-800 rounded-2xl p-1 gap-1">
