@@ -36,7 +36,7 @@ export default function OnboardingPage() {
   const initial = name.trim() ? name.trim().charAt(0).toUpperCase() : '?';
 
   return (
-    <div className="flex flex-col bg-gray-50 dark:bg-gray-950" style={{ height: '100dvh' }}>
+    <div className="flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-950" style={{ height: '100dvh' }}>
       {/* Header */}
       <div className="px-6 pt-14 pb-5 flex-shrink-0">
         <div className="flex gap-1.5 mb-5">
@@ -118,7 +118,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* CTA */}
-      <div className="flex-shrink-0 px-6 pt-4 pb-10">
+      <div className="flex-shrink-0 px-6 pt-4" style={{ paddingBottom: 'max(32px, env(safe-area-inset-bottom, 32px))' }}>
         <button
           type="button"
           onClick={handleGetStarted}
