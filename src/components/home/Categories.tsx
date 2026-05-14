@@ -25,8 +25,8 @@ export default function Categories({ year, month, filterFn }: Props) {
   const allTxs = getMonthTransactions(year, month);
   const txs = filterFn ? allTxs.filter(filterFn) : allTxs;
   const allCategories = [
-    ...EXPENSE_CATEGORIES,
-    ...INCOME_CATEGORIES.filter(c => !EXPENSE_CATEGORIES.some(e => e.id === c.id)),
+    ...EXPENSE_CATEGORIES.map(c => ({ ...c, type: 'expense' as const })),
+    ...INCOME_CATEGORIES.filter(c => !EXPENSE_CATEGORIES.some(e => e.id === c.id)).map(c => ({ ...c, type: 'income' as const })),
   ];
 
   const rows = allCategories
@@ -51,7 +51,7 @@ export default function Categories({ year, month, filterFn }: Props) {
       <div className="mx-4 space-y-2 pb-2">
         {rows.map(row => {
           const isOpen = expanded === row.id;
-          const isIncome = INCOME_CATEGORIES.some(c => c.id === row.id);
+          const isIncome = row.type === 'income';
           return (
             <div key={row.id} className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
               {/* Category header row */}
