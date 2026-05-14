@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import GreenCard from '../components/home/GreenCard';
 import Categories from '../components/home/Categories';
 import ManualEntryModal from '../components/home/ManualEntryModal';
+import GoalTrackerCard from '../components/home/GoalTrackerCard';
 import { useApp } from '../context/AppContext';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, Transaction } from '../types';
 
@@ -104,6 +105,9 @@ export default function Home() {
 
       {/* Green summary card */}
       <GreenCard year={year} month={month} onPrev={handlePrev} onNext={handleNext} onYearChange={setYear} />
+
+      {/* Goal Tracker Card */}
+      <GoalTrackerCard year={year} month={month} />
 
       {/* Action buttons — side by side, same height */}
       <div className="mx-4 mt-4 grid grid-cols-2 gap-3">

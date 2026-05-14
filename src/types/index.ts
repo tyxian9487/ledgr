@@ -174,6 +174,16 @@ export interface BudgetSettings {
   expectedIncome: number;
   allocations: BudgetAllocation[];
   incomeFixed?: boolean;
+  savingsGoal?: {
+    enabled: boolean;
+    amount: number;
+    mode: 'pct' | 'fixed';
+  };
+  investmentGoal?: {
+    enabled: boolean;
+    amount: number;
+    mode: 'pct' | 'fixed';
+  };
 }
 
 export const EXPENSE_CATEGORIES = [

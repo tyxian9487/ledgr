@@ -157,12 +157,31 @@ export default function BudgetPage() {
   const [showGoals, setShowGoals] = useState(true);
   const [activeSlice, setActiveSlice] = useState<string | null>(null);
 
-  const [savingsEnabled, setSavingsEnabled] = useState(false);
-  const [savingsMode, setSavingsMode] = useState<'pct' | 'fixed'>('pct');
+  const [savingsEnabled, setSavingsEnabled] = useState(budget.savingsGoal?.enabled ?? false);
+  const [savingsMode, setSavingsMode] = useState<'pct' | 'fixed'>(budget.savingsGoal?.mode ?? 'pct');
   const [savingsValue, setSavingsValue] = useState('');
-  const [investEnabled, setInvestEnabled] = useState(false);
-  const [investMode, setInvestMode] = useState<'pct' | 'fixed'>('pct');
+  const [investEnabled, setInvestEnabled] = useState(budget.investmentGoal?.enabled ?? false);
+  const [investMode, setInvestMode] = useState<'pct' | 'fixed'>(budget.investmentGoal?.mode ?? 'pct');
   const [investValue, setInvestValue] = useState('');
+
+  // Update display values when income or budget changes
+  useEffect(() => {
+    if (budget.savingsGoal && income > 0) {
+      const value = budget.savingsGoal.mode === 'pct' 
+        ? (budget.savingsGoal.amount / income) * 100 
+        : budget.savingsGoal.amount;
+      setSavingsValue(String(Math.round(value)));
+    }
+  }, [budget.savingsGoal, income]);
+
+  useEffect(() => {
+    if (budget.investmentGoal && income > 0) {
+      const value = budget.investmentGoal.mode === 'pct' 
+        ? (budget.investmentGoal.amount / income) * 100 
+        : budget.investmentGoal.amount;
+      setInvestValue(String(Math.round(value)));
+    }
+  }, [budget.investmentGoal, income]);
 
   const income = parseFloat(incomeInput) || 0;
   const totalPct = allocations.reduce((s, a) => s + a.percentage, 0);
@@ -228,9 +247,27 @@ export default function BudgetPage() {
   const netIncome = Math.max(0, income - savingsAmt - investAmt);
 
   const handleSave = useCallback(() => {
-    updateBudget({ expectedIncome: income, allocations, incomeFixed });
+    const savingsGoal = savingsEnabled && savingsValue ? {
+      enabled: true,
+      amount: savingsMode === 'pct' ? income * (parseFloat(savingsValue) / 100) : parseFloat(savingsValue),
+      mode: savingsMode,
+    } : undefined;
+    
+    const investmentGoal = investEnabled && investValue ? {
+      enabled: true,
+      amount: investMode === 'pct' ? income * (parseFloat(investValue) / 100) : parseFloat(investValue),
+      mode: investMode,
+    } : undefined;
+    
+    updateBudget({ 
+      expectedIncome: income, 
+      allocations, 
+      incomeFixed,
+      savingsGoal,
+      investmentGoal,
+    });
     navigate('/');
-  }, [income, allocations, incomeFixed, updateBudget, navigate]);
+  }, [income, allocations, incomeFixed, savingsEnabled, savingsValue, savingsMode, investEnabled, investValue, investMode, updateBudget, navigate]);
 
   const refIncome = income > 0 ? income : (actualIncome > 0 ? actualIncome : 5000);
   const chartAmount = analyzed ? netIncome : refIncome;
