@@ -621,7 +621,7 @@ export default function BudgetPage() {
       </div>
 
       {/* Save button pinned at bottom for when flex layout works */}
-      <div className="flex-shrink-0 px-5 py-3 bg-gray-50 dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800">
+      <div className="sticky bottom-0 z-20 flex-shrink-0 px-5 py-3 bg-gray-50 dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 backdrop-blur-md">
         <button type="button" onClick={handleSave}
           className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base shadow-lg shadow-green-600/30 active:scale-[0.98] transition-transform">
           Save Budget Plan
