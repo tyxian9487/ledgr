@@ -293,7 +293,7 @@ export default function BudgetPage() {
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-5 pb-4 space-y-4" style={{ overscrollBehavior: 'contain' }}>
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-5 pb-28 space-y-4" style={{ overscrollBehavior: 'contain' }}>
 
         {/* Income input */}
         <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800">
@@ -621,7 +621,7 @@ export default function BudgetPage() {
       </div>
 
       {/* Save button pinned at bottom for when flex layout works */}
-      <div className="sticky bottom-0 z-20 flex-shrink-0 px-5 py-3 bg-gray-50 dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 backdrop-blur-md">
+      <div className="sticky bottom-0 z-60 flex-shrink-0 px-5 py-3 bg-gray-50 dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 backdrop-blur-md">
         <button type="button" onClick={handleSave}
           className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base shadow-lg shadow-green-600/30 active:scale-[0.98] transition-transform">
           Save Budget Plan
