@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, ChevronDown, RefreshCw, Calendar, ImageIcon } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, TransactionType, AutoDebitPeriod } from '../../types';
+import { playRewardSound } from '../../utils/sounds';
 
 interface Props {
   onClose: () => void;
@@ -64,6 +65,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
       updateTransaction(transactionId, data);
     } else {
       addTransaction(data);
+      playRewardSound();
     }
     onClose();
   }
