@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowRightLeft, PiggyBank, TrendingUp } from 'lucide-react';
+import { Activity, ArrowRightLeft, PiggyBank, TrendingUp } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import StatusCelebration from '../StatusCelebration';
 
@@ -92,7 +92,10 @@ export default function GoalTrackerCard({ year, month }: Props) {
 
         {/* Goal Content */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-bold dark:text-white truncate">{goalTitle}</h3>
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="text-sm font-bold dark:text-white truncate">{goalTitle}</h3>
+            <Activity size={16} className={goalColor === 'green' ? 'text-green-500 opacity-80' : 'text-purple-500 opacity-80'} />
+          </div>
           
           {/* Progress Bar */}
           <div className="mt-2 relative">
