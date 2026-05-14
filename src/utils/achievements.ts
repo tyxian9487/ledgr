@@ -66,6 +66,26 @@ function manualCount(transactions: Transaction[]) {
   return transactions.filter(t => !t.id.includes('_auto_')).length;
 }
 
+function savingsGoalPct(budget: BudgetSettings): number {
+  if (!budget.savingsGoal?.enabled || !budget.expectedIncome || budget.expectedIncome <= 0) return 0;
+  return budget.savingsGoal.amount / budget.expectedIncome;
+}
+
+function goalFulfilledForAnyMonth(transactions: Transaction[], goalAmount: number): boolean {
+  if (goalAmount <= 0) return false;
+  const monthlySavings = new Map<string, number>();
+  transactions.forEach(t => {
+    if (t.type !== 'expense' || t.category !== 'savings') return;
+    const d = new Date(t.date);
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    monthlySavings.set(key, (monthlySavings.get(key) ?? 0) + t.amount);
+  });
+  for (const total of monthlySavings.values()) {
+    if (total >= goalAmount) return true;
+  }
+  return false;
+}
+
 export const BADGES: BadgeDef[] = [
   {
     id: 'first_transaction', icon: '🌱', label: 'First Steps',
@@ -95,13 +115,19 @@ export const BADGES: BadgeDef[] = [
   },
   {
     id: 'saver_10', icon: '💰', label: 'Smart Saver',
-    description: 'Saved 10%+ of income in a month',
-    check: ({ transactions }) => peakSavingRate(transactions) >= 0.10,
+    description: 'Saved a set goal of 10%+ of income',
+    check: ({ transactions, budget }) => {
+      const pct = savingsGoalPct(budget);
+      return pct >= 0.10 && goalFulfilledForAnyMonth(transactions, budget.savingsGoal?.amount ?? 0);
+    },
   },
   {
     id: 'saver_20', icon: '🏦', label: 'Super Saver',
-    description: 'Saved 20%+ of income in a month',
-    check: ({ transactions }) => peakSavingRate(transactions) >= 0.20,
+    description: 'Saved a set goal of 15%+ of income',
+    check: ({ transactions, budget }) => {
+      const pct = savingsGoalPct(budget);
+      return pct >= 0.15 && goalFulfilledForAnyMonth(transactions, budget.savingsGoal?.amount ?? 0);
+    },
   },
   {
     id: 'streak_3', icon: '🔥', label: 'On a Roll',
