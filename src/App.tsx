@@ -14,6 +14,7 @@ import TrendsPage from './pages/TrendsPage';
 import LoginPage from './pages/LoginPage';
 import OnboardingPage from './pages/OnboardingPage';
 import AchievementsPage from './pages/AchievementsPage';
+import GoalFormPage from './pages/GoalFormPage';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, hasCompletedOnboarding } = useApp();
@@ -55,6 +56,7 @@ function AppRoutes() {
         <Route path="/budget" element={<AuthGuard><BudgetPage /></AuthGuard>} />
         <Route path="/trends" element={<AuthGuard><TrendsPage /></AuthGuard>} />
         <Route path="/achievements" element={<AuthGuard><AchievementsPage /></AuthGuard>} />
+        <Route path="/goals/new" element={<AuthGuard><GoalFormPage /></AuthGuard>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       {!hideNav && isAuthenticated && hasCompletedOnboarding && <BottomNav />}

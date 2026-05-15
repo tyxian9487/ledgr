@@ -3,8 +3,9 @@ import {
   ArrowLeft, Sparkles, RotateCcw, ChevronDown, ChevronUp,
   Home, UtensilsCrossed, Car, Heart, Zap, Tv, ShoppingBag,
   PiggyBank, RefreshCw, Gem, MoreHorizontal, TrendingUp, ToggleLeft, ToggleRight,
-  Lock, Unlock,
+  Lock, Unlock, X, Plus,
 } from 'lucide-react';
+import { iconMap } from '../components/home/CategoryIcon';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { BudgetAllocation } from '../types';
@@ -137,7 +138,7 @@ function MiniDonut({ allocations, size = 140, activeSlice, onSliceClick }: {
 
 export default function BudgetPage() {
   const navigate = useNavigate();
-  const { budget, updateBudget, getMonthTransactions, getMonthIncome, formatCurrency, getCurrencySymbol } = useApp();
+  const { budget, updateBudget, getMonthTransactions, getMonthIncome, formatCurrency, getCurrencySymbol, removeCustomGoal } = useApp();
 
   const actualIncome = getMonthIncome(NOW.getFullYear(), NOW.getMonth());
 
@@ -427,12 +428,10 @@ export default function BudgetPage() {
             className="w-full px-5 pt-4 pb-3 flex items-center justify-between border-b border-gray-50 dark:border-gray-800"
           >
             <div className="text-left">
-              <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">Savings & Investment Goals</p>
-              {!showGoals && (savingsAmt > 0 || investAmt > 0) ? (
+              <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">Goals</p>
+              {!showGoals && savingsEnabled && savingsAmt > 0 ? (
                 <p className="text-xs text-green-600 dark:text-green-400 mt-0.5 font-medium">
-                  {savingsEnabled && savingsAmt > 0 ? `Savings ${formatCurrency(savingsAmt)}/mo` : ''}
-                  {savingsEnabled && savingsAmt > 0 && investEnabled && investAmt > 0 ? ' · ' : ''}
-                  {investEnabled && investAmt > 0 ? `Invest ${formatCurrency(investAmt)}/mo` : ''}
+                  {`Savings ${formatCurrency(savingsAmt)}/mo`}
                 </p>
               ) : (
                 <p className="text-xs text-gray-400 mt-0.5">Optional — set a personal target</p>
@@ -488,45 +487,40 @@ export default function BudgetPage() {
             )}
           </div>
 
-          {/* Investment goal */}
-          <div className="px-5 py-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <TrendingUp size={16} className="text-purple-500" />
-                <span className="text-sm font-semibold dark:text-white">Monthly Investment Goal</span>
+
+          {(budget.customGoals ?? []).map(goal => {
+            const GoalIcon = iconMap[goal.icon] || PiggyBank;
+            const pct = goal.targetAmount > 0 ? Math.min(100, (goal.savedAmount / goal.targetAmount) * 100) : 0;
+            const daysLeft = Math.max(0, Math.round((new Date(goal.startDate).getTime() + goal.durationDays * 86400000 - Date.now()) / 86400000));
+            return (
+              <div key={goal.id} className="px-5 py-4 border-b border-gray-50 dark:border-gray-800">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: goal.color + '20' }}>
+                    <GoalIcon size={16} style={{ color: goal.color }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold dark:text-white truncate">{goal.name}</p>
+                    <p className="text-xs text-gray-400">{formatCurrency(goal.savedAmount)} / {formatCurrency(goal.targetAmount)} · {daysLeft}d left</p>
+                  </div>
+                  <button type="button" onClick={() => removeCustomGoal(goal.id)} className="text-gray-300 dark:text-gray-600 hover:text-red-400 transition-colors">
+                    <X size={14} />
+                  </button>
+                </div>
+                <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: goal.color }} />
+                </div>
               </div>
-              <button type="button" onClick={() => setInvestEnabled(v => !v)} className="flex items-center">
-                {investEnabled
-                  ? <ToggleRight size={28} className="text-purple-500" />
-                  : <ToggleLeft size={28} className="text-gray-300 dark:text-gray-600" />}
-              </button>
-            </div>
-            {investEnabled && (
-              <>
-                <div className="flex gap-2 mb-3">
-                  <button type="button" onClick={() => setInvestMode('pct')}
-                    className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors ${investMode === 'pct' ? 'bg-purple-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
-                    % of income
-                  </button>
-                  <button type="button" onClick={() => setInvestMode('fixed')}
-                    className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors ${investMode === 'fixed' ? 'bg-purple-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
-                    Fixed {getCurrencySymbol()}
-                  </button>
-                </div>
-                <div className="flex items-center border border-gray-100 dark:border-gray-700 rounded-xl px-3 py-2 gap-2 bg-gray-50 dark:bg-gray-800">
-                  <span className="text-gray-400 text-sm">{investMode === 'pct' ? '%' : getCurrencySymbol()}</span>
-                  <input type="number" placeholder={investMode === 'pct' ? '10' : '500'} value={investValue}
-                    onChange={e => setInvestValue(e.target.value)}
-                    className="flex-1 bg-transparent text-sm font-bold outline-none dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-600"
-                    inputMode="decimal" />
-                </div>
-                {investAmt > 0 && (
-                  <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold mt-1.5 text-right">
-                    = {formatCurrency(investAmt)} / mo
-                  </p>
-                )}
-              </>
-            )}
+            );
+          })}
+          <div className="px-5 py-4">
+            <button
+              type="button"
+              onClick={() => navigate('/goals/new')}
+              className="w-full py-3 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-center gap-2 text-sm font-semibold text-gray-400 dark:text-gray-500 hover:border-green-400 hover:text-green-600 transition-colors"
+            >
+              <Plus size={16} />
+              Add Goal
+            </button>
           </div>
           </>)}
         </div>

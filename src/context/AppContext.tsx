@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { Transaction, UserProfile, BudgetSettings, AutoDebitPeriod, CustomCategory, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../types';
+import { Transaction, UserProfile, BudgetSettings, AutoDebitPeriod, CustomCategory, CustomGoal, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../types';
 
 function advanceDate(date: Date, period: AutoDebitPeriod): Date {
   const d = new Date(date);
@@ -70,6 +70,9 @@ interface AppContextType {
   stopAutoDebit: (id: string) => void;
   endAutoDebitAt: (id: string) => void;
   restartAutoDebit: (templateId: string) => void;
+  addCustomGoal: (goal: Omit<CustomGoal, 'id'>) => void;
+  updateCustomGoal: (id: string, data: Partial<Omit<CustomGoal, 'id'>>) => void;
+  removeCustomGoal: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -343,6 +346,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const addCustomGoal = useCallback((goal: Omit<CustomGoal, 'id'>) => {
+    const newGoal: CustomGoal = { ...goal, id: `goal_${Date.now()}` };
+    setBudget(prev => ({ ...prev, customGoals: [...(prev.customGoals ?? []), newGoal] }));
+  }, []);
+
+  const updateCustomGoal = useCallback((id: string, data: Partial<Omit<CustomGoal, 'id'>>) => {
+    setBudget(prev => ({
+      ...prev,
+      customGoals: (prev.customGoals ?? []).map(g => g.id === id ? { ...g, ...data } : g),
+    }));
+  }, []);
+
+  const removeCustomGoal = useCallback((id: string) => {
+    setBudget(prev => ({
+      ...prev,
+      customGoals: (prev.customGoals ?? []).filter(g => g.id !== id),
+    }));
+  }, []);
+
   return (
     <AppContext.Provider value={{
       transactions,
@@ -376,6 +398,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       stopAutoDebit,
       endAutoDebitAt,
       restartAutoDebit,
+      addCustomGoal,
+      updateCustomGoal,
+      removeCustomGoal,
     }}>
       {children}
     </AppContext.Provider>

@@ -171,6 +171,17 @@ export interface BudgetAllocation {
   percentage: number;
 }
 
+export interface CustomGoal {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  targetAmount: number;
+  savedAmount: number;
+  durationDays: number;
+  startDate: string;
+}
+
 export interface BudgetSettings {
   expectedIncome: number;
   allocations: BudgetAllocation[];
@@ -185,6 +196,7 @@ export interface BudgetSettings {
     amount: number;
     mode: 'pct' | 'fixed';
   };
+  customGoals?: CustomGoal[];
 }
 
 export const EXPENSE_CATEGORIES = [
