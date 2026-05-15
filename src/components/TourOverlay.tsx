@@ -23,34 +23,46 @@ export default function TourOverlay() {
   const [rect, setRect] = useState<DOMRect | null>(null);
   const prevRectRef = useRef<DOMRect | null>(null);
   const rafRef = useRef<number>();
-  const scrolledRef = useRef(false); // reset per step so we scroll once when element first found
+  const scrolledRef = useRef(false);
+  const prevPageRef = useRef<string | null>(null);
 
   const onCorrectPage = currentStep ? location.pathname === currentStep.page : false;
 
   useEffect(() => {
-    scrolledRef.current = false; // reset scroll-once flag when step changes
-    if (!tourActive || !currentStep || !onCorrectPage) {
-      prevRectRef.current = null;
-      setRect(null);
-      return;
+    // Always clear stale rect and reset flags on step change
+    setRect(null);
+    prevRectRef.current = null;
+    scrolledRef.current = false;
+
+    if (!tourActive || !currentStep || !onCorrectPage) return;
+
+    // When entering a new page in the tour, scroll the window to top first so
+    // elements aren't above the viewport due to residual scroll from the previous page.
+    if (currentStep.page !== prevPageRef.current) {
+      prevPageRef.current = currentStep.page;
+      window.scrollTo(0, 0);
     }
+
     function poll() {
       const el = document.querySelector(currentStep!.selector);
       const newRect = el ? el.getBoundingClientRect() : null;
 
-      // First time we find the element, scroll it into view if it's off-screen
+      // First time element is found, scroll it into view if off-screen
       if (el && newRect && !scrolledRef.current) {
         scrolledRef.current = true;
-        const offTop    = newRect.top < 60;
-        const offBottom = newRect.bottom > window.innerHeight - 60;
+        const offTop    = newRect.top < 80;
+        const offBottom = newRect.bottom > window.innerHeight - 80;
         if (offTop || offBottom) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const targetY = window.scrollY + newRect.top - (window.innerHeight / 2 - newRect.height / 2);
+          window.scrollTo(0, Math.max(0, targetY));
         }
       }
 
       if (rectsChanged(prevRectRef.current, newRect)) {
         prevRectRef.current = newRect;
-        setRect(newRect ? { top: newRect.top, left: newRect.left, width: newRect.width, height: newRect.height, right: newRect.right, bottom: newRect.bottom, x: newRect.x, y: newRect.y, toJSON: newRect.toJSON.bind(newRect) } as DOMRect : null);
+        setRect(newRect
+          ? { top: newRect.top, left: newRect.left, width: newRect.width, height: newRect.height, right: newRect.right, bottom: newRect.bottom, x: newRect.x, y: newRect.y, toJSON: newRect.toJSON.bind(newRect) } as DOMRect
+          : null);
       }
       rafRef.current = requestAnimationFrame(poll);
     }
@@ -67,15 +79,14 @@ export default function TourOverlay() {
   const cardW = Math.min(300, vw - 32);
   const cardLeft = Math.max(16, (vw - cardW) / 2);
 
-  // If spotlight is in the bottom 45% of the screen, float the card near the top
-  // so it doesn't cover bottom nav or the highlighted element.
   const cardAtTop = rect ? rect.top > vh * 0.55 : false;
   const cardPos = cardAtTop
     ? { top: 80, bottom: 'auto' as const }
     : { bottom: 24, top: 'auto' as const };
 
-  // Spotlight geometry — only render panels when element is within the viewport
-  const isInView = rect != null && rect.top < vh && rect.bottom > 0 && rect.left < vw && rect.right > 0;
+  // Only render spotlight panels when the element's top is actually within the viewport.
+  // This prevents the "full dark overlay" artifact when an element is off-screen.
+  const isInView = rect != null && rect.top >= 0 && rect.top < vh;
   const sl = isInView ? rect!.left - PAD : 0;
   const st = isInView ? rect!.top - PAD : 0;
   const sr = isInView ? rect!.right + PAD : vw;
@@ -85,23 +96,18 @@ export default function TourOverlay() {
 
   const overlay = (
     <>
-      {/* Four dark panels surrounding the spotlight — only when element is visible in viewport */}
+      {/* Four dark panels surrounding the spotlight — only rendered when element is in view */}
       {isInView && (
         <>
-          {/* top strip */}
           <div onClick={skipTour} style={{ position: 'fixed', top: 0, left: 0, right: 0, height: Math.max(0, st), background: OVL, zIndex: 99990 }} />
-          {/* bottom strip */}
           <div onClick={skipTour} style={{ position: 'fixed', top: Math.max(0, sb), left: 0, right: 0, bottom: 0, background: OVL, zIndex: 99990 }} />
-          {/* left strip */}
           <div onClick={skipTour} style={{ position: 'fixed', top: st, left: 0, width: Math.max(0, sl), height: sh, background: OVL, zIndex: 99990 }} />
-          {/* right strip */}
           <div onClick={skipTour} style={{ position: 'fixed', top: st, left: sr, right: 0, height: sh, background: OVL, zIndex: 99990 }} />
-          {/* white highlight ring — pointer events off so the element inside is tappable */}
           <div style={{ position: 'fixed', top: st, left: sl, width: sw, height: sh, border: RING, borderRadius: RADIUS, zIndex: 99991, pointerEvents: 'none' }} />
         </>
       )}
 
-      {/* Tour card — floats top or bottom depending on where the spotlight is */}
+      {/* Tour card */}
       <div
         style={{ position: 'fixed', ...cardPos, left: cardLeft, width: cardW, zIndex: 99999, pointerEvents: 'all' }}
         onClick={e => e.stopPropagation()}

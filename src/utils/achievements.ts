@@ -76,6 +76,7 @@ function goalFulfilledForAnyMonth(transactions: Transaction[], goalAmount: numbe
   const monthlySavings = new Map<string, number>();
   transactions.forEach(t => {
     if (t.type !== 'expense' || t.category !== 'savings') return;
+    if (t.linkedGoalId && t.linkedGoalId !== '__monthly__') return;
     const d = new Date(t.date);
     const key = `${d.getFullYear()}-${d.getMonth()}`;
     monthlySavings.set(key, (monthlySavings.get(key) ?? 0) + t.amount);

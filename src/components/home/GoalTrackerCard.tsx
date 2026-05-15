@@ -44,7 +44,9 @@ export default function GoalTrackerCard({ year, month }: Props) {
   const allGoals: GoalEntry[] = [];
 
   if (savingsGoal?.enabled) {
-    const actualAmount = txs.filter(t => t.category === 'savings').reduce((sum, t) => sum + t.amount, 0);
+    const actualAmount = txs
+      .filter(t => t.category === 'savings' && (!t.linkedGoalId || t.linkedGoalId === '__monthly__'))
+      .reduce((sum, t) => sum + t.amount, 0);
     const goalAmount = savingsGoal.amount || 0;
     const monthName = new Date(year, month).toLocaleDateString('en-US', { month: 'long' });
     allGoals.push({

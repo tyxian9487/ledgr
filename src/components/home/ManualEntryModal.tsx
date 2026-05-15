@@ -95,6 +95,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
       isAutoDebit,
       autoDebitPeriod: isAutoDebit ? period : undefined,
       receiptImage: prefill?.receiptImage,
+      linkedGoalId: (category === 'savings' && linkedGoalId) ? linkedGoalId : undefined,
     };
     if (transactionId) {
       updateTransaction(transactionId, data);

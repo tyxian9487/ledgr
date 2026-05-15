@@ -14,6 +14,7 @@ export interface Transaction {
   isAutoDebit: boolean;
   autoDebitPeriod?: AutoDebitPeriod;
   receiptImage?: string;
+  linkedGoalId?: string;
 }
 
 export interface UserProfile {

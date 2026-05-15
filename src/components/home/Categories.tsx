@@ -524,9 +524,15 @@ function TxRow({
   viewYear?: number;
   viewMonth?: number;
 }) {
-  const { stopAutoDebit, endAutoDebitAt } = useApp();
+  const { stopAutoDebit, endAutoDebitAt, budget } = useApp();
   const [showAutoAction, setShowAutoAction] = useState(false);
   const cat = allCategories.find(c => c.id === tx.category);
+
+  const linkedGoalName = (tx.category === 'savings' && tx.linkedGoalId)
+    ? tx.linkedGoalId === '__monthly__'
+      ? 'Monthly Savings'
+      : (budget.customGoals ?? []).find(g => g.id === tx.linkedGoalId)?.name ?? null
+    : null;
 
   const now = new Date();
   const isGenerated = tx.id.includes('_auto_');
@@ -556,10 +562,15 @@ function TxRow({
           <p className="text-xs font-medium dark:text-gray-200 truncate">
             {tx.description || (cat?.label ?? tx.category)}
           </p>
-          <div className="flex items-center gap-1.5 mt-0.5">
+          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
             <p className="text-[10px] text-gray-400">{formatDate(tx.date)}</p>
             {showCategory && cat && (
               <span className="text-[9px] text-gray-400 font-medium">{cat.label}</span>
+            )}
+            {linkedGoalName && (
+              <span className="text-[9px] bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded-full font-semibold">
+                🐖 {linkedGoalName}
+              </span>
             )}
             {tx.receiptImage && (
               <div className="flex items-center gap-0.5">
@@ -633,6 +644,7 @@ function EditModal({ editTx, onClose }: { editTx: Transaction | null; onClose: (
         description: editTx.description,
         receiptImage: editTx.receiptImage,
         date: editTx.date.slice(0, 10),
+        linkedGoalId: editTx.linkedGoalId,
       }}
       onClose={onClose}
     />
