@@ -335,7 +335,7 @@ export default function AchievementsPage() {
                   💡
                 </div>
                 <span className="flex-1 text-sm font-medium dark:text-white leading-snug pr-1">
-                  {tip.title}
+                  {(() => { const k = 'tip.' + tip.id + '.title'; const tr = t(k as any); return tr !== k ? tr : tip.title; })()}
                 </span>
                 <ChevronDown
                   size={15}
@@ -344,7 +344,7 @@ export default function AchievementsPage() {
               </button>
               {expandedTip === i && (
                 <div className="px-4 pb-4">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{tip.body}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{(() => { const k = 'tip.' + tip.id + '.body'; const tr = t(k as any); return tr !== k ? tr : tip.body; })()}</p>
                 </div>
               )}
             </div>

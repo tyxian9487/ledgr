@@ -7,19 +7,18 @@ import { ICON_OPTIONS, COLOR_OPTIONS } from '../types';
 import { iconMap } from '../components/home/CategoryIcon';
 import { PiggyBank } from 'lucide-react';
 
-function formatMonths(m: number) {
-  if (m < 12) return `${m} month${m !== 1 ? 's' : ''}`;
-  const yrs = Math.floor(m / 12);
-  const rem = m % 12;
-  return rem === 0
-    ? `${yrs} year${yrs !== 1 ? 's' : ''}`
-    : `${yrs}y ${rem}m`;
-}
-
 export default function GoalFormPage() {
   const navigate = useNavigate();
   const { addCustomGoal, getCurrencySymbol, formatCurrency } = useApp();
   const { t } = useTranslation();
+
+  function formatMonths(m: number): string {
+    if (m < 12) return m === 1 ? t('gform.fmt_1month') : t('gform.fmt_nmonths', { n: String(m) });
+    const yrs = Math.floor(m / 12);
+    const rem = m % 12;
+    if (rem === 0) return yrs === 1 ? t('gform.fmt_1year') : t('gform.fmt_nyears', { n: String(yrs) });
+    return t('gform.fmt_ym', { y: String(yrs), mo: String(rem) });
+  }
 
   const DURATION_PRESETS = [
     { label: t('gform.dur_1m'),  months: 1 },

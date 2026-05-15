@@ -293,21 +293,27 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
                 className="w-full border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 text-sm bg-gray-50 dark:bg-gray-800 dark:text-white outline-none focus:border-green-500 transition-colors resize-none placeholder:text-gray-300 dark:placeholder:text-gray-600"
               />
               {/* Category-based quick labels */}
-              {category && DESCRIPTION_SUGGESTIONS[category] && (
-                <div className="flex gap-1.5 flex-wrap mt-2">
-                  {DESCRIPTION_SUGGESTIONS[category].map(label => (
-                    <button key={label} type="button"
-                      onClick={() => setDescription(label)}
-                      className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
-                        description === label
-                          ? 'bg-green-600 text-white border-green-600'
-                          : 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-green-400 hover:text-green-600'
-                      }`}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              )}
+              {category && (() => {
+                const k = 'tag.' + category;
+                const val = t(k as any);
+                const tags = val !== k ? val.split('|').filter(Boolean) : (DESCRIPTION_SUGGESTIONS[category] || []);
+                if (!tags.length) return null;
+                return (
+                  <div className="flex gap-1.5 flex-wrap mt-2">
+                    {tags.map(label => (
+                      <button key={label} type="button"
+                        onClick={() => setDescription(label)}
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
+                          description === label
+                            ? 'bg-green-600 text-white border-green-600'
+                            : 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-green-400 hover:text-green-600'
+                        }`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Savings goal selector — always shown when savings category is selected */}
