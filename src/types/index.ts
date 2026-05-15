@@ -181,6 +181,8 @@ export interface CustomGoal {
   savedAmount: number;
   durationDays: number;
   startDate: string;
+  completedAt?: string;
+  continueAfterComplete?: boolean;
 }
 
 export interface BudgetSettings {

@@ -5,6 +5,7 @@ import TourOverlay from './components/TourOverlay';
 import ErrorBoundary from './components/ErrorBoundary';
 import BottomNav from './components/BottomNav';
 import NotificationWatcher from './components/NotificationWatcher';
+import AutoSavingsProcessor from './components/AutoSavingsProcessor';
 import Home from './pages/Home';
 import ReceiptCapture from './pages/ReceiptCapture';
 import Profile from './pages/Profile';
@@ -64,6 +65,7 @@ function AppRoutes() {
       {!hideNav && isAuthenticated && hasCompletedOnboarding && <BottomNav />}
       {isAuthenticated && hasCompletedOnboarding && <NotificationWatcher />}
       {isAuthenticated && hasCompletedOnboarding && <TourOverlay />}
+      {isAuthenticated && hasCompletedOnboarding && <AutoSavingsProcessor />}
     </div>
   );
 }
