@@ -495,8 +495,12 @@ export default function BudgetPage() {
 
           {(budget.customGoals ?? []).map(goal => {
             const GoalIcon = iconMap[goal.icon] || PiggyBank;
-            const pct = goal.targetAmount > 0 ? Math.min(100, (goal.savedAmount / goal.targetAmount) * 100) : 0;
-            const daysLeft = Math.max(0, Math.round((new Date(goal.startDate).getTime() + goal.durationDays * 86400000 - Date.now()) / 86400000));
+            const durationMonths = Math.max(1, Math.round(goal.durationDays / 30));
+            const monthlyTarget = goal.targetAmount / durationMonths;
+            const elapsedDays = (Date.now() - new Date(goal.startDate).getTime()) / 86400000;
+            const currentMonthIdx = Math.min(Math.floor(Math.max(0, elapsedDays) / 30), durationMonths - 1);
+            const monthSaved = Math.max(0, Math.min(monthlyTarget, goal.savedAmount - currentMonthIdx * monthlyTarget));
+            const totalPct = goal.targetAmount > 0 ? Math.min(100, (goal.savedAmount / goal.targetAmount) * 100) : 0;
             return (
               <div key={goal.id} className="px-5 py-4 border-b border-gray-50 dark:border-gray-800">
                 <div className="flex items-center gap-3 mb-2">
@@ -505,14 +509,19 @@ export default function BudgetPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold dark:text-white truncate">{goal.name}</p>
-                    <p className="text-xs text-gray-400">{formatCurrency(goal.savedAmount)} / {formatCurrency(goal.targetAmount)} · {daysLeft}d left</p>
+                    <p className="text-xs text-gray-400">
+                      Month {currentMonthIdx + 1}/{durationMonths} · <span className="font-medium" style={{ color: goal.color }}>{formatCurrency(monthSaved)}</span>/{formatCurrency(monthlyTarget)} this month
+                    </p>
+                    <p className="text-xs text-gray-300 dark:text-gray-600 mt-0.5">
+                      Total: {formatCurrency(goal.savedAmount)} / {formatCurrency(goal.targetAmount)}
+                    </p>
                   </div>
                   <button type="button" onClick={() => removeCustomGoal(goal.id)} className="text-gray-300 dark:text-gray-600 hover:text-red-400 transition-colors">
                     <X size={14} />
                   </button>
                 </div>
                 <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: goal.color }} />
+                  <div className="h-full rounded-full transition-all" style={{ width: `${totalPct}%`, background: goal.color }} />
                 </div>
               </div>
             );

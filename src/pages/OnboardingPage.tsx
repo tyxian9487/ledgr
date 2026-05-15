@@ -64,7 +64,7 @@ const STEP_TITLES = [
   'What do you spend on?',
 ];
 const STEP_SUBS = [
-  'Personalise your ledgr experience',
+  'Personalise your Kachingo experience',
   'How satisfied are you with your current finances?',
   'How would you describe your financial discipline?',
   'Select all that apply',

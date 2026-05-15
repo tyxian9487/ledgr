@@ -15,6 +15,7 @@ import LoginPage from './pages/LoginPage';
 import OnboardingPage from './pages/OnboardingPage';
 import AchievementsPage from './pages/AchievementsPage';
 import GoalFormPage from './pages/GoalFormPage';
+import GoalDetailPage from './pages/GoalDetailPage';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, hasCompletedOnboarding } = useApp();
@@ -26,7 +27,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   const { isAuthenticated, hasCompletedOnboarding } = useApp();
   const location = useLocation();
-  const hideNav = ['/capture', '/subscription', '/login', '/onboarding', '/goals/new'].includes(location.pathname);
+  const hideNav = ['/capture', '/subscription', '/login', '/onboarding', '/goals/new'].includes(location.pathname) || location.pathname.startsWith('/goals/');
 
   return (
     <div className="relative">
@@ -57,6 +58,7 @@ function AppRoutes() {
         <Route path="/trends" element={<AuthGuard><TrendsPage /></AuthGuard>} />
         <Route path="/achievements" element={<AuthGuard><AchievementsPage /></AuthGuard>} />
         <Route path="/goals/new" element={<AuthGuard><GoalFormPage /></AuthGuard>} />
+        <Route path="/goals/:id" element={<AuthGuard><GoalDetailPage /></AuthGuard>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       {!hideNav && isAuthenticated && hasCompletedOnboarding && <BottomNav />}

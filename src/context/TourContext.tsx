@@ -118,7 +118,7 @@ export const TOUR_STEPS: TourStep[] = [
     page: '/budget',
     selector: '[data-tour="budget-income"]',
     title: 'Expected Monthly Income',
-    body: 'Enter your expected monthly income here. ledgr uses this to calculate how much you can spend in each category.',
+    body: 'Enter your expected monthly income here. Kachingo uses this to calculate how much you can spend in each category.',
     tooltipPos: 'bottom',
   },
   {

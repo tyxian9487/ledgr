@@ -160,16 +160,16 @@ export default function AchievementsPage() {
       ctx.fillStyle = 'rgba(255,255,255,0.3)';
       ctx.font = '11px -apple-system, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(`Generated with ledgr · ${today}`, W / 2, H - 16);
+      ctx.fillText(`Generated with Kachingo · ${today}`, W / 2, H - 16);
 
       const dataUrl = canvas.toDataURL('image/png');
-      const filename = `ledgr-streak-${currentStreak}-months.png`;
+      const filename = `kachingo-streak-${currentStreak}-months.png`;
       if (navigator.share) {
         try {
           const blob = await fetch(dataUrl).then(r => r.blob());
           const file = new File([blob], filename, { type: 'image/png' });
           if (navigator.canShare?.({ files: [file] })) {
-            await navigator.share({ files: [file], title: `${currentStreak}-month budget streak – ledgr` });
+            await navigator.share({ files: [file], title: `${currentStreak}-month budget streak – Kachingo` });
             return;
           }
         } catch { /* fall through to download */ }

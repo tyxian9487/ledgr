@@ -57,7 +57,7 @@ export default function LoginPage() {
           <div className="w-16 h-16 rounded-[22px] bg-white/15 backdrop-blur-sm border border-white/25 flex items-center justify-center shadow-2xl">
             <span className="text-white font-black text-3xl tracking-tighter">l</span>
           </div>
-          <h1 className="text-white font-black text-4xl tracking-tight mt-0.5">ledgr</h1>
+          <h1 className="text-white font-black text-4xl tracking-tight mt-0.5">Kachingo</h1>
           <p className="text-green-100/75 text-sm font-medium">Your money, simplified.</p>
         </div>
 

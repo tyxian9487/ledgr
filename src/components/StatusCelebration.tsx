@@ -203,16 +203,16 @@ export default function StatusCelebration({ status, onClose }: Props) {
       const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
       ctx.fillStyle = 'rgba(255,255,255,0.3)';
       ctx.font = '11px -apple-system, sans-serif';
-      ctx.fillText(`Generated with ledgr · ${today}`, W / 2, H - 18);
+      ctx.fillText(`Generated with Kachingo · ${today}`, W / 2, H - 18);
 
       const dataUrl = canvas.toDataURL('image/png');
-      const filename = `ledgr-status-${status}.png`;
+      const filename = `kachingo-status-${status}.png`;
       if (navigator.share) {
         try {
           const blob = await fetch(dataUrl).then(r => r.blob());
           const file = new File([blob], filename, { type: 'image/png' });
           if (navigator.canShare?.({ files: [file] })) {
-            await navigator.share({ files: [file], title: `Financial Status: ${cfg.label} – ledgr` });
+            await navigator.share({ files: [file], title: `Financial Status: ${cfg.label} – Kachingo` });
             return;
           }
         } catch { /* fall through to download */ }

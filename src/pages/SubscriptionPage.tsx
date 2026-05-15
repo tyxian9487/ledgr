@@ -117,7 +117,7 @@ export default function SubscriptionPage() {
           <div className="text-center">
             <h1 className="text-2xl font-black text-gray-900 mb-2">Quick tour?</h1>
             <p className="text-sm text-gray-500 leading-relaxed">
-              We'll walk you through ledgr's key features in about 2 minutes. Skip anytime.
+              We'll walk you through Kachingo's key features in about 2 minutes. Skip anytime.
             </p>
           </div>
           <button
@@ -165,7 +165,7 @@ export default function SubscriptionPage() {
             <span className="text-white font-black text-2xl tracking-tighter">l</span>
           </div>
           <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-1">
-            {isPremium ? 'You\'re on Premium' : 'Try ledgr Premium'}
+            {isPremium ? 'You\'re on Premium' : 'Try Kachingo Premium'}
           </h1>
           {!isPremium && (
             <p className="text-sm text-gray-500 dark:text-gray-400">

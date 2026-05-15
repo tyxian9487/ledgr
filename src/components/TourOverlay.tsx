@@ -23,10 +23,12 @@ export default function TourOverlay() {
   const [rect, setRect] = useState<DOMRect | null>(null);
   const prevRectRef = useRef<DOMRect | null>(null);
   const rafRef = useRef<number>();
+  const scrolledRef = useRef(false); // reset per step so we scroll once when element first found
 
   const onCorrectPage = currentStep ? location.pathname === currentStep.page : false;
 
   useEffect(() => {
+    scrolledRef.current = false; // reset scroll-once flag when step changes
     if (!tourActive || !currentStep || !onCorrectPage) {
       prevRectRef.current = null;
       setRect(null);
@@ -35,6 +37,17 @@ export default function TourOverlay() {
     function poll() {
       const el = document.querySelector(currentStep!.selector);
       const newRect = el ? el.getBoundingClientRect() : null;
+
+      // First time we find the element, scroll it into view if it's off-screen
+      if (el && newRect && !scrolledRef.current) {
+        scrolledRef.current = true;
+        const offTop    = newRect.top < 60;
+        const offBottom = newRect.bottom > window.innerHeight - 60;
+        if (offTop || offBottom) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+
       if (rectsChanged(prevRectRef.current, newRect)) {
         prevRectRef.current = newRect;
         setRect(newRect ? { top: newRect.top, left: newRect.left, width: newRect.width, height: newRect.height, right: newRect.right, bottom: newRect.bottom, x: newRect.x, y: newRect.y, toJSON: newRect.toJSON.bind(newRect) } as DOMRect : null);
