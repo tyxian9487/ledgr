@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { playRewardSound } from '../utils/sounds';
+import { useTranslation } from '../context/LanguageContext';
 
 interface BadgeInfo {
   icon: string;
@@ -15,7 +16,9 @@ interface Props {
 }
 
 export default function BadgeCelebration({ badge, remaining, onClose }: Props) {
-  useEffect(() => { playRewardSound(); }, []); // play once on mount
+  const { t } = useTranslation();
+
+  useEffect(() => { playRewardSound(); }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -41,7 +44,7 @@ export default function BadgeCelebration({ badge, remaining, onClose }: Props) {
         onClick={e => e.stopPropagation()}
       >
         <p className="text-yellow-400/80 text-xs font-bold uppercase tracking-[0.2em]">
-          🎉 Badge Unlocked
+          {t('badge.unlocked')}
         </p>
 
         <div
@@ -61,7 +64,7 @@ export default function BadgeCelebration({ badge, remaining, onClose }: Props) {
             className="px-4 py-2 rounded-full text-xs font-semibold"
             style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}
           >
-            {remaining} more badge{remaining > 1 ? 's' : ''} to see →
+            {t('badge.more', { n: String(remaining), s: remaining > 1 ? 's' : '' })}
           </div>
         )}
       </div>
@@ -77,7 +80,7 @@ export default function BadgeCelebration({ badge, remaining, onClose }: Props) {
       </button>
 
       <p className="absolute bottom-12 left-0 right-0 text-center text-white/30 text-xs">
-        Tap anywhere to {remaining > 0 ? 'continue' : 'dismiss'}
+        {remaining > 0 ? t('badge.tap_continue') : t('badge.tap_dismiss')}
       </p>
     </div>
   );

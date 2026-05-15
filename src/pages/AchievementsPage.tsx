@@ -281,12 +281,12 @@ export default function AchievementsPage() {
               <p className={`text-[11px] font-semibold text-center leading-tight ${
                 badge.unlocked ? 'text-gray-800 dark:text-white' : 'text-gray-400 dark:text-gray-600'
               }`}>
-                {badge.label}
+                {(() => { const k = 'badge.' + badge.id + '.label'; const tr = t(k as any); return tr !== k ? tr : badge.label; })()}
               </p>
               <p className={`text-[9px] text-center leading-tight ${
                 badge.unlocked ? 'text-gray-400' : 'text-gray-300 dark:text-gray-700'
               }`}>
-                {badge.description}
+                {(() => { const k = 'badge.' + badge.id + '.desc'; const tr = t(k as any); return tr !== k ? tr : badge.description; })()}
               </p>
               {badge.unlocked && (
                 <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center mt-0.5">

@@ -245,7 +245,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
                 {selectedCategory ? (
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full" style={{ background: selectedCategory.color }} />
-                    <span className="text-sm font-medium dark:text-white">{selectedCategory.label}</span>
+                    <span className="text-sm font-medium dark:text-white">{(() => { const k = 'cat.' + selectedCategory.id; const tr = t(k as any); return tr !== k ? tr : selectedCategory.label; })()}</span>
                   </div>
                 ) : (
                   <span className="text-sm text-gray-400">{t('tx.select_category')}</span>
@@ -262,7 +262,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
                       className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
                       <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: cat.color }} />
-                      <span className="text-sm dark:text-white">{cat.label}</span>
+                      <span className="text-sm dark:text-white">{(() => { const k = 'cat.' + cat.id; const tr = t(k as any); return tr !== k ? tr : cat.label; })()}</span>
                       {category === cat.id && <span className="ml-auto text-green-600 text-sm">✓</span>}
                     </button>
                   ))}
@@ -314,7 +314,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
             {isSavings && (
               <div>
                 <label className="text-xs font-semibold mb-1.5 flex items-center gap-1 text-green-700 dark:text-green-400">
-                  <span>🐖</span> Save to <span className="text-red-400 ml-0.5">*</span>
+                  <span>🐖</span> {t('tx.save_to')} <span className="text-red-400 ml-0.5">*</span>
                 </label>
                 {saveOptions.length === 0 ? (
                   <div className="rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 px-4 py-3 text-xs text-gray-400 text-center">

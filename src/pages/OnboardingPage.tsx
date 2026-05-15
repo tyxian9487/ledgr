@@ -246,18 +246,18 @@ export default function OnboardingPage() {
         {step === 2 && (
           <div className="space-y-3 py-2">
             {[
-              { val: 1, emoji: '😟', label: 'Very Dissatisfied', sub: 'Significantly behind where I want to be' },
-              { val: 2, emoji: '😕', label: 'Dissatisfied',      sub: "Struggling more than I'd like" },
-              { val: 3, emoji: '😐', label: 'Neutral',           sub: 'Getting by but could be better' },
-              { val: 4, emoji: '😊', label: 'Satisfied',         sub: 'On track and feeling good' },
-              { val: 5, emoji: '😄', label: 'Very Satisfied',    sub: 'Exceeding my financial goals' },
+              { val: 1, emoji: '😟', labelKey: 'onboard.sat.1' as const, subKey: 'onboard.sat.1.sub' as const },
+              { val: 2, emoji: '😕', labelKey: 'onboard.sat.2' as const, subKey: 'onboard.sat.2.sub' as const },
+              { val: 3, emoji: '😐', labelKey: 'onboard.sat.3' as const, subKey: 'onboard.sat.3.sub' as const },
+              { val: 4, emoji: '😊', labelKey: 'onboard.sat.4' as const, subKey: 'onboard.sat.4.sub' as const },
+              { val: 5, emoji: '😄', labelKey: 'onboard.sat.5' as const, subKey: 'onboard.sat.5.sub' as const },
             ].map(opt => (
               <button key={opt.val} type="button" onClick={() => setSatisfaction(opt.val)}
                 className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl border-2 transition-all active:scale-[0.98] ${satisfaction === opt.val ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900'}`}>
                 <span className="text-3xl leading-none">{opt.emoji}</span>
                 <div className="flex-1 text-left">
-                  <p className={`text-sm font-bold ${satisfaction === opt.val ? 'text-green-700 dark:text-green-400' : 'dark:text-white'}`}>{opt.label}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{opt.sub}</p>
+                  <p className={`text-sm font-bold ${satisfaction === opt.val ? 'text-green-700 dark:text-green-400' : 'dark:text-white'}`}>{t(opt.labelKey)}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{t(opt.subKey)}</p>
                 </div>
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${satisfaction === opt.val ? 'border-green-500 bg-green-500' : 'border-gray-200 dark:border-gray-700'}`}>
                   {satisfaction === opt.val && <div className="w-2 h-2 rounded-full bg-white" />}
@@ -271,25 +271,15 @@ export default function OnboardingPage() {
         {step === 3 && (
           <div className="space-y-4 py-2">
             {[
-              {
-                val: true,
-                emoji: '🎯',
-                label: "Yes, I'm disciplined",
-                sub: 'I set financial goals and consistently follow through on them',
-              },
-              {
-                val: false,
-                emoji: '💪',
-                label: 'I need more discipline',
-                sub: 'I want to improve but struggle to stay consistent',
-              },
+              { val: true,  emoji: '🎯', labelKey: 'onboard.disc.yes' as const, subKey: 'onboard.disc.yes.sub' as const },
+              { val: false, emoji: '💪', labelKey: 'onboard.disc.no'  as const, subKey: 'onboard.disc.no.sub'  as const },
             ].map(opt => (
               <button key={String(opt.val)} type="button" onClick={() => setDisciplined(opt.val)}
                 className={`w-full flex items-center gap-4 px-5 py-5 rounded-2xl border-2 transition-all active:scale-[0.98] ${disciplined === opt.val ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900'}`}>
                 <span className="text-4xl leading-none">{opt.emoji}</span>
                 <div className="flex-1 text-left">
-                  <p className={`text-sm font-bold ${disciplined === opt.val ? 'text-green-700 dark:text-green-400' : 'dark:text-white'}`}>{opt.label}</p>
-                  <p className="text-xs text-gray-400 mt-1 leading-relaxed">{opt.sub}</p>
+                  <p className={`text-sm font-bold ${disciplined === opt.val ? 'text-green-700 dark:text-green-400' : 'dark:text-white'}`}>{t(opt.labelKey)}</p>
+                  <p className="text-xs text-gray-400 mt-1 leading-relaxed">{t(opt.subKey)}</p>
                 </div>
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${disciplined === opt.val ? 'border-green-500 bg-green-500' : 'border-gray-200 dark:border-gray-700'}`}>
                   {disciplined === opt.val && <div className="w-2 h-2 rounded-full bg-white" />}
