@@ -105,7 +105,7 @@ export default function GoalTrackerCard({ year, month }: Props) {
 
   return (
     <>
-      <div className="mx-4 mt-4 rounded-2xl glass p-4">
+      <div className="mx-4 mt-3 rounded-2xl glass p-3">
         <div className="flex items-center gap-3">
           {allGoals.length > 1 ? (
             <button type="button" onClick={prev}
@@ -113,42 +113,42 @@ export default function GoalTrackerCard({ year, month }: Props) {
               <ChevronLeft size={14} className="text-gray-600 dark:text-gray-300" />
             </button>
           ) : (
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background: goal.color + '20' }}>
-              <GoalIcon size={20} style={{ color: goal.color }} />
+              <GoalIcon size={16} style={{ color: goal.color }} />
             </div>
           )}
 
           <div className="flex-1 min-w-0">
             {allGoals.length > 1 && (
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center mb-2"
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center mb-1.5"
                 style={{ background: goal.color + '20' }}>
-                <GoalIcon size={16} style={{ color: goal.color }} />
+                <GoalIcon size={13} style={{ color: goal.color }} />
               </div>
             )}
 
             <div className="flex items-center gap-1.5 mb-0.5">
               {goal.isCustom ? (
                 <button type="button" onClick={() => navigate(`/goals/${goal.id}`)}
-                  className="text-sm font-bold dark:text-white truncate text-left">
+                  className="text-xs font-bold dark:text-white truncate text-left">
                   {goal.title}
                 </button>
               ) : (
-                <h3 className="text-sm font-bold dark:text-white truncate">{goal.title}</h3>
+                <h3 className="text-xs font-bold dark:text-white truncate">{goal.title}</h3>
               )}
-              <Activity size={13} className="opacity-50 flex-shrink-0" style={{ color: goal.color }} />
+              <Activity size={11} className="opacity-50 flex-shrink-0" style={{ color: goal.color }} />
             </div>
-            <p className="text-[11px] text-gray-400 mb-1.5">{goal.subtitle}</p>
+            <p className="text-[10px] text-gray-400 mb-1">{goal.subtitle}</p>
 
-            <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
               <div className="h-full rounded-full transition-all duration-500"
                 style={{ width: `${goal.progress}%`, background: goal.color }} />
             </div>
-            <div className="flex justify-between items-center mt-1">
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+            <div className="flex justify-between items-center mt-0.5">
+              <span className="text-[11px] text-gray-500 dark:text-gray-400">
                 {formatCurrency(goal.actualAmount)} / {formatCurrency(goal.goalAmount)}
               </span>
-              <span className="text-xs font-semibold" style={{ color: goal.color }}>
+              <span className="text-[11px] font-semibold" style={{ color: goal.color }}>
                 {goal.progress.toFixed(0)}%
               </span>
             </div>

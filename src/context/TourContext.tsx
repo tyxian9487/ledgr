@@ -125,8 +125,8 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'budget-goals',
     page: '/budget',
     selector: '[data-tour="budget-goals"]',
-    title: 'Savings & Investment Goals',
-    body: 'Set monthly savings and investment targets. These are allocated first — pay yourself before you spend.',
+    title: 'Goals',
+    body: 'Set your monthly savings target and track custom goals. Goals are deducted first — pay yourself before you spend.',
     tooltipPos: 'bottom',
   },
   {

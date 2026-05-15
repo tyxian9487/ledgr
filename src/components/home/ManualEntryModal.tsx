@@ -57,7 +57,7 @@ function todayString() {
 }
 
 export default function ManualEntryModal({ onClose, transactionId, prefill }: Props) {
-  const { addTransaction, updateTransaction, getCurrencySymbol, expenseCategories, incomeCategories } = useApp();
+  const { addTransaction, updateTransaction, getCurrencySymbol, expenseCategories, incomeCategories, budget, updateCustomGoal } = useApp();
 
   const [showAddTxHint, setShowAddTxHint] = useState(() => !localStorage.getItem('ledgr_addtx_hint_seen'));
 
@@ -72,6 +72,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [viewReceipt, setViewReceipt] = useState(false);
+  const [linkedGoalId, setLinkedGoalId] = useState('');
 
   const categories = type === 'expense' ? expenseCategories : incomeCategories;
   const selectedCategory = categories.find(c => c.id === category);
@@ -93,6 +94,11 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
     } else {
       addTransaction(data);
       playCoinSound();
+      // If savings linked to a custom goal, update goal's savedAmount
+      if (category === 'savings' && linkedGoalId) {
+        const g = (budget.customGoals ?? []).find(g => g.id === linkedGoalId);
+        if (g) updateCustomGoal(linkedGoalId, { savedAmount: g.savedAmount + parseFloat(amount) });
+      }
     }
     onClose();
   }
@@ -293,6 +299,38 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
                 </div>
               )}
             </div>
+
+            {/* Link savings to custom goal */}
+            {type === 'expense' && category === 'savings' && (budget.customGoals?.length ?? 0) > 0 && (
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">
+                  Link to Goal <span className="text-gray-300">(optional)</span>
+                </label>
+                <div className="flex flex-col gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setLinkedGoalId('')}
+                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium border-2 transition-colors ${
+                      linkedGoalId === '' ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400'
+                    }`}
+                  >
+                    Monthly savings goal only
+                  </button>
+                  {(budget.customGoals ?? []).map(g => (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => setLinkedGoalId(g.id)}
+                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium border-2 transition-colors ${
+                        linkedGoalId === g.id ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400'
+                      }`}
+                    >
+                      {g.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Auto debit toggle */}
             <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4">

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTour } from '../context/TourContext';
 import {
   ArrowLeft, Sparkles, RotateCcw, ChevronDown, ChevronUp,
   Home, UtensilsCrossed, Car, Heart, Zap, Tv, ShoppingBag,
@@ -137,6 +138,11 @@ export default function BudgetPage() {
   const actualIncome = getMonthIncome(NOW.getFullYear(), NOW.getMonth());
 
   const [activeTab, setActiveTab] = useState<'goals' | 'budget'>('goals');
+  const { currentStep } = useTour();
+  useEffect(() => {
+    if (currentStep?.id === 'budget-goals') setActiveTab('goals');
+    if (currentStep?.id === 'budget-income') setActiveTab('budget');
+  }, [currentStep?.id]);
   const [incomeInput, setIncomeInput] = useState(
     budget.expectedIncome > 0 ? String(budget.expectedIncome) : actualIncome > 0 ? String(actualIncome) : ''
   );

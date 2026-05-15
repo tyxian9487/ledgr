@@ -1,5 +1,6 @@
 import { Home, Camera, User, LineChart, Target } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
 
 const NAV_ITEMS = [
   { label: 'Home', icon: Home, path: '/', tourId: 'nav-home' },
@@ -15,20 +16,31 @@ export default function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const active = location.pathname;
+  const { budget } = useApp();
+
+  const activeGoalCount = (budget.savingsGoal?.enabled ? 1 : 0) + (budget.customGoals?.length ?? 0);
 
   function NavBtn({ label, icon: Icon, path, tourId }: { label: string; icon: React.ElementType; path: string; tourId: string }) {
     const isActive = active === path;
+    const showBadge = path === '/budget' && activeGoalCount > 0;
     return (
       <button
         data-tour={tourId}
         onClick={() => navigate(path)}
         className="flex flex-col items-center gap-0.5 min-w-[52px]"
       >
-        <Icon
-          size={22}
-          className={isActive ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}
-          strokeWidth={isActive ? 2.5 : 1.8}
-        />
+        <div className="relative">
+          <Icon
+            size={22}
+            className={isActive ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}
+            strokeWidth={isActive ? 2.5 : 1.8}
+          />
+          {showBadge && (
+            <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] rounded-full bg-green-500 text-white text-[9px] font-black flex items-center justify-center px-0.5 leading-none">
+              {activeGoalCount > 9 ? '9+' : activeGoalCount}
+            </span>
+          )}
+        </div>
         <span className={`text-[11px] font-medium ${isActive ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>
           {label}
         </span>
