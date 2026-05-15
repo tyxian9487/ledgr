@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Check, Plus, PiggyBank } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -14,10 +14,13 @@ export default function GoalDetailPage() {
 
   const goal = budget.customGoals?.find(g => g.id === id);
 
-  if (!goal) {
-    navigate('/budget');
-    return null;
-  }
+  useEffect(() => {
+    if (budget.customGoals !== undefined && !budget.customGoals.find(g => g.id === id)) {
+      navigate('/budget');
+    }
+  }, [budget.customGoals, id, navigate]);
+
+  if (!goal) return null;
 
   const GoalIcon = iconMap[goal.icon] || PiggyBank;
 
