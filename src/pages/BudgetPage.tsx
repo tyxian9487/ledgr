@@ -292,7 +292,7 @@ export default function BudgetPage() {
     const invAmt = investEnabled && investValue
       ? investMode === 'pct' ? income * (parseFloat(investValue) / 100) : parseFloat(investValue)
       : 0;
-    const spendable = Math.max(0, income - savAmt - invAmt);
+    const spendable = Math.max(0, income - savAmt - invAmt - customGoalMonthly);
     const result = analyzeAllocations(spendable);
     setAllocations(result);
     setAnalyzed(true);
@@ -320,7 +320,12 @@ export default function BudgetPage() {
   const investAmt = income > 0 && investValue
     ? investMode === 'pct' ? income * (parseFloat(investValue) / 100) : parseFloat(investValue)
     : 0;
-  const netIncome = Math.max(0, income - savingsAmt - investAmt);
+  // Sum monthly contribution from each custom goal (targetAmount / durationMonths)
+  const customGoalMonthly = (budget.customGoals ?? []).reduce((sum, g) => {
+    const months = Math.max(1, g.durationDays / 30);
+    return sum + g.targetAmount / months;
+  }, 0);
+  const netIncome = Math.max(0, income - savingsAmt - investAmt - customGoalMonthly);
 
   const handleSave = useCallback(() => {
     const savingsGoal = savingsEnabled && savingsValue ? {
@@ -534,11 +539,18 @@ export default function BudgetPage() {
                 {totalPct.toFixed(0)}% allocated
               </span>
             </div>
-            {(savingsAmt > 0 || investAmt > 0) && income > 0 && (
-              <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-white/10 rounded-xl">
-                <span className="text-xs text-green-100/90 flex-1">Spendable after goals</span>
-                <span className="text-xs font-bold text-white">{formatCurrency(netIncome)}</span>
-                <span className="text-[10px] text-green-100/80">/ {formatCurrency(income)}</span>
+            {(savingsAmt > 0 || investAmt > 0 || customGoalMonthly > 0) && income > 0 && (
+              <div className="mb-3 px-3 py-2 bg-white/10 rounded-xl">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-green-100/90 flex-1">Spendable after goals</span>
+                  <span className="text-xs font-bold text-white">{formatCurrency(netIncome)}</span>
+                  <span className="text-[10px] text-green-100/80">/ {formatCurrency(income)}</span>
+                </div>
+                {customGoalMonthly > 0 && (
+                  <p className="text-[10px] text-green-100/70 mt-0.5">
+                    Incl. {formatCurrency(customGoalMonthly)}/mo reserved for {(budget.customGoals ?? []).length} custom goal{(budget.customGoals?.length ?? 0) !== 1 ? 's' : ''}
+                  </p>
+                )}
               </div>
             )}
             <div className="flex flex-col items-center gap-2">
