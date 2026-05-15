@@ -154,6 +154,36 @@ export const BADGES: BadgeDef[] = [
     description: 'Reached Excellent health (80+)',
     check: ({ score }) => score >= 80,
   },
+  {
+    id: 'goal_created', icon: '🎯', label: 'Goal Setter',
+    description: 'Created your first custom saving goal',
+    check: ({ budget }) => (budget.customGoals?.length ?? 0) >= 1,
+  },
+  {
+    id: 'goal_3', icon: '💫', label: 'Dream Big',
+    description: 'Running 3 or more saving goals at once',
+    check: ({ budget }) => (budget.customGoals?.length ?? 0) >= 3,
+  },
+  {
+    id: 'goal_completed', icon: '🏆', label: 'Goal Crusher',
+    description: 'Fully completed a custom saving goal',
+    check: ({ budget }) =>
+      (budget.customGoals ?? []).some(g => g.savedAmount >= g.targetAmount && g.targetAmount > 0),
+  },
+  {
+    id: 'savings_depositor', icon: '🐖', label: 'Dedicated Saver',
+    description: 'Made 5+ savings deposits via Add Transaction',
+    check: ({ transactions }) =>
+      transactions.filter(t => t.type === 'expense' && t.category === 'savings').length >= 5,
+  },
+  {
+    id: 'savings_50pct', icon: '🚀', label: 'Halfway There',
+    description: 'Reached 50% progress on any custom goal',
+    check: ({ budget }) =>
+      (budget.customGoals ?? []).some(
+        g => g.targetAmount > 0 && g.savedAmount / g.targetAmount >= 0.5
+      ),
+  },
 ];
 
 // ── Knowledge Base ────────────────────────────────────────────────────────────

@@ -99,7 +99,7 @@ function drawDonutOnCanvas(
 }
 
 export default function GreenCard({ year, month, onPrev, onNext, onYearChange }: Props) {
-  const { getMonthTransactions, getMonthIncome, getMonthExpenses, formatCurrency, budget } = useApp();
+  const { getMonthTransactions, getMonthIncome, getMonthExpenses, formatCurrency } = useApp();
   const [sharing, setSharing] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
 
@@ -129,9 +129,7 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
     .filter(c => categoryTotals[c.id])
     .map(c => ({ category: c.id, label: c.label, amount: categoryTotals[c.id], color: c.color }));
 
-  const savingsThisMonth = categoryTotals['savings'] || 0;
-  const savingsGoalAmt = budget.savingsGoal?.enabled && budget.savingsGoal.amount > 0 ? budget.savingsGoal.amount : 0;
-  const savingsPct = savingsGoalAmt > 0 ? Math.min(100, (savingsThisMonth / savingsGoalAmt) * 100) : 0;
+
 
   const now = new Date();
   const isFuture = new Date(year, month) >= new Date(now.getFullYear(), now.getMonth());
@@ -420,24 +418,6 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
           </p>
         </div>
       </div>
-      {/* Savings goal progress */}
-      {savingsGoalAmt > 0 && (
-        <div className="mx-4 mb-4">
-          <div className="glass rounded-2xl px-3 py-2.5">
-            <div className="flex justify-between items-center mb-1.5">
-              <p className="text-white/70 text-[10px] uppercase tracking-wider font-medium">Savings Goal</p>
-              <span className="text-white text-[11px] font-bold">{formatCurrency(savingsThisMonth)} / {formatCurrency(savingsGoalAmt)}</span>
-            </div>
-            <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-white rounded-full transition-all duration-500"
-                style={{ width: `${savingsPct}%` }}
-              />
-            </div>
-            <p className="text-white/50 text-[10px] mt-1">Log savings via Add Transaction → Savings category</p>
-          </div>
-        </div>
-      )}
     </div>
     {showCelebration && (
       <StatusCelebration status={status} onClose={() => setShowCelebration(false)} />

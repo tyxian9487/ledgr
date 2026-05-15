@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, ChevronLeft, ChevronRight, PiggyBank } from 'lucide-react';
+import { Activity, ChevronDown, PiggyBank } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { iconMap } from './CategoryIcon';
@@ -33,12 +33,11 @@ function getMonthlyCustomProgress(savedAmount: number, targetAmount: number, dur
 
 export default function GoalTrackerCard({ year, month }: Props) {
   const navigate = useNavigate();
-  const { budget, getMonthTransactions, formatCurrency, updateCustomGoal } = useApp();
+  const { budget, getMonthTransactions, formatCurrency } = useApp();
   const [currentIdx, setCurrentIdx] = useState(0);
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebratedGoals, setCelebratedGoals] = useState<Set<string>>(new Set());
-  const [contribution, setContribution] = useState('');
-  const [showContrib, setShowContrib] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const savingsGoal = budget.savingsGoal;
   const txs = getMonthTransactions(year, month);
@@ -88,31 +87,56 @@ export default function GoalTrackerCard({ year, month }: Props) {
     }
   }, [isCompleted, goal.id, year, month, celebratedGoals]);
 
-  function prev() { setCurrentIdx(i => (i - 1 + allGoals.length) % allGoals.length); setShowContrib(false); }
-  function next() { setCurrentIdx(i => (i + 1) % allGoals.length); setShowContrib(false); }
-
-  function handleContribute() {
-    const amt = parseFloat(contribution);
-    if (!isNaN(amt) && amt > 0 && goal.isCustom) {
-      const g = (budget.customGoals ?? []).find(g => g.id === goal.id);
-      if (g) updateCustomGoal(goal.id, { savedAmount: g.savedAmount + amt });
-      setContribution('');
-      setShowContrib(false);
-    }
-  }
-
   const GoalIcon = iconMap[goal.iconKey] || PiggyBank;
 
   return (
     <>
       <div className="mx-4 mt-3 rounded-2xl glass p-3">
-        <div className="flex items-center gap-3">
-          {allGoals.length > 1 ? (
-            <button type="button" onClick={prev}
-              className="w-7 h-7 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 flex-shrink-0 opacity-60">
-              <ChevronLeft size={14} className="text-gray-600 dark:text-gray-300" />
+
+        {/* Goal selector dropdown — only when multiple goals */}
+        {allGoals.length > 1 && (
+          <div className="relative mb-2">
+            <button
+              type="button"
+              onClick={() => setShowDropdown(v => !v)}
+              className="flex items-center gap-1.5 w-full"
+            >
+              <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
+                style={{ background: goal.color + '25' }}>
+                <GoalIcon size={11} style={{ color: goal.color }} />
+              </div>
+              <span className="text-[11px] font-bold dark:text-white truncate flex-1 text-left">{goal.title}</span>
+              <ChevronDown size={12} className={`text-gray-400 flex-shrink-0 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
             </button>
-          ) : (
+
+            {showDropdown && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800 overflow-hidden z-20">
+                {allGoals.map((g, i) => {
+                  const GIcon = iconMap[g.iconKey] || PiggyBank;
+                  return (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => { setCurrentIdx(i); setShowDropdown(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
+                        style={{ background: g.color + '25' }}>
+                        <GIcon size={11} style={{ color: g.color }} />
+                      </div>
+                      <span className="text-xs text-gray-700 dark:text-gray-200 flex-1 text-left truncate">{g.title}</span>
+                      {i === safeIdx && <span className="text-green-600 text-xs">✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Goal body */}
+        <div className="flex items-center gap-3">
+          {allGoals.length === 1 && (
             <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background: goal.color + '20' }}>
               <GoalIcon size={16} style={{ color: goal.color }} />
@@ -120,24 +144,19 @@ export default function GoalTrackerCard({ year, month }: Props) {
           )}
 
           <div className="flex-1 min-w-0">
-            {allGoals.length > 1 && (
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center mb-1.5"
-                style={{ background: goal.color + '20' }}>
-                <GoalIcon size={13} style={{ color: goal.color }} />
+            {allGoals.length === 1 && (
+              <div className="flex items-center gap-1.5 mb-0.5">
+                {goal.isCustom ? (
+                  <button type="button" onClick={() => navigate(`/goals/${goal.id}`)}
+                    className="text-xs font-bold dark:text-white truncate text-left">
+                    {goal.title}
+                  </button>
+                ) : (
+                  <h3 className="text-xs font-bold dark:text-white truncate">{goal.title}</h3>
+                )}
+                <Activity size={11} className="opacity-50 flex-shrink-0" style={{ color: goal.color }} />
               </div>
             )}
-
-            <div className="flex items-center gap-1.5 mb-0.5">
-              {goal.isCustom ? (
-                <button type="button" onClick={() => navigate(`/goals/${goal.id}`)}
-                  className="text-xs font-bold dark:text-white truncate text-left">
-                  {goal.title}
-                </button>
-              ) : (
-                <h3 className="text-xs font-bold dark:text-white truncate">{goal.title}</h3>
-              )}
-              <Activity size={11} className="opacity-50 flex-shrink-0" style={{ color: goal.color }} />
-            </div>
             <p className="text-[10px] text-gray-400 mb-1">{goal.subtitle}</p>
 
             <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -154,53 +173,13 @@ export default function GoalTrackerCard({ year, month }: Props) {
             </div>
 
             {goal.isCustom && (
-              <div className="mt-2">
-                {showContrib ? (
-                  <div className="flex gap-2 items-center">
-                    <input type="number" placeholder="Amount" value={contribution}
-                      onChange={e => setContribution(e.target.value)}
-                      className="flex-1 text-xs px-2 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 outline-none dark:text-white"
-                      inputMode="decimal" />
-                    <button type="button" onClick={handleContribute}
-                      className="px-3 py-1.5 rounded-xl text-xs font-bold text-white"
-                      style={{ background: goal.color }}>Add</button>
-                    <button type="button" onClick={() => setShowContrib(false)}
-                      className="px-2 py-1.5 rounded-xl text-xs text-gray-400 bg-gray-100 dark:bg-gray-800">✕</button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <button type="button" onClick={() => setShowContrib(true)}
-                      className="text-xs font-semibold px-3 py-1 rounded-xl border border-dashed"
-                      style={{ color: goal.color, borderColor: goal.color + '60' }}>
-                      + Log savings
-                    </button>
-                    <button type="button" onClick={() => navigate(`/goals/${goal.id}`)}
-                      className="text-xs text-gray-400">
-                      See all months →
-                    </button>
-                  </div>
-                )}
-              </div>
+              <button type="button" onClick={() => navigate(`/goals/${goal.id}`)}
+                className="mt-1.5 text-[10px] font-semibold" style={{ color: goal.color }}>
+                See all months →
+              </button>
             )}
           </div>
-
-          {allGoals.length > 1 && (
-            <button type="button" onClick={next}
-              className="w-7 h-7 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 flex-shrink-0 opacity-60">
-              <ChevronRight size={14} className="text-gray-600 dark:text-gray-300" />
-            </button>
-          )}
         </div>
-
-        {allGoals.length > 1 && (
-          <div className="flex justify-center gap-1.5 mt-3">
-            {allGoals.map((_, i) => (
-              <button key={i} type="button" onClick={() => { setCurrentIdx(i); setShowContrib(false); }}
-                className="rounded-full transition-all"
-                style={{ width: i === safeIdx ? 16 : 6, height: 6, background: i === safeIdx ? goal.color : '#d1d5db' }} />
-            ))}
-          </div>
-        )}
       </div>
 
       {showCelebration && (

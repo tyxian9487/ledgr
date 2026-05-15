@@ -137,12 +137,13 @@ export default function BudgetPage() {
 
   const actualIncome = getMonthIncome(NOW.getFullYear(), NOW.getMonth());
 
-  const [activeTab, setActiveTab] = useState<'goals' | 'budget'>('goals');
   const { currentStep } = useTour();
-  useEffect(() => {
-    if (currentStep?.id === 'budget-goals') setActiveTab('goals');
-    if (currentStep?.id === 'budget-income') setActiveTab('budget');
-  }, [currentStep?.id]);
+  const [userTab, setUserTab] = useState<'goals' | 'budget'>('goals');
+  // Tour drives the tab synchronously so the element is always in the DOM when the overlay polls
+  const activeTab: 'goals' | 'budget' =
+    currentStep?.id === 'budget-goals' ? 'goals' :
+    currentStep?.id === 'budget-income' ? 'budget' :
+    userTab;
   const [incomeInput, setIncomeInput] = useState(
     budget.expectedIncome > 0 ? String(budget.expectedIncome) : actualIncome > 0 ? String(actualIncome) : ''
   );
@@ -321,7 +322,7 @@ export default function BudgetPage() {
         <div className="flex">
           <button
             type="button"
-            onClick={() => setActiveTab('goals')}
+            onClick={() => setUserTab('goals')}
             className={`flex-1 py-3.5 text-sm font-bold relative flex items-center justify-center gap-1.5 transition-colors ${activeTab === 'goals' ? 'text-green-600' : 'text-gray-400'}`}
           >
             Goals
@@ -334,7 +335,7 @@ export default function BudgetPage() {
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('budget')}
+            onClick={() => setUserTab('budget')}
             className={`flex-1 py-3.5 text-sm font-bold relative transition-colors ${activeTab === 'budget' ? 'text-green-600' : 'text-gray-400'}`}
           >
             Budget
