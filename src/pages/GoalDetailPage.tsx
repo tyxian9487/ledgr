@@ -28,7 +28,10 @@ export default function GoalDetailPage() {
   const GoalIcon = iconMap[goal.icon] || PiggyBank;
 
   const durationMonths = Math.max(1, Math.round(goal.durationDays / 30));
-  const startTime = new Date(goal.startDate).getTime();
+  // Normalize to local midnight so transactions logged on the same calendar day
+  // as goal creation are always within Month 1 (avoids time-of-day mismatch).
+  const startDateObj = new Date(goal.startDate);
+  const startTime = new Date(startDateObj.getFullYear(), startDateObj.getMonth(), startDateObj.getDate()).getTime();
   const elapsedDays = (Date.now() - startTime) / 86400000;
   const currentMonthIdx = Math.min(Math.floor(Math.max(0, elapsedDays) / 30), durationMonths - 1);
 
