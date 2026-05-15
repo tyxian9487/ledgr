@@ -17,6 +17,7 @@ interface Props {
     date?: string;
     isAutoDebit?: boolean;
     autoDebitPeriod?: AutoDebitPeriod;
+    linkedGoalId?: string;
   };
 }
 
@@ -72,13 +73,19 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [viewReceipt, setViewReceipt] = useState(false);
-  const [linkedGoalId, setLinkedGoalId] = useState('');
+  const [linkedGoalId, setLinkedGoalId] = useState(prefill?.linkedGoalId ?? '');
 
   const categories = type === 'expense' ? expenseCategories : incomeCategories;
   const selectedCategory = categories.find(c => c.id === category);
 
+  const isSavings = type === 'expense' && category === 'savings';
+  const saveOptions: Array<{ id: string; name: string }> = [];
+  if (budget.savingsGoal?.enabled) saveOptions.push({ id: '__monthly__', name: 'Monthly Savings Goal' });
+  (budget.customGoals ?? []).forEach(g => saveOptions.push({ id: g.id, name: g.name }));
+  const savingsBlocked = isSavings && saveOptions.length > 0 && !linkedGoalId;
+
   function handleSubmit() {
-    if (!amount || !category) return;
+    if (!amount || !category || savingsBlocked) return;
     const data = {
       type,
       amount: parseFloat(amount),
@@ -94,8 +101,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
     } else {
       addTransaction(data);
       playCoinSound();
-      // If savings linked to a custom goal, update goal's savedAmount
-      if (category === 'savings' && linkedGoalId) {
+      if (category === 'savings' && linkedGoalId && linkedGoalId !== '__monthly__') {
         const g = (budget.customGoals ?? []).find(g => g.id === linkedGoalId);
         if (g) updateCustomGoal(linkedGoalId, { savedAmount: g.savedAmount + parseFloat(amount) });
       }
@@ -248,7 +254,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
                   {categories.map(cat => (
                     <button
                       key={cat.id}
-                      onClick={() => { setCategory(cat.id); setShowCategoryDropdown(false); }}
+                      onClick={() => { setCategory(cat.id); setShowCategoryDropdown(false); if (cat.id !== 'savings') setLinkedGoalId(''); }}
                       className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
                       <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: cat.color }} />
@@ -300,35 +306,35 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
               )}
             </div>
 
-            {/* Link savings to custom goal */}
-            {type === 'expense' && category === 'savings' && (budget.customGoals?.length ?? 0) > 0 && (
+            {/* Savings goal selector — always shown when savings category is selected */}
+            {isSavings && (
               <div>
-                <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">
-                  Link to Goal <span className="text-gray-300">(optional)</span>
+                <label className="text-xs font-semibold mb-1.5 flex items-center gap-1 text-green-700 dark:text-green-400">
+                  <span>🐖</span> Save to <span className="text-red-400 ml-0.5">*</span>
                 </label>
-                <div className="flex flex-col gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setLinkedGoalId('')}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium border-2 transition-colors ${
-                      linkedGoalId === '' ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400'
-                    }`}
-                  >
-                    Monthly savings goal only
-                  </button>
-                  {(budget.customGoals ?? []).map(g => (
-                    <button
-                      key={g.id}
-                      type="button"
-                      onClick={() => setLinkedGoalId(g.id)}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium border-2 transition-colors ${
-                        linkedGoalId === g.id ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400'
-                      }`}
-                    >
-                      {g.name}
-                    </button>
-                  ))}
-                </div>
+                {saveOptions.length === 0 ? (
+                  <div className="rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 px-4 py-3 text-xs text-gray-400 text-center">
+                    No savings goals set up yet — go to Budget to create one.
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    {saveOptions.map(opt => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setLinkedGoalId(opt.id)}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium border-2 transition-colors flex items-center gap-2 ${
+                          linkedGoalId === opt.id
+                            ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                            : 'border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:border-green-300'
+                        }`}
+                      >
+                        <span className="flex-1">{opt.name}</span>
+                        {linkedGoalId === opt.id && <span className="text-green-500 text-base">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -387,10 +393,10 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={!amount || !category}
+              disabled={!amount || !category || savingsBlocked}
               className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-all duration-150 shadow-lg shadow-green-600/30"
             >
-              {!amount || !category ? 'Fill in Amount & Category' : 'Confirm Transaction'}
+              {!amount || !category ? 'Fill in Amount & Category' : savingsBlocked ? 'Select a savings goal first' : 'Confirm Transaction'}
             </button>
           </div>
         </div>

@@ -74,18 +74,19 @@ export default function TourOverlay() {
     ? { top: 80, bottom: 'auto' as const }
     : { bottom: 24, top: 'auto' as const };
 
-  // Spotlight geometry
-  const sl = rect ? rect.left - PAD : 0;
-  const st = rect ? rect.top - PAD : 0;
-  const sr = rect ? rect.right + PAD : vw;
-  const sb = rect ? rect.bottom + PAD : vh;
+  // Spotlight geometry — only render panels when element is within the viewport
+  const isInView = rect != null && rect.top < vh && rect.bottom > 0 && rect.left < vw && rect.right > 0;
+  const sl = isInView ? rect!.left - PAD : 0;
+  const st = isInView ? rect!.top - PAD : 0;
+  const sr = isInView ? rect!.right + PAD : vw;
+  const sb = isInView ? rect!.bottom + PAD : vh;
   const sw = sr - sl;
   const sh = sb - st;
 
   const overlay = (
     <>
-      {/* Four dark panels surrounding the spotlight — no canvas, no blend modes */}
-      {rect ? (
+      {/* Four dark panels surrounding the spotlight — only when element is visible in viewport */}
+      {isInView && (
         <>
           {/* top strip */}
           <div onClick={skipTour} style={{ position: 'fixed', top: 0, left: 0, right: 0, height: Math.max(0, st), background: OVL, zIndex: 99990 }} />
@@ -98,9 +99,6 @@ export default function TourOverlay() {
           {/* white highlight ring — pointer events off so the element inside is tappable */}
           <div style={{ position: 'fixed', top: st, left: sl, width: sw, height: sh, border: RING, borderRadius: RADIUS, zIndex: 99991, pointerEvents: 'none' }} />
         </>
-      ) : (
-        /* no element found yet — full dark overlay */
-        <div onClick={skipTour} style={{ position: 'fixed', inset: 0, background: OVL, zIndex: 99990 }} />
       )}
 
       {/* Tour card — floats top or bottom depending on where the spotlight is */}

@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Check, Plus, PiggyBank } from 'lucide-react';
+import { ArrowLeft, Check, PiggyBank } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { iconMap } from '../components/home/CategoryIcon';
+import ManualEntryModal from '../components/home/ManualEntryModal';
 
 export default function GoalDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { budget, updateCustomGoal, formatCurrency, getCurrencySymbol } = useApp();
+  const { budget, formatCurrency } = useApp();
 
-  const [contribution, setContribution] = useState('');
-  const [showContribInput, setShowContribInput] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   const goal = budget.customGoals?.find(g => g.id === id);
 
@@ -31,15 +31,6 @@ export default function GoalDetailPage() {
 
   const isGoalComplete = goal.savedAmount >= goal.targetAmount;
   const overallProgress = Math.min(1, goal.savedAmount / goal.targetAmount);
-
-  function handleAddContribution() {
-    if (!goal) return;
-    const amount = parseFloat(contribution);
-    if (!amount || amount <= 0) return;
-    updateCustomGoal(goal.id, { savedAmount: goal.savedAmount + amount });
-    setContribution('');
-    setShowContribInput(false);
-  }
 
   return (
     <div className="flex flex-col bg-gray-50 dark:bg-gray-950" style={{ height: '100dvh', overflowY: 'auto' }}>
@@ -180,57 +171,17 @@ export default function GoalDetailPage() {
                 </p>
               </div>
 
-              {/* Inline contribution input for current month */}
+              {/* Log savings button for current month */}
               {isCurrent && (
                 <div className="mt-3 w-full max-w-[220px]">
-                  {showContribInput ? (
-                    <div className="flex items-center gap-2 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 px-3 py-2">
-                      <span className="text-sm text-gray-400 dark:text-gray-500 font-semibold flex-shrink-0">
-                        {getCurrencySymbol()}
-                      </span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        inputMode="decimal"
-                        value={contribution}
-                        onChange={e => setContribution(e.target.value)}
-                        placeholder="0.00"
-                        className="flex-1 text-sm text-gray-800 dark:text-white bg-transparent outline-none min-w-0 placeholder:text-gray-300 dark:placeholder:text-gray-600"
-                        autoFocus
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') handleAddContribution();
-                          if (e.key === 'Escape') { setShowContribInput(false); setContribution(''); }
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAddContribution}
-                        disabled={!parseFloat(contribution) || parseFloat(contribution) <= 0}
-                        className="text-sm font-semibold px-3 py-1 rounded-lg text-white active:opacity-80 transition-opacity disabled:opacity-40"
-                        style={{ backgroundColor: goal.color }}
-                      >
-                        Add
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { setShowContribInput(false); setContribution(''); }}
-                        className="text-gray-400 dark:text-gray-500 text-xs"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setShowContribInput(true)}
-                      className="flex items-center gap-1.5 w-full justify-center text-sm font-semibold py-2 rounded-xl border-2 border-dashed active:opacity-70 transition-opacity"
-                      style={{ color: goal.color, borderColor: goal.color + '60' }}
-                    >
-                      <Plus size={14} />
-                      Log savings
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(true)}
+                    className="flex items-center gap-1.5 w-full justify-center text-sm font-semibold py-2 rounded-xl border-2 border-dashed active:opacity-70 transition-opacity"
+                    style={{ color: goal.color, borderColor: goal.color + '60' }}
+                  >
+                    🐖 Log savings
+                  </button>
                 </div>
               )}
             </div>
@@ -268,6 +219,13 @@ export default function GoalDetailPage() {
           {Math.round(overallProgress * 100)}%
         </p>
       </div>
+
+      {showModal && (
+        <ManualEntryModal
+          onClose={() => setShowModal(false)}
+          prefill={{ type: 'expense', category: 'savings', linkedGoalId: goal.id }}
+        />
+      )}
     </div>
   );
 }
