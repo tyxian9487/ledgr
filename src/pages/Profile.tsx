@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CURRENCIES } from '../types';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CURRENCIES, LANGUAGES } from '../types';
 import LegalSheet from '../components/LegalSheet';
 import { computeStreaks, BADGES } from '../utils/achievements';
 import CategoryManagerSheet from '../components/CategoryManagerSheet';
@@ -104,6 +104,7 @@ export default function Profile() {
   const [showCSV, setShowCSV] = useState(false);
   const [showCurrency, setShowCurrency] = useState(false);
   const [currencySearch, setCurrencySearch] = useState('');
+  const [showLanguage, setShowLanguage] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
   const [sharing, setSharing] = useState(false);
 
@@ -623,6 +624,12 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
             value={`${userProfile.currency || 'USD'} · ${getCurrencySymbol()}`}
             onClick={() => setShowCurrency(true)}
           />
+          <SettingsRow
+            icon={<span className="text-base leading-none">🌐</span>}
+            label="Language"
+            value={LANGUAGES.find(l => l.code === (userProfile.language || 'en'))?.nativeLabel ?? 'English'}
+            onClick={() => setShowLanguage(true)}
+          />
         </div>
 
         {/* Data */}
@@ -701,6 +708,42 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
                     </button>
                   );
                 })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Language picker modal ── */}
+      {showLanguage && (
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-end justify-center" onClick={() => setShowLanguage(false)}>
+          <div
+            className="w-full max-w-[430px] bg-white dark:bg-gray-900 rounded-t-3xl animate-slide-up overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100 dark:border-gray-800">
+              <h2 className="text-lg font-bold dark:text-white">Language</h2>
+              <button type="button" onClick={() => setShowLanguage(false)} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                <X size={16} className="text-gray-500 dark:text-gray-400" />
+              </button>
+            </div>
+            <div className="pb-10">
+              {LANGUAGES.map(lang => {
+                const isSelected = (userProfile.language || 'en') === lang.code;
+                return (
+                  <button
+                    key={lang.code}
+                    type="button"
+                    onClick={() => { updateUserProfile({ language: lang.code }); setShowLanguage(false); }}
+                    className={`w-full flex items-center gap-4 px-5 py-4 border-b border-gray-50 dark:border-gray-800 last:border-0 transition-colors ${isSelected ? 'bg-green-50 dark:bg-green-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                  >
+                    <div className="flex-1 text-left">
+                      <p className={`text-sm font-semibold ${isSelected ? 'text-green-700 dark:text-green-400' : 'dark:text-white'}`}>{lang.nativeLabel}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{lang.label}</p>
+                    </div>
+                    {isSelected && <span className="text-green-600 font-bold text-base">✓</span>}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
