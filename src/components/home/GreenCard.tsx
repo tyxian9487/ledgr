@@ -15,7 +15,7 @@ interface Props {
   onYearChange: (year: number) => void;
 }
 
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTH_KEYS = ['month.jan','month.feb','month.mar','month.apr','month.may','month.jun','month.jul','month.aug','month.sep','month.oct','month.nov','month.dec'] as const;
 
 function getStatus(income: number, expenses: number): FinancialStatus {
   if (income === 0) return expenses === 0 ? 'excellent' : 'critical';
@@ -165,7 +165,7 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
       ctx.fillStyle = 'white';
       ctx.font = 'bold 20px -apple-system, system-ui, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(`${MONTHS[month]} ${year}`, W / 2, 35);
+      ctx.fillText(`${t(MONTH_KEYS[month])} ${year}`, W / 2, 35);
 
       // ── Status glass box (y: 50–122) ──
       const sY = 50, sH = 72;
@@ -300,14 +300,14 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
 
       // Download / share
       const dataUrl = canvas.toDataURL('image/png');
-      const filename = `ExpenseWise-${MONTHS[month]}-${year}.png`;
+      const filename = `ExpenseWise-${t(MONTH_KEYS[month])}-${year}.png`;
 
       if (navigator.share) {
         try {
           const blob = await fetch(dataUrl).then(r => r.blob());
           const file = new File([blob], filename, { type: 'image/png' });
           if (navigator.canShare?.({ files: [file] })) {
-            await navigator.share({ files: [file], title: `${MONTHS[month]} ${year} – ExpenseWise` });
+            await navigator.share({ files: [file], title: `${t(MONTH_KEYS[month])} ${year} – ExpenseWise` });
             return;
           }
         } catch { /* fall through */ }
@@ -341,7 +341,7 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
             <ChevronLeft size={16} className="text-white" />
           </button>
           <span className="text-white font-semibold text-sm tracking-wide uppercase w-10 text-center">
-            {MONTHS[month].slice(0, 3)}
+            {t((MONTH_KEYS[month] + '.short') as typeof MONTH_KEYS[number])}
           </span>
           <button
             onClick={onNext}

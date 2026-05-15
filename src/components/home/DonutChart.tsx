@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from '../../context/LanguageContext';
 
 interface Slice {
   category: string;
@@ -27,6 +28,7 @@ function arcPath(cx: number, cy: number, r: number, startAngle: number, endAngle
 
 export default function DonutChart({ slices, total, formatCurrency }: Props) {
   const fmt = formatCurrency ?? ((n: number) => `$${n.toLocaleString()}`);
+  const { t } = useTranslation();
   const [activeSlice, setActiveSlice] = useState<string | null>(null);
 
   const cx = 80, cy = 80, outerR = 68, innerR = 44;
@@ -51,7 +53,6 @@ export default function DonutChart({ slices, total, formatCurrency }: Props) {
           {paths.length === 0 ? (
             <circle cx={cx} cy={cy} r={ringR} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={ringW} />
           ) : paths.length === 1 ? (
-            /* Single slice — full ring, no arc ambiguity */
             <circle
               cx={cx} cy={cy} r={ringR} fill="none"
               stroke={paths[0].color} strokeWidth={ringW}
@@ -76,8 +77,7 @@ export default function DonutChart({ slices, total, formatCurrency }: Props) {
         </svg>
         {/* Center total */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-[9px] text-white/70 font-medium leading-tight">Total</span>
-          <span className="text-[9px] text-white/70 font-medium leading-tight">Expenses</span>
+          <span className="text-[9px] text-white/70 font-medium leading-tight">{t('card.total_expenses')}</span>
           <span className="text-white font-bold text-sm leading-tight mt-0.5">
             {fmt(total)}
           </span>

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import { useTour, TOUR_STEPS } from '../context/TourContext';
+import { useTranslation } from '../context/LanguageContext';
+import { TKey } from '../i18n/translations';
 
 const PAD = 10;
 const RADIUS = 16;
@@ -19,6 +21,7 @@ function rectsChanged(a: DOMRect | null, b: DOMRect | null): boolean {
 
 export default function TourOverlay() {
   const { tourActive, currentStep, tourStepIndex, nextStep, skipTour } = useTour();
+  const { t } = useTranslation();
   const location = useLocation();
   const [rect, setRect] = useState<DOMRect | null>(null);
   const prevRectRef = useRef<DOMRect | null>(null);
@@ -29,15 +32,12 @@ export default function TourOverlay() {
   const onCorrectPage = currentStep ? location.pathname === currentStep.page : false;
 
   useEffect(() => {
-    // Always clear stale rect and reset flags on step change
     setRect(null);
     prevRectRef.current = null;
     scrolledRef.current = false;
 
     if (!tourActive || !currentStep || !onCorrectPage) return;
 
-    // When entering a new page in the tour, scroll the window to top first so
-    // elements aren't above the viewport due to residual scroll from the previous page.
     if (currentStep.page !== prevPageRef.current) {
       prevPageRef.current = currentStep.page;
       window.scrollTo(0, 0);
@@ -47,7 +47,6 @@ export default function TourOverlay() {
       const el = document.querySelector(currentStep!.selector);
       const newRect = el ? el.getBoundingClientRect() : null;
 
-      // First time element is found, scroll it into view if off-screen
       if (el && newRect && !scrolledRef.current) {
         scrolledRef.current = true;
         const offTop    = newRect.top < 80;
@@ -84,8 +83,6 @@ export default function TourOverlay() {
     ? { top: 80, bottom: 'auto' as const }
     : { bottom: 24, top: 'auto' as const };
 
-  // Only render spotlight panels when the element's top is actually within the viewport.
-  // This prevents the "full dark overlay" artifact when an element is off-screen.
   const isInView = rect != null && rect.top >= 0 && rect.top < vh;
   const sl = isInView ? rect!.left - PAD : 0;
   const st = isInView ? rect!.top - PAD : 0;
@@ -94,9 +91,13 @@ export default function TourOverlay() {
   const sw = sr - sl;
   const sh = sb - st;
 
+  const titleKey = `tour.${step.id}.title` as TKey;
+  const bodyKey = `tour.${step.id}.body` as TKey;
+  const stepTitle = t(titleKey) !== titleKey ? t(titleKey) : step.title;
+  const stepBody = t(bodyKey) !== bodyKey ? t(bodyKey) : step.body;
+
   const overlay = (
     <>
-      {/* Four dark panels surrounding the spotlight — only rendered when element is in view */}
       {isInView && (
         <>
           <div onClick={skipTour} style={{ position: 'fixed', top: 0, left: 0, right: 0, height: Math.max(0, st), background: OVL, zIndex: 99990 }} />
@@ -107,7 +108,6 @@ export default function TourOverlay() {
         </>
       )}
 
-      {/* Tour card */}
       <div
         style={{ position: 'fixed', ...cardPos, left: cardLeft, width: cardW, zIndex: 99999, pointerEvents: 'all' }}
         onClick={e => e.stopPropagation()}
@@ -121,17 +121,17 @@ export default function TourOverlay() {
               ))}
               <span style={{ fontSize: 10, color: '#9ca3af', marginLeft: 'auto', fontWeight: 600 }}>{tourStepIndex + 1} / {TOUR_STEPS.length}</span>
             </div>
-            <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: '#111827', lineHeight: 1.35 }}>{step.title}</p>
-            <p style={{ margin: '0 0 14px', fontSize: 12, color: '#6b7280', lineHeight: 1.6 }}>{step.body}</p>
+            <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: '#111827', lineHeight: 1.35 }}>{stepTitle}</p>
+            <p style={{ margin: '0 0 14px', fontSize: 12, color: '#6b7280', lineHeight: 1.6 }}>{stepBody}</p>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <button onClick={skipTour} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#9ca3af', fontWeight: 500, padding: '4px 0' }}>
-                Skip tour
+                {t('tour.skip')}
               </button>
               {step.isGuide ? (
-                <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 700 }}>Tap the highlighted item →</span>
+                <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 700 }}>{t('tour.tap_hint')}</span>
               ) : (
                 <button onClick={nextStep} style={{ background: '#16a34a', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, padding: '8px 20px', borderRadius: 12, boxShadow: '0 2px 8px rgba(22,163,74,0.35)' }}>
-                  {isLastStep ? 'Finish 🎉' : 'Next →'}
+                  {isLastStep ? t('tour.finish') : t('tour.next')}
                 </button>
               )}
             </div>

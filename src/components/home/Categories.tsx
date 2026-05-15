@@ -15,15 +15,15 @@ interface Props {
   onCloseCalendar?: () => void;
 }
 
-const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const DAY_ABBR = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTH_KEYS = ['month.jan','month.feb','month.mar','month.apr','month.may','month.jun','month.jul','month.aug','month.sep','month.oct','month.nov','month.dec'] as const;
+const DAY_KEYS = ['day.sun','day.mon','day.tue','day.wed','day.thu','day.fri','day.sat'] as const;
 
 function formatDate(iso: string) {
   const d = new Date(iso);
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function formatDayLabel(dateStr: string, todayStr: string, yesterdayStr: string): string {
+function formatDayLabel(dateStr: string, todayStr: string, yesterdayStr: string, dayNames: string[]): string {
   const d = new Date(dateStr + 'T12:00:00');
   const today = new Date();
   const yesterday = new Date(today);
@@ -35,7 +35,7 @@ function formatDayLabel(dateStr: string, todayStr: string, yesterdayStr: string)
 
   const diffMs = today.getTime() - d.getTime();
   const diffDays = Math.floor(diffMs / 86400000);
-  if (diffDays < 7) return d.toLocaleDateString('en-US', { weekday: 'long' });
+  if (diffDays < 7) return dayNames[d.getDay()];
 
   const sameYear = d.getFullYear() === today.getFullYear();
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(sameYear ? {} : { year: 'numeric' }) });
@@ -120,7 +120,7 @@ function CalendarOverlay({
           <button type="button" onClick={prevMonth} className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
             <ChevronLeft size={18} className="text-gray-600 dark:text-gray-300" />
           </button>
-          <p className="text-base font-bold dark:text-white">{MONTH_NAMES[calMonth]} {calYear}</p>
+          <p className="text-base font-bold dark:text-white">{t(MONTH_KEYS[calMonth])} {calYear}</p>
           <button type="button" onClick={nextMonth} className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
             <ChevronRight size={18} className="text-gray-600 dark:text-gray-300" />
           </button>
@@ -128,8 +128,8 @@ function CalendarOverlay({
 
         {/* Day headers */}
         <div className="grid grid-cols-7 px-4 mb-1">
-          {DAY_ABBR.map(d => (
-            <p key={d} className="text-center text-[10px] font-bold text-gray-400 py-1">{d}</p>
+          {DAY_KEYS.map(dk => (
+            <p key={dk} className="text-center text-[10px] font-bold text-gray-400 py-1">{t((dk + '.short') as typeof dk)}</p>
           ))}
         </div>
 
@@ -184,7 +184,7 @@ function CalendarOverlay({
               <div key={o} className="w-4 h-4 rounded-md" style={{ background: `rgba(239,68,68,${o})` }} />
             ))}
           </div>
-          <p className="text-[10px] text-gray-400">Low → High spend</p>
+          <p className="text-[10px] text-gray-400">{t('cal.low_high_spend')}</p>
           <div className="flex items-center gap-1">
             <div className="w-4 h-4 rounded-md" style={{ background: 'rgba(34,197,94,0.18)' }} />
             <p className="text-[10px] text-gray-400">{t('common.income')}</p>
@@ -207,7 +207,7 @@ function CalendarOverlay({
           return (
             <div className="px-5 pt-4">
               <p className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider mb-3">
-                {MONTH_NAMES[calMonth]} {selectedDay}
+                {t(MONTH_KEYS[calMonth])} {selectedDay}
               </p>
               <div className="space-y-2">
                 {groups.map(([catId, { txs: groupTxs, total, isIncome }]) => {
@@ -330,7 +330,7 @@ export default function Categories({ year, month, filterFn, view = 'category', s
                 >
                   <CategoryIcon icon={row.icon} color={row.color} />
                   <div className="flex-1 text-left">
-                    <p className="text-sm font-semibold dark:text-white">{row.label}</p>
+                    <p className="text-sm font-semibold dark:text-white">{(() => { const k = 'cat.' + row.id; const tr = t(k as any); return tr !== k ? tr : row.label; })()}</p>
                     <p className="text-[11px] text-gray-400">
                       {row.txs.length} transaction{row.txs.length !== 1 ? 's' : ''}
                     </p>
@@ -412,7 +412,7 @@ export default function Categories({ year, month, filterFn, view = 'category', s
                 </div>
 
                 <div className="flex-1 text-left">
-                  <p className="text-sm font-semibold dark:text-white">{formatDayLabel(dateStr, t('day.today'), t('day.yesterday'))}</p>
+                  <p className="text-sm font-semibold dark:text-white">{formatDayLabel(dateStr, t('day.today'), t('day.yesterday'), DAY_KEYS.map(dk => t(dk)))}</p>
                   <p className="text-[11px] text-gray-400">
                     {dayTxs.length} {t('misc.transactions', { s: dayTxs.length !== 1 ? 's' : '' })}
                   </p>

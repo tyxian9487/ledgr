@@ -3,6 +3,7 @@ import { Camera, X, RefreshCw, ImageIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ManualEntryModal from '../components/home/ManualEntryModal';
 import { TransactionType } from '../types';
+import { useTranslation } from '../context/LanguageContext';
 
 type Stage = 'preview' | 'capturing' | 'processing' | 'review';
 
@@ -31,6 +32,7 @@ function parseReceiptMock(imageDataUrl: string): Promise<ParsedReceipt> {
 
 export default function ReceiptCapture() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -55,9 +57,9 @@ export default function ReceiptCapture() {
       }
       setCameraActive(true);
     } catch {
-      setCameraError('Camera access denied or not available. Please allow camera access and try again.');
+      setCameraError(t('capture.camera_error'));
     }
-  }, []);
+  }, [t]);
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach(t => t.stop());
@@ -98,7 +100,6 @@ export default function ReceiptCapture() {
       setStage('review');
     };
     reader.readAsDataURL(file);
-    // reset input so same file can be re-selected
     e.target.value = '';
   }, [stopCamera]);
 
@@ -131,15 +132,14 @@ export default function ReceiptCapture() {
               <div className="w-3/4 h-2/3 border-2 border-white/60 rounded-2xl" style={{ boxShadow: '0 0 0 9999px rgba(0,0,0,0.45)' }} />
             </div>
             <p className="absolute bottom-36 left-0 right-0 text-center text-white/80 text-xs">
-              Align receipt within frame
+              {t('capture.align')}
             </p>
-            {/* Gallery button overlay while camera is active */}
             <button
               onClick={() => galleryRef.current?.click()}
               className="absolute bottom-32 right-6 flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5"
             >
               <ImageIcon size={14} className="text-white" />
-              <span className="text-white text-xs font-medium">Gallery</span>
+              <span className="text-white text-xs font-medium">{t('capture.gallery')}</span>
             </button>
           </>
         ) : stage === 'processing' && capturedImage ? (
@@ -147,8 +147,8 @@ export default function ReceiptCapture() {
             <img src={capturedImage} alt="Captured" className="w-3/4 rounded-2xl opacity-50 object-contain max-h-64" />
             <div className="flex flex-col items-center gap-3">
               <div className="w-10 h-10 border-t-white rounded-full animate-spin border-white/30" style={{ borderWidth: 3, borderStyle: 'solid' }} />
-              <p className="text-white font-medium text-sm">Analyzing receipt...</p>
-              <p className="text-white/60 text-xs">AI is reading your receipt</p>
+              <p className="text-white font-medium text-sm">{t('capture.analyzing')}</p>
+              <p className="text-white/60 text-xs">{t('capture.ai_reading')}</p>
             </div>
           </div>
         ) : (
@@ -156,9 +156,9 @@ export default function ReceiptCapture() {
             <div className="w-24 h-24 rounded-full bg-white/10 flex items-center justify-center mb-2">
               <Camera size={40} className="text-white/60" />
             </div>
-            <p className="text-white font-semibold text-lg text-center">Receipt Capture</p>
+            <p className="text-white font-semibold text-lg text-center">{t('capture.title')}</p>
             <p className="text-white/60 text-sm text-center leading-relaxed">
-              Point your camera at a receipt and our AI will automatically extract the transaction details.
+              {t('capture.desc')}
             </p>
             {cameraError && (
               <div className="bg-red-500/20 border border-red-500/30 rounded-2xl px-4 py-3 w-full">
@@ -179,9 +179,8 @@ export default function ReceiptCapture() {
         onChange={handleGalleryUpload}
       />
 
-      {/* Controls — always: [red X cancel] [main action] [gallery] */}
+      {/* Controls */}
       <div className="bg-black/80 px-8 py-6 pb-24 flex items-center justify-between">
-        {/* Cancel — round red X */}
         <button
           onClick={() => { stopCamera(); navigate('/'); }}
           className="w-14 h-14 rounded-full bg-red-500/20 border-2 border-red-500/60 flex items-center justify-center active:scale-90 transition-transform"
@@ -189,7 +188,6 @@ export default function ReceiptCapture() {
           <X size={22} className="text-red-400" />
         </button>
 
-        {/* Center — shutter when active, start-camera when not */}
         {cameraActive ? (
           <button
             onClick={capturePhoto}
@@ -206,7 +204,6 @@ export default function ReceiptCapture() {
           </button>
         )}
 
-        {/* Gallery — round */}
         <button
           onClick={() => galleryRef.current?.click()}
           className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center active:scale-90 transition-transform"
