@@ -26,7 +26,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   const { isAuthenticated, hasCompletedOnboarding } = useApp();
   const location = useLocation();
-  const hideNav = ['/capture', '/subscription', '/login', '/onboarding'].includes(location.pathname);
+  const hideNav = ['/capture', '/subscription', '/login', '/onboarding', '/goals/new'].includes(location.pathname);
 
   return (
     <div className="relative">
