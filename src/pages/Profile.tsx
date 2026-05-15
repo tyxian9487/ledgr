@@ -54,29 +54,11 @@ function SettingsRow({ icon, label, value, onClick, danger }: SettingsRowProps) 
   );
 }
 
-const FAQ_ITEMS = [
-  { q: 'How do I add a transaction?', a: 'Tap "Add Transaction" on the home screen. Fill in the amount, category, and date, then tap "Confirm Transaction".' },
-  { q: 'What is Auto Debit?', a: 'Auto Debit marks a transaction as recurring. You can set a period (daily, weekly, monthly, etc.) to track regular bills and income.' },
-  { q: 'How is my Financial Score calculated?', a: 'Your score is based on the ratio of your expenses to income. A lower expense-to-income ratio earns a higher score (max 100).' },
-  { q: 'Is my data stored securely?', a: 'All your data is stored locally on your device. We do not upload your financial information to any server.' },
-  { q: 'How do I capture a receipt?', a: 'Tap the camera icon in the bottom navigation. Take or upload a photo and the app will auto-fill transaction details from the receipt.' },
-  { q: 'Can I export my data?', a: 'Premium subscribers can export transaction data as CSV or PDF. Upgrade your plan to unlock this feature.' },
-  { q: 'How do I delete a transaction?', a: 'On the home screen, find the transaction in its category section and tap the delete (trash) icon next to it.' },
-  { q: 'How do I switch to dark mode?', a: 'Go to Profile → Preferences and tap the Dark Mode row to toggle it, or tap the sun/moon icon in the top-right of the Profile screen.' },
-];
-
 function getStreakEmoji(n: number) {
   if (n >= 12) return '💎';
   if (n >= 6) return '⚡';
   if (n >= 1) return '🔥';
   return '🎯';
-}
-function getStreakLabel(n: number) {
-  if (n >= 12) return 'Legendary';
-  if (n >= 6) return 'On Fire';
-  if (n >= 3) return 'Hot Streak';
-  if (n >= 1) return 'Going!';
-  return 'Start now';
 }
 
 function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
@@ -93,6 +75,25 @@ export default function Profile() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { transactions, userProfile, darkMode, toggleDarkMode, updateUserProfile, getCurrencySymbol, formatCurrency, signOut, budget } = useApp();
+
+  const FAQ_ITEMS = [
+    { q: t('faq.q1'), a: t('faq.a1') },
+    { q: t('faq.q2'), a: t('faq.a2') },
+    { q: t('faq.q3'), a: t('faq.a3') },
+    { q: t('faq.q4'), a: t('faq.a4') },
+    { q: t('faq.q5'), a: t('faq.a5') },
+    { q: t('faq.q6'), a: t('faq.a6') },
+    { q: t('faq.q7'), a: t('faq.a7') },
+    { q: t('faq.q8'), a: t('faq.a8') },
+  ];
+
+  function getStreakLabel(n: number) {
+    if (n >= 12) return t('streak.legendary');
+    if (n >= 6) return t('streak.on_fire');
+    if (n >= 3) return t('streak.hot_streak');
+    if (n >= 1) return t('streak.going');
+    return t('streak.start_now');
+  }
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(userProfile.name);
   const [editingEmail, setEditingEmail] = useState(false);
@@ -156,9 +157,9 @@ export default function Profile() {
 
   function handleChangePassword() {
     setPwError('');
-    if (currentPw !== getStoredPw()) { setPwError('Current password is incorrect.'); return; }
-    if (newPw.length < 6) { setPwError('New password must be at least 6 characters.'); return; }
-    if (newPw !== confirmPw) { setPwError('New passwords do not match.'); return; }
+    if (currentPw !== getStoredPw()) { setPwError(t('pw.error_wrong')); return; }
+    if (newPw.length < 6) { setPwError(t('pw.error_short')); return; }
+    if (newPw !== confirmPw) { setPwError(t('pw.error_mismatch')); return; }
     localStorage.setItem(PW_KEY, newPw);
     setPwSuccess(true);
     setCurrentPw(''); setNewPw(''); setConfirmPw('');

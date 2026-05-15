@@ -45,13 +45,6 @@ const DESCRIPTION_SUGGESTIONS: Record<string, string[]> = {
   other_income:  ['Bonus', 'Refund', 'Cashback', 'Side hustle', 'Rental income', 'Dividend'],
 };
 
-const PERIODS: { value: AutoDebitPeriod; label: string }[] = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'biweekly', label: 'Bi-weekly' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'yearly', label: 'Yearly' },
-];
 
 function todayString() {
   const d = new Date();
@@ -61,6 +54,14 @@ function todayString() {
 export default function ManualEntryModal({ onClose, transactionId, prefill }: Props) {
   const { addTransaction, updateTransaction, getCurrencySymbol, expenseCategories, incomeCategories, budget, updateCustomGoal } = useApp();
   const { t } = useTranslation();
+
+  const PERIODS: { value: AutoDebitPeriod; label: string }[] = [
+    { value: 'daily',    label: t('period.daily') },
+    { value: 'weekly',   label: t('period.weekly') },
+    { value: 'biweekly', label: t('period.biweekly') },
+    { value: 'monthly',  label: t('period.monthly') },
+    { value: 'yearly',   label: t('period.yearly') },
+  ];
 
   const [showAddTxHint, setShowAddTxHint] = useState(() => !localStorage.getItem('ledgr_addtx_hint_seen'));
 
@@ -82,7 +83,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
 
   const isSavings = type === 'expense' && category === 'savings';
   const saveOptions: Array<{ id: string; name: string }> = [];
-  if (budget.savingsGoal?.enabled) saveOptions.push({ id: '__monthly__', name: 'Monthly Savings Goal' });
+  if (budget.savingsGoal?.enabled) saveOptions.push({ id: '__monthly__', name: t('tx.monthly_savings_goal') });
   (budget.customGoals ?? []).forEach(g => saveOptions.push({ id: g.id, name: g.name }));
   const savingsBlocked = isSavings && saveOptions.length > 0 && !linkedGoalId;
 
@@ -175,8 +176,8 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
               >
                 <img src={prefill.receiptImage} alt="Receipt" className="w-14 h-14 object-cover rounded-xl flex-shrink-0" />
                 <div className="text-left">
-                  <p className="text-sm font-medium dark:text-white">Receipt attached</p>
-                  <p className="text-xs text-gray-400">Tap to view full image</p>
+                  <p className="text-sm font-medium dark:text-white">{t('tx.receipt')}</p>
+                  <p className="text-xs text-gray-400">{t('tx.tap_view')}</p>
                 </div>
                 <ImageIcon size={16} className="text-gray-300 ml-auto flex-shrink-0" />
               </button>
@@ -190,7 +191,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
                   type === 'expense' ? 'bg-red-500 text-white shadow-sm' : 'text-gray-500 dark:text-gray-400'
                 }`}
               >
-                Expense
+                {t('common.expense')}
               </button>
               <button
                 onClick={() => { setType('income'); setCategory(''); }}
@@ -198,13 +199,13 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
                   type === 'income' ? 'bg-green-600 text-white shadow-sm' : 'text-gray-500 dark:text-gray-400'
                 }`}
               >
-                Income
+                {t('common.income')}
               </button>
             </div>
 
             {/* Amount */}
             <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">Amount</label>
+              <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">{t('common.amount')}</label>
               <div className="flex items-center border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 focus-within:border-green-500 transition-colors bg-gray-50 dark:bg-gray-800">
                 <span className="text-gray-400 font-semibold mr-2">{getCurrencySymbol()}</span>
                 <input
@@ -220,7 +221,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
 
             {/* Date */}
             <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">Date</label>
+              <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">{t('common.date')}</label>
               <div className="flex items-center border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 focus-within:border-green-500 transition-colors bg-gray-50 dark:bg-gray-800 gap-3">
                 <Calendar size={16} className="text-gray-400 flex-shrink-0" />
                 <input
@@ -235,7 +236,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
 
             {/* Category */}
             <div className="relative">
-              <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">Category</label>
+              <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">{t('tx.category_label')}</label>
               <button
                 type="button"
                 onClick={() => { setShowCategoryDropdown(!showCategoryDropdown); setShowPeriodDropdown(false); }}
@@ -247,7 +248,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
                     <span className="text-sm font-medium dark:text-white">{selectedCategory.label}</span>
                   </div>
                 ) : (
-                  <span className="text-sm text-gray-400">Select category</span>
+                  <span className="text-sm text-gray-400">{t('tx.select_category')}</span>
                 )}
                 <ChevronDown size={16} className={`text-gray-400 transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} />
               </button>
@@ -273,7 +274,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
                     <div className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
                       <Plus size={11} className="text-green-600" strokeWidth={3} />
                     </div>
-                    <span className="text-sm font-semibold text-green-600 dark:text-green-400">Add new category</span>
+                    <span className="text-sm font-semibold text-green-600 dark:text-green-400">{t('tx.add_category')}</span>
                   </button>
                 </div>
               )}
@@ -282,10 +283,10 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
             {/* Description */}
             <div>
               <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">
-                Description <span className="text-gray-300">(optional)</span>
+                {t('common.description')} <span className="text-gray-300">({t('common.optional')})</span>
               </label>
               <textarea
-                placeholder="Add a note..."
+                placeholder={t('tx.add_note')}
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 rows={2}
@@ -317,7 +318,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
                 </label>
                 {saveOptions.length === 0 ? (
                   <div className="rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 px-4 py-3 text-xs text-gray-400 text-center">
-                    No savings goals set up yet — go to Budget to create one.
+                    {t('tx.no_goals')}
                   </div>
                 ) : (
                   <div className="flex flex-col gap-1.5">
@@ -347,8 +348,8 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
                 <div className="flex items-center gap-2">
                   <RefreshCw size={16} className="text-green-600" />
                   <div>
-                    <p className="text-sm font-medium dark:text-white">Auto Debit</p>
-                    <p className="text-[11px] text-gray-400">Repeat this transaction</p>
+                    <p className="text-sm font-medium dark:text-white">{t('tx.auto_debit')}</p>
+                    <p className="text-[11px] text-gray-400">{t('tx.repeat')}</p>
                   </div>
                 </div>
                 <button
@@ -399,7 +400,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
               disabled={!amount || !category || savingsBlocked}
               className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-all duration-150 shadow-lg shadow-green-600/30"
             >
-              {!amount || !category ? 'Fill in Amount & Category' : savingsBlocked ? 'Select a savings goal first' : 'Confirm Transaction'}
+              {!amount || !category ? t('tx.fill') : savingsBlocked ? t('tx.select_goal_first') : t('tx.confirm')}
             </button>
           </div>
         </div>

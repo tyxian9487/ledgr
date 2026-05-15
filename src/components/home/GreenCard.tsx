@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useTranslation } from '../../context/LanguageContext';
 import { EXPENSE_CATEGORIES, FinancialStatus } from '../../types';
 import DonutChart from './DonutChart';
 import type { Slice } from './DonutChart';
@@ -100,6 +101,7 @@ function drawDonutOnCanvas(
 
 export default function GreenCard({ year, month, onPrev, onNext, onYearChange }: Props) {
   const { getMonthTransactions, getMonthIncome, getMonthExpenses, formatCurrency } = useApp();
+  const { t } = useTranslation();
   const [sharing, setSharing] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
 
@@ -114,9 +116,9 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
   const yearOptions = Array.from({ length: 6 }, (_, idx) => currentYear - idx);
 
   const statusConfig = {
-    excellent: { label: 'Excellent', Coin: GoldCoin, text: '#fbbf24', coinColor: '#f59e0b' },
-    sustained: { label: 'Sustained', Coin: SilverCoin, text: '#cbd5e1', coinColor: '#94a3b8' },
-    critical:  { label: 'Critical',  Coin: CopperCoin, text: '#f97316', coinColor: '#b45309' },
+    excellent: { label: t('card.status_excellent'), Coin: GoldCoin, text: '#fbbf24', coinColor: '#f59e0b' },
+    sustained: { label: t('card.status_sustained'), Coin: SilverCoin, text: '#cbd5e1', coinColor: '#94a3b8' },
+    critical:  { label: t('card.status_critical'),  Coin: CopperCoin, text: '#f97316', coinColor: '#b45309' },
   };
   const { label, Coin, text, coinColor } = statusConfig[status];
 
@@ -373,12 +375,12 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
       >
         <Coin />
         <div>
-          <p className="text-white/60 text-[10px] uppercase tracking-wider font-medium">Financial Status</p>
+          <p className="text-white/60 text-[10px] uppercase tracking-wider font-medium">{t('card.financial_status')}</p>
           <p className="font-bold text-base leading-tight" style={{ color: text }}>{label}</p>
         </div>
         <div className="ml-auto flex items-center gap-3">
           <div className="text-right">
-            <p className="text-white/60 text-[10px]">Score</p>
+            <p className="text-white/60 text-[10px]">{t('card.score')}</p>
             <p className="text-white font-semibold text-sm">
               {status === 'excellent' ? '90+' : status === 'sustained' ? '60–79' : '<60'}
             </p>
@@ -407,14 +409,14 @@ export default function GreenCard({ year, month, onPrev, onNext, onYearChange }:
       {/* Income / Remaining row */}
       <div data-tour="stats-row" className="mx-4 mb-4 grid grid-cols-2 gap-3">
         <div className="glass rounded-2xl p-3">
-          <p className="text-white/60 text-[10px] uppercase tracking-wider mb-1">Income</p>
+          <p className="text-white/60 text-[10px] uppercase tracking-wider mb-1">{t('common.income')}</p>
           <p className="text-white font-bold text-base">{formatCurrency(totalIncome)}</p>
         </div>
         <div className="glass rounded-2xl p-3">
-          <p className="text-white/60 text-[10px] uppercase tracking-wider mb-1">Remaining</p>
+          <p className="text-white/60 text-[10px] uppercase tracking-wider mb-1">{t('card.remaining')}</p>
           <p className={`font-bold text-base ${remaining >= 0 ? 'text-white' : 'text-red-300'}`}>
             {formatCurrency(Math.abs(remaining))}
-            {remaining < 0 && <span className="text-[10px] ml-1">deficit</span>}
+            {remaining < 0 && <span className="text-[10px] ml-1">{t('card.deficit')}</span>}
           </p>
         </div>
       </div>

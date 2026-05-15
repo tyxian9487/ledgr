@@ -7,13 +7,6 @@ import { ICON_OPTIONS, COLOR_OPTIONS } from '../types';
 import { iconMap } from '../components/home/CategoryIcon';
 import { PiggyBank } from 'lucide-react';
 
-const DURATION_PRESETS = [
-  { label: '1 Month',  months: 1 },
-  { label: '3 Months', months: 3 },
-  { label: '6 Months', months: 6 },
-  { label: '1 Year',   months: 12 },
-];
-
 function formatMonths(m: number) {
   if (m < 12) return `${m} month${m !== 1 ? 's' : ''}`;
   const yrs = Math.floor(m / 12);
@@ -26,6 +19,14 @@ function formatMonths(m: number) {
 export default function GoalFormPage() {
   const navigate = useNavigate();
   const { addCustomGoal, getCurrencySymbol, formatCurrency } = useApp();
+  const { t } = useTranslation();
+
+  const DURATION_PRESETS = [
+    { label: t('gform.dur_1m'),  months: 1 },
+    { label: t('gform.dur_3m'), months: 3 },
+    { label: t('gform.dur_6m'), months: 6 },
+    { label: t('gform.dur_1y'),   months: 12 },
+  ];
 
   const [name, setName]                 = useState('');
   const [icon, setIcon]                 = useState(ICON_OPTIONS[0]);
@@ -77,8 +78,8 @@ export default function GoalFormPage() {
           <ArrowLeft size={18} className="text-gray-600 dark:text-gray-300" />
         </button>
         <div>
-          <h1 className="text-lg font-bold dark:text-white">New Goal</h1>
-          <p className="text-xs text-gray-400">Set a custom savings target</p>
+          <h1 className="text-lg font-bold dark:text-white">{t('gform.title')}</h1>
+          <p className="text-xs text-gray-400">{t('gform.subtitle')}</p>
         </div>
       </div>
 
@@ -91,7 +92,7 @@ export default function GoalFormPage() {
         {/* Goal name */}
         <div>
           <label className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-2">
-            Goal Name
+            {t('gform.name')}
           </label>
           <input
             type="text"
@@ -105,7 +106,7 @@ export default function GoalFormPage() {
         {/* Icon picker — collapsed pill → expandable grid */}
         <div>
           <label className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-2">
-            Icon
+            {t('gform.icon')}
           </label>
 
           {/* Collapsed trigger */}
@@ -164,7 +165,7 @@ export default function GoalFormPage() {
         {/* Color picker */}
         <div>
           <label className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-2">
-            Color
+            {t('gform.color')}
           </label>
           <div className="flex flex-wrap gap-2.5">
             {COLOR_OPTIONS.map(c => (
@@ -184,7 +185,7 @@ export default function GoalFormPage() {
         {/* Target amount */}
         <div>
           <label className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-2">
-            Target Amount
+            {t('gform.target')}
           </label>
           <div className="flex items-center border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 bg-gray-50 dark:bg-gray-900 gap-2 focus-within:border-green-500 transition-colors">
             <span className="text-gray-400 font-semibold text-lg">{getCurrencySymbol()}</span>
@@ -202,7 +203,7 @@ export default function GoalFormPage() {
         {/* Duration */}
         <div>
           <label className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-2">
-            Duration
+            {t('gform.duration')}
           </label>
           <div className="flex flex-wrap gap-2 mb-3">
             {DURATION_PRESETS.map((preset, idx) => (
@@ -228,7 +229,7 @@ export default function GoalFormPage() {
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
               }`}
             >
-              Custom
+              {t('gform.custom')}
             </button>
           </div>
 
@@ -267,7 +268,7 @@ export default function GoalFormPage() {
         {name.trim() && target > 0 && durationMonths > 0 && (
           <div className="rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
             <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-4 pt-3 pb-2">
-              Preview
+              {t('gform.preview')}
             </p>
             <div className="px-4 pb-4">
               <div className="flex items-center gap-3 mb-3">
@@ -297,7 +298,7 @@ export default function GoalFormPage() {
               <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 rounded-xl px-3 py-2.5">
                 <span className="text-base">💡</span>
                 <p className="text-xs text-green-700 dark:text-green-400 font-semibold leading-snug">
-                  Save {formatCurrency(monthly)}/month to reach this goal in {formatMonths(durationMonths)}
+                  {t('gform.save_rate', { amount: formatCurrency(monthly), duration: formatMonths(durationMonths) })}
                 </p>
               </div>
             </div>
@@ -308,12 +309,12 @@ export default function GoalFormPage() {
         <div className="pt-2 pb-4">
           {!isValid && (
             <p className="text-center text-xs text-gray-400 mb-2">
-              {!name.trim() ? 'Enter a goal name' : !target ? 'Enter a target amount' : 'Choose a duration'}
+              {!name.trim() ? t('gform.enter_name') : !target ? t('gform.enter_target') : t('gform.choose_duration')}
             </p>
           )}
           {isValid && monthly > 0 && (
             <p className="text-center text-xs text-gray-400 mb-2">
-              {formatCurrency(monthly)}/month will be reserved from your budget
+              {t('gform.reserved', { amount: formatCurrency(monthly) })}
             </p>
           )}
           <button
@@ -326,7 +327,7 @@ export default function GoalFormPage() {
                 : 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'
             }`}
           >
-            Save Goal
+            {t('gform.save')}
           </button>
         </div>
 

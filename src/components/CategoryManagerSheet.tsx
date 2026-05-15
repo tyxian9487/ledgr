@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Plus, Trash2, Edit2, Check } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useTranslation } from '../context/LanguageContext';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, ICON_OPTIONS, COLOR_OPTIONS, CustomCategory } from '../types';
 import CategoryIcon, { CategoryIconRaw } from './home/CategoryIcon';
 
@@ -26,13 +27,14 @@ function AddCategoryForm({
   onSave: (data: Omit<CustomCategory, 'id'>) => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState<AddFormState>(initial ?? { ...DEFAULT_FORM, type: defaultType });
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex-shrink-0 flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100 dark:border-gray-800">
-        <h3 className="text-base font-bold dark:text-white">{initial ? 'Edit Category' : 'New Category'}</h3>
+        <h3 className="text-base font-bold dark:text-white">{initial ? t('catmgr.edit') : t('catmgr.new')}</h3>
         <button type="button" onClick={onCancel} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
           <X size={15} className="text-gray-500" />
         </button>
@@ -42,7 +44,7 @@ function AddCategoryForm({
         {/* Type */}
         {!initial && (
           <div>
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Type</label>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">{t('catmgr.type')}</label>
             <div className="flex rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800 p-0.5 bg-gray-50 dark:bg-gray-800 gap-0.5">
               {(['expense', 'income'] as Tab[]).map(t => (
                 <button key={t} type="button" onClick={() => setForm(f => ({ ...f, type: t }))}
@@ -56,10 +58,10 @@ function AddCategoryForm({
 
         {/* Name */}
         <div>
-          <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Name</label>
+          <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">{t('catmgr.name')}</label>
           <input
             type="text"
-            placeholder="e.g. Coffee Shops"
+            placeholder={t('catmgr.name_ph')}
             value={form.label}
             maxLength={24}
             onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
@@ -69,7 +71,7 @@ function AddCategoryForm({
 
         {/* Color */}
         <div>
-          <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Color</label>
+          <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">{t('catmgr.color')}</label>
           <div className="flex flex-wrap gap-2.5">
             {COLOR_OPTIONS.map(c => (
               <button key={c} type="button" onClick={() => setForm(f => ({ ...f, color: c }))}
@@ -84,10 +86,10 @@ function AddCategoryForm({
         {/* Preview + Icon grid */}
         <div>
           <div className="flex items-center gap-3 mb-3">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Icon</label>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('catmgr.icon')}</label>
             <div className="flex items-center gap-2 ml-auto">
               <CategoryIcon icon={form.icon} color={form.color} size={16} />
-              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">{form.label || 'Preview'}</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">{form.label || t('gform.preview')}</span>
             </div>
           </div>
           <div className="grid grid-cols-7 gap-2">
@@ -110,7 +112,7 @@ function AddCategoryForm({
           onClick={() => onSave({ label: form.label.trim(), icon: form.icon, color: form.color, type: form.type })}
           className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-sm shadow-lg shadow-green-600/30 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Save Category
+          {t('catmgr.save')}
         </button>
       </div>
     </div>
@@ -123,6 +125,7 @@ interface Props {
 
 export default function CategoryManagerSheet({ onClose }: Props) {
   const { customCategories, disabledCategories, addCustomCategory, updateCustomCategory, removeCustomCategory, toggleCategoryEnabled } = useApp();
+  const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('expense');
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<CustomCategory | null>(null);
@@ -172,7 +175,7 @@ export default function CategoryManagerSheet({ onClose }: Props) {
 
         {/* Header */}
         <div className="flex-shrink-0 flex items-center justify-between px-5 py-3">
-          <h2 className="text-lg font-bold dark:text-white">Manage Categories</h2>
+          <h2 className="text-lg font-bold dark:text-white">{t('catmgr.title')}</h2>
           <button type="button" onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
             <X size={16} className="text-gray-500" />
           </button>
@@ -193,7 +196,7 @@ export default function CategoryManagerSheet({ onClose }: Props) {
         {/* List */}
         <div className="flex-1 min-h-0 overflow-y-auto">
           {/* Built-in section */}
-          <p className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-5 py-2">Built-in</p>
+          <p className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-5 py-2">{t('catmgr.builtin')}</p>
           {builtins.map(cat => {
             const enabled = !disabledCategories.includes(cat.id);
             return (
@@ -211,7 +214,7 @@ export default function CategoryManagerSheet({ onClose }: Props) {
           {/* Custom section */}
           {customs.length > 0 && (
             <>
-              <p className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-5 pt-4 pb-2">My Categories</p>
+              <p className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-5 pt-4 pb-2">{t('catmgr.my_cats')}</p>
               {customs.map(cat => (
                 <div key={cat.id} className="flex items-center gap-3 px-5 py-2.5">
                   <CategoryIcon icon={cat.icon} color={cat.color} size={16} />
@@ -237,7 +240,7 @@ export default function CategoryManagerSheet({ onClose }: Props) {
           <button type="button" onClick={() => setAdding(true)}
             className="w-full py-3.5 rounded-2xl border-2 border-dashed border-green-300 dark:border-green-800 flex items-center justify-center gap-2 text-green-600 dark:text-green-400 font-semibold text-sm active:scale-[0.98] transition-transform">
             <Plus size={16} />
-            Add Custom Category
+            {t('catmgr.add')}
           </button>
         </div>
       </div>

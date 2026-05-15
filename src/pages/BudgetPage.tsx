@@ -253,9 +253,9 @@ export default function BudgetPage() {
 
   const canAnalyze = income > 0 && (!savingsEnabled || savingsValue.trim() !== '');
   const analyzeBlockReason = income <= 0
-    ? 'Enter your expected income first'
+    ? t('budget.enter_income')
     : savingsEnabled && savingsValue.trim() === ''
-    ? 'Enter your savings goal amount or disable it'
+    ? t('budget.enter_savings')
     : null;
 
   function handleAnalyze() {

@@ -1,37 +1,41 @@
 import { X } from 'lucide-react';
+import { useTranslation } from '../context/LanguageContext';
+import type { TKey } from '../i18n/translations';
 
 interface Props {
   type: 'terms' | 'privacy';
   onClose: () => void;
 }
 
-const TERMS = [
-  { title: '1. Acceptance of Terms', body: 'By using Kachingo you agree to these terms and conditions. If you do not agree, please do not use the app.' },
-  { title: '2. Data Storage', body: 'All financial data is stored locally on your device using browser localStorage. We do not transmit or upload your personal financial information to any server.' },
-  { title: '3. Privacy', body: 'Your privacy is important to us. We collect only the minimal data necessary for app functionality. See our Privacy Policy for full details.' },
-  { title: '4. AI Receipt Capture', body: 'The AI receipt scanning feature is provided as-is. Always verify captured data before confirming a transaction.' },
-  { title: '5. Financial Advice Disclaimer', body: 'Kachingo is a tracking and budgeting tool only. It does not provide financial advice, investment recommendations, or tax guidance. Consult a qualified financial advisor for personal finance decisions.' },
-  { title: '6. Account Security', body: 'You are responsible for maintaining the confidentiality of your account. We are not liable for any unauthorised access resulting from your failure to keep credentials secure.' },
-  { title: '7. Limitation of Liability', body: 'We are not liable for any financial decisions made based on information displayed in the app, or for any data loss resulting from clearing browser storage.' },
-  { title: '8. Updates', body: 'We reserve the right to update these terms at any time. Continued use of the app after changes constitutes acceptance of the new terms.' },
-];
-
-const PRIVACY = [
-  { title: '1. Information We Collect', body: 'Kachingo collects only the information you enter directly: transaction details, budget settings, profile name, and currency preference. We do not collect device identifiers, location data, or any analytics.' },
-  { title: '2. How We Store Your Data', body: 'All data is stored locally in your browser\'s localStorage on your device. It never leaves your device and is not transmitted to any server or third party.' },
-  { title: '3. Third-Party Sign-In', body: 'Sign-in with Google or Apple is presented as an option for user convenience. In the current version, authentication is handled locally. If cloud authentication is added in future, this policy will be updated.' },
-  { title: '4. Data Sharing', body: 'We do not sell, trade, or rent your personal information to third parties. We do not use your data for advertising or profiling.' },
-  { title: '5. Data Deletion', body: 'You can delete all your data at any time by going to Profile → Clear All Data. This permanently removes all locally stored information.' },
-  { title: '6. Cookies & Tracking', body: 'Kachingo does not use cookies, trackers, analytics SDKs, or any form of behavioural tracking.' },
-  { title: '7. Children\'s Privacy', body: 'Kachingo is not directed at children under the age of 13. We do not knowingly collect information from children.' },
-  { title: '8. Changes to This Policy', body: 'We may update this Privacy Policy from time to time. We will notify users of significant changes through the app.' },
-  { title: '9. Contact', body: 'If you have questions about this Privacy Policy, please open a support request via the Help & FAQ section in the app.' },
-];
-
 export default function LegalSheet({ type, onClose }: Props) {
+  const { t } = useTranslation();
   const isTerms = type === 'terms';
+
+  const TERMS: { title: string; body: string }[] = [
+    { title: t('terms.t1'), body: t('terms.b1') },
+    { title: t('terms.t2'), body: t('terms.b2') },
+    { title: t('terms.t3'), body: t('terms.b3') },
+    { title: t('terms.t4'), body: t('terms.b4') },
+    { title: t('terms.t5'), body: t('terms.b5') },
+    { title: t('terms.t6'), body: t('terms.b6') },
+    { title: t('terms.t7'), body: t('terms.b7') },
+    { title: t('terms.t8'), body: t('terms.b8') },
+  ];
+
+  const PRIVACY: { title: string; body: string }[] = [
+    { title: t('privacy.t1'), body: t('privacy.b1') },
+    { title: t('privacy.t2'), body: t('privacy.b2') },
+    { title: t('privacy.t3'), body: t('privacy.b3') },
+    { title: t('privacy.t4'), body: t('privacy.b4') },
+    { title: t('privacy.t5'), body: t('privacy.b5') },
+    { title: t('privacy.t6'), body: t('privacy.b6') },
+    { title: t('privacy.t7'), body: t('privacy.b7') },
+    { title: t('privacy.t8'), body: t('privacy.b8') },
+    { title: t('privacy.t9'), body: t('privacy.b9') },
+  ];
+
   const items = isTerms ? TERMS : PRIVACY;
-  const title = isTerms ? 'Terms & Conditions' : 'Privacy Policy';
+  const title = isTerms ? t('profile.terms') : t('profile.privacy');
 
   return (
     <div className="fixed inset-0 z-[200] bg-black/60 flex items-end justify-center" onClick={onClose}>
@@ -44,7 +48,7 @@ export default function LegalSheet({ type, onClose }: Props) {
         <div className="flex-shrink-0 flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800">
           <div>
             <h2 className="text-lg font-bold dark:text-white">{title}</h2>
-            <p className="text-[11px] text-gray-400 mt-0.5">Last updated May 2026</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">{t('legal.last_updated')}</p>
           </div>
           <button
             type="button"
@@ -72,7 +76,7 @@ export default function LegalSheet({ type, onClose }: Props) {
             onClick={onClose}
             className="w-full py-3 rounded-2xl bg-green-600 text-white font-bold text-sm"
           >
-            I Understand
+            {t('legal.i_understand')}
           </button>
         </div>
       </div>
