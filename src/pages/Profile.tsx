@@ -538,25 +538,25 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
 
       {/* Financial Assessment */}
       <div className="mx-4 mb-4">
-        <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3">Financial Assessment</h2>
+        <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3">{t('profile.assessment')}</h2>
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="bg-green-50 dark:bg-green-900/20 rounded-2xl p-4 border border-green-100 dark:border-green-900/30">
             <div className="flex items-center gap-1.5 mb-2">
               <TrendingUp size={14} className="text-green-600" />
-              <span className="text-[11px] text-green-600 font-semibold uppercase tracking-wide">Income</span>
+              <span className="text-[11px] text-green-600 font-semibold uppercase tracking-wide">{t('profile.income_year')}</span>
             </div>
             <p className="text-xl font-black text-green-700 dark:text-green-400">{formatCurrency(yearIncome)}</p>
-            <p className="text-[11px] text-green-600/70 mt-0.5">This year</p>
-            <p className="text-[11px] text-green-600 mt-1 font-medium">~{formatCurrency(avgIncome)}/mo avg</p>
+            <p className="text-[11px] text-green-600/70 mt-0.5">{t('profile.this_year')}</p>
+            <p className="text-[11px] text-green-600 mt-1 font-medium">{t('profile.avg_income', { amount: formatCurrency(avgIncome) })}</p>
           </div>
           <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-4 border border-red-100 dark:border-red-900/30">
             <div className="flex items-center gap-1.5 mb-2">
               <TrendingDown size={14} className="text-red-500" />
-              <span className="text-[11px] text-red-500 font-semibold uppercase tracking-wide">Expenses</span>
+              <span className="text-[11px] text-red-500 font-semibold uppercase tracking-wide">{t('profile.expenses_year')}</span>
             </div>
             <p className="text-xl font-black text-red-600 dark:text-red-400">{formatCurrency(yearExpenses)}</p>
-            <p className="text-[11px] text-red-500/70 mt-0.5">This year</p>
-            <p className="text-[11px] text-red-500 mt-1 font-medium">~{formatCurrency(avgExpenses)}/mo avg</p>
+            <p className="text-[11px] text-red-500/70 mt-0.5">{t('profile.this_year')}</p>
+            <p className="text-[11px] text-red-500 mt-1 font-medium">{t('profile.avg_income', { amount: formatCurrency(avgExpenses) })}</p>
           </div>
         </div>
 
@@ -565,7 +565,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
           <div className="text-center">
             <p className="font-bold text-base dark:text-white">{scoreLabel}</p>
             <p className="text-xs text-gray-400 mt-1">
-              {score >= 80 ? "You're saving a healthy portion of your income." : score >= 60 ? "You're managing well but there's room to improve." : 'Your expenses are high relative to income.'}
+              {score >= 80 ? t('profile.saving_healthy') : score >= 60 ? t('profile.managing_well') : t('profile.expenses_high')}
             </p>
           </div>
           <div className="flex gap-4 text-center">
@@ -580,7 +580,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
           <button type="button" onClick={() => setShowReport(true)}
             className="w-full py-3 rounded-2xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
             <Download size={16} />
-            Generate Report
+            {t('profile.generate_report')}
           </button>
         </div>
       </div>
@@ -589,7 +589,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
       <div className="mx-4 space-y-3 mb-4">
         {/* Account */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
-          <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-4 pt-3 pb-1">Account</p>
+          <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-4 pt-3 pb-1">{t('profile.account')}</p>
           {editingEmail ? (
             <div className="px-4 py-3 flex items-center gap-3">
               <div className="w-9 h-9 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
@@ -601,36 +601,36 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
                 onKeyDown={e => e.key === 'Enter' && (updateUserProfile({ email: emailInput }), setEditingEmail(false))} />
             </div>
           ) : (
-            <SettingsRow icon={<Edit3 size={16} />} label="Email" value={userProfile.email} onClick={() => setEditingEmail(true)} />
+            <SettingsRow icon={<Edit3 size={16} />} label={t('profile.email')} value={userProfile.email} onClick={() => setEditingEmail(true)} />
           )}
-          <SettingsRow icon={<Star size={16} />} label="Subscription Plan" value={userProfile.plan === 'free' ? 'Free' : 'Premium'} onClick={() => navigate('/subscription')} />
-          <SettingsRow icon={<Lock size={16} />} label="Change Password" onClick={() => { setShowChangePw(true); setPwError(''); setPwSuccess(false); }} />
+          <SettingsRow icon={<Star size={16} />} label={t('profile.plan')} value={userProfile.plan === 'free' ? t('profile.free') : t('profile.premium')} onClick={() => navigate('/subscription')} />
+          <SettingsRow icon={<Lock size={16} />} label={t('profile.change_pw')} onClick={() => { setShowChangePw(true); setPwError(''); setPwSuccess(false); }} />
         </div>
 
         {/* Preferences */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
-          <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-4 pt-3 pb-1">Preferences</p>
-          <SettingsRow icon={<Tag size={16} />} label="Categories" onClick={() => setShowCategories(true)} />
-          <SettingsRow icon={<Bell size={16} />} label="Notifications" onClick={() => setShowNotifications(true)} />
+          <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-4 pt-3 pb-1">{t('profile.preferences')}</p>
+          <SettingsRow icon={<Tag size={16} />} label={t('profile.categories')} onClick={() => setShowCategories(true)} />
+          <SettingsRow icon={<Bell size={16} />} label={t('profile.notifications')} onClick={() => setShowNotifications(true)} />
           <button type="button" onClick={toggleDarkMode}
             className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left">
             <div className="w-9 h-9 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
               {darkMode ? <Moon size={16} className="text-blue-400" /> : <Sun size={16} className="text-yellow-500" />}
             </div>
-            <span className="flex-1 text-sm font-medium dark:text-white">Dark Mode</span>
+            <span className="flex-1 text-sm font-medium dark:text-white">{t('profile.dark_mode')}</span>
             <div className={`w-12 h-6 rounded-full transition-colors duration-200 relative pointer-events-none flex-shrink-0 ${darkMode ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'}`}>
               <span className={`absolute top-0.5 h-5 w-5 bg-white rounded-full shadow-md transition-all duration-200 ${darkMode ? 'left-[26px]' : 'left-0.5'}`} />
             </div>
           </button>
           <SettingsRow
             icon={<Globe size={16} />}
-            label="Currency"
+            label={t('profile.currency')}
             value={`${userProfile.currency || 'USD'} · ${getCurrencySymbol()}`}
             onClick={() => setShowCurrency(true)}
           />
           <SettingsRow
             icon={<span className="text-base leading-none">🌐</span>}
-            label="Language"
+            label={t('profile.language')}
             value={LANGUAGES.find(l => l.code === (userProfile.language || 'en'))?.nativeLabel ?? 'English'}
             onClick={() => setShowLanguage(true)}
           />
@@ -638,22 +638,22 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
 
         {/* Data */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
-          <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-4 pt-3 pb-1">Data</p>
-          <SettingsRow icon={<Download size={16} />} label="Export CSV" value="Transactions" onClick={() => setShowCSV(true)} />
+          <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-4 pt-3 pb-1">{t('profile.data')}</p>
+          <SettingsRow icon={<Download size={16} />} label={t('profile.export_csv')} value={t('profile.tx_label')} onClick={() => setShowCSV(true)} />
         </div>
 
         {/* Legal */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
-          <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-4 pt-3 pb-1">Legal & Support</p>
-          <SettingsRow icon={<FileText size={16} />} label="Terms & Conditions" onClick={() => setShowTerms(true)} />
-          <SettingsRow icon={<FileText size={16} />} label="Privacy Policy" onClick={() => setShowPrivacy(true)} />
-          <SettingsRow icon={<HelpCircle size={16} />} label="Help & FAQ" onClick={() => setShowFAQ(true)} />
+          <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-4 pt-3 pb-1">{t('profile.legal')}</p>
+          <SettingsRow icon={<FileText size={16} />} label={t('profile.terms')} onClick={() => setShowTerms(true)} />
+          <SettingsRow icon={<FileText size={16} />} label={t('profile.privacy')} onClick={() => setShowPrivacy(true)} />
+          <SettingsRow icon={<HelpCircle size={16} />} label={t('profile.help_faq')} onClick={() => setShowFAQ(true)} />
         </div>
 
         {/* Danger */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
-          <SettingsRow icon={<Trash2 size={16} />} label="Clear All Data" danger onClick={() => { if (window.confirm('Clear all transaction data? This cannot be undone.')) { localStorage.clear(); window.location.reload(); } }} />
-          <SettingsRow icon={<LogOut size={16} />} label="Sign Out" danger onClick={signOut} />
+          <SettingsRow icon={<Trash2 size={16} />} label={t('profile.clear_data')} danger onClick={() => { if (window.confirm(t('profile.clear_confirm'))) { localStorage.clear(); window.location.reload(); } }} />
+          <SettingsRow icon={<LogOut size={16} />} label={t('profile.sign_out')} danger onClick={signOut} />
         </div>
       </div>
 
@@ -668,7 +668,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
             onClick={e => e.stopPropagation()}
           >
             <div className="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100 dark:border-gray-800">
-              <h2 className="text-lg font-bold dark:text-white">Select Currency</h2>
+              <h2 className="text-lg font-bold dark:text-white">{t('profile.select_currency')}</h2>
               <button type="button" onClick={() => setShowCurrency(false)} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                 <X size={16} className="text-gray-500 dark:text-gray-400" />
               </button>
@@ -677,7 +677,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
               <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5">
                 <Search size={14} className="text-gray-400 flex-shrink-0" />
                 <input
-                  placeholder="Search currency..."
+                  placeholder={t('profile.search_currency')}
                   value={currencySearch}
                   onChange={e => setCurrencySearch(e.target.value)}
                   className="flex-1 bg-transparent text-sm outline-none dark:text-white placeholder:text-gray-400"
@@ -725,7 +725,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100 dark:border-gray-800">
-              <h2 className="text-lg font-bold dark:text-white">Language</h2>
+              <h2 className="text-lg font-bold dark:text-white">{t('profile.language')}</h2>
               <button type="button" onClick={() => setShowLanguage(false)} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                 <X size={16} className="text-gray-500 dark:text-gray-400" />
               </button>
@@ -765,8 +765,8 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
             <div className="flex justify-center mb-5">
               <div className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
             </div>
-            <h3 className="text-lg font-bold dark:text-white mb-1">Generate Report</h3>
-            <p className="text-sm text-gray-400 mb-6">Export your {currentYear} financial health report</p>
+            <h3 className="text-lg font-bold dark:text-white mb-1">{t('profile.report_title')}</h3>
+            <p className="text-sm text-gray-400 mb-6">{t('profile.report_desc', { year: currentYear })}</p>
 
             <div className="space-y-3">
               <button type="button" onClick={generateReportPNG}
@@ -775,8 +775,8 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
                   <FileImage size={22} className="text-green-600" />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-sm dark:text-white">Download as PNG</p>
-                  <p className="text-xs text-gray-400 mt-0.5">High-quality image you can share anywhere</p>
+                  <p className="font-bold text-sm dark:text-white">{t('profile.png')}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{t('profile.png_desc')}</p>
                 </div>
               </button>
 
@@ -786,15 +786,15 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
                   <FileType2 size={22} className="text-blue-600" />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-sm dark:text-white">Download as PDF</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Print-ready document via your browser</p>
+                  <p className="font-bold text-sm dark:text-white">{t('profile.pdf')}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{t('profile.pdf_desc')}</p>
                 </div>
               </button>
             </div>
 
             <button type="button" onClick={() => setShowReport(false)}
               className="w-full mt-4 py-3 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-semibold text-sm">
-              Cancel
+              {t('common.cancel')}
             </button>
           </div>
         </div>
@@ -811,24 +811,24 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
               <div className="w-10 h-10 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                 <Lock size={18} className="text-gray-500 dark:text-gray-400" />
               </div>
-              <h3 className="text-lg font-bold dark:text-white">Change Password</h3>
+              <h3 className="text-lg font-bold dark:text-white">{t('pw.title')}</h3>
             </div>
-            <p className="text-sm text-gray-400 mb-5 ml-[52px]">Enter your current password to set a new one</p>
+            <p className="text-sm text-gray-400 mb-5 ml-[52px]">{t('pw.subtitle')}</p>
 
             {pwSuccess ? (
               <div className="flex flex-col items-center py-6 gap-3">
                 <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                   <span className="text-2xl">✓</span>
                 </div>
-                <p className="font-bold text-green-600 text-base">Password updated!</p>
+                <p className="font-bold text-green-600 text-base">{t('pw.success')}</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {/* Current password */}
                 {[
-                  { label: 'Current Password', val: currentPw, set: setCurrentPw, show: showCurrentPw, toggle: () => setShowCurrentPw(v => !v) },
-                  { label: 'New Password', val: newPw, set: setNewPw, show: showNewPw, toggle: () => setShowNewPw(v => !v) },
-                  { label: 'Confirm New Password', val: confirmPw, set: setConfirmPw, show: showConfirmPw, toggle: () => setShowConfirmPw(v => !v) },
+                  { label: t('pw.current'), val: currentPw, set: setCurrentPw, show: showCurrentPw, toggle: () => setShowCurrentPw(v => !v) },
+                  { label: t('pw.new'), val: newPw, set: setNewPw, show: showNewPw, toggle: () => setShowNewPw(v => !v) },
+                  { label: t('pw.confirm'), val: confirmPw, set: setConfirmPw, show: showConfirmPw, toggle: () => setShowConfirmPw(v => !v) },
                 ].map(field => (
                   <div key={field.label}>
                     <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 block">{field.label}</label>
@@ -852,11 +852,11 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
 
                 <button type="button" onClick={handleChangePassword}
                   className="w-full py-3.5 rounded-2xl bg-green-600 text-white font-bold mt-1 active:scale-[0.98] transition-transform shadow-md shadow-green-600/20">
-                  Update Password
+                  {t('pw.update')}
                 </button>
                 <button type="button" onClick={() => setShowChangePw(false)}
                   className="w-full py-3 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-semibold text-sm">
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             )}
@@ -874,7 +874,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
         <div className="fixed inset-0 z-[100] bg-black/60 flex items-end justify-center" onClick={() => setShowNotifications(false)}>
           <div className="w-full max-w-[430px] bg-white dark:bg-gray-900 rounded-t-3xl animate-slide-up flex flex-col overflow-hidden" style={{ maxHeight: '80vh' }} onClick={e => e.stopPropagation()}>
             <div className="flex-shrink-0 flex items-center justify-between px-6 pt-6 pb-3 border-b border-gray-100 dark:border-gray-800">
-              <h2 className="text-lg font-bold dark:text-white">Notifications</h2>
+              <h2 className="text-lg font-bold dark:text-white">{t('notif.title')}</h2>
               <button type="button" onClick={() => setShowNotifications(false)} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                 <X size={16} className="text-gray-500 dark:text-gray-400" />
               </button>
@@ -882,15 +882,15 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
             <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-2">
               <div className={`rounded-2xl p-4 border-2 transition-colors ${notifEnabled ? 'border-green-200 dark:border-green-900/40 bg-green-50 dark:bg-green-900/10' : 'border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800'}`}>
                 <div className="flex items-center justify-between">
-                  <div><p className="text-sm font-bold dark:text-white">Enable Notifications</p><p className="text-[11px] text-gray-400 mt-0.5">Turn all notifications on or off</p></div>
+                  <div><p className="text-sm font-bold dark:text-white">{t('notif.enable')}</p><p className="text-[11px] text-gray-400 mt-0.5">{t('notif.enable_desc')}</p></div>
                   <Toggle value={notifEnabled} onChange={() => setNotifEnabled(!notifEnabled)} />
                 </div>
               </div>
               {[
-                { label: 'Transaction Reminders', sub: 'Remind me to log daily transactions', value: notifTransactions, set: setNotifTransactions },
-                { label: 'Monthly Summary', sub: 'Get a summary at the end of each month', value: notifMonthlySummary, set: setNotifMonthlySummary },
-                { label: 'Auto Debit Alerts', sub: 'Notify before a recurring payment is due', value: notifAutoDebit, set: setNotifAutoDebit },
-                { label: 'Budget Alerts', sub: 'Alert when spending exceeds your goal', value: notifBudgetAlerts, set: setNotifBudgetAlerts },
+                { label: t('notif.tx'), sub: t('notif.tx_desc'), value: notifTransactions, set: setNotifTransactions },
+                { label: t('notif.monthly'), sub: t('notif.monthly_desc'), value: notifMonthlySummary, set: setNotifMonthlySummary },
+                { label: t('notif.auto_debit'), sub: t('notif.auto_debit_desc'), value: notifAutoDebit, set: setNotifAutoDebit },
+                { label: t('notif.budget'), sub: t('notif.budget_desc'), value: notifBudgetAlerts, set: setNotifBudgetAlerts },
               ].map(item => (
                 <div key={item.label} className={`bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-800 transition-opacity ${notifEnabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
                   <div className="flex items-center justify-between">
@@ -901,7 +901,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
               ))}
             </div>
             <div className="flex-shrink-0 px-6 pt-3 pb-8 border-t border-gray-100 dark:border-gray-800">
-              <button type="button" onClick={() => setShowNotifications(false)} className="w-full py-3 rounded-2xl bg-green-600 text-white font-bold">Save Settings</button>
+              <button type="button" onClick={() => setShowNotifications(false)} className="w-full py-3 rounded-2xl bg-green-600 text-white font-bold">{t('notif.save')}</button>
             </div>
           </div>
         </div>
@@ -912,7 +912,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
         <div className="fixed inset-0 z-[100] bg-black/60 flex items-end justify-center" onClick={() => setShowFAQ(false)}>
           <div className="w-full max-w-[430px] bg-white dark:bg-gray-900 rounded-t-3xl animate-slide-up flex flex-col overflow-hidden" style={{ maxHeight: '85vh' }} onClick={e => e.stopPropagation()}>
             <div className="flex-shrink-0 flex items-center justify-between px-6 pt-6 pb-3 border-b border-gray-100 dark:border-gray-800">
-              <div><h2 className="text-lg font-bold dark:text-white">Help & FAQ</h2><p className="text-xs text-gray-400">Tap a question to expand</p></div>
+              <div><h2 className="text-lg font-bold dark:text-white">{t('faq.title')}</h2><p className="text-xs text-gray-400">{t('faq.subtitle')}</p></div>
               <button type="button" onClick={() => setShowFAQ(false)} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                 <X size={16} className="text-gray-500 dark:text-gray-400" />
               </button>
@@ -934,7 +934,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
               ))}
             </div>
             <div className="flex-shrink-0 px-6 pt-3 pb-8 border-t border-gray-100 dark:border-gray-800">
-              <button type="button" onClick={() => setShowFAQ(false)} className="w-full py-3 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold">Close</button>
+              <button type="button" onClick={() => setShowFAQ(false)} className="w-full py-3 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold">{t('faq.close')}</button>
             </div>
           </div>
         </div>
@@ -946,6 +946,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
 const ALL_CATEGORIES = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
 
 function CSVExportModal({ transactions, onClose }: { transactions: import('../types').Transaction[]; onClose: () => void }) {
+  const { t } = useTranslation();
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [category, setCategory] = useState('all');
@@ -982,7 +983,7 @@ function CSVExportModal({ transactions, onClose }: { transactions: import('../ty
         onClick={e => e.stopPropagation()}
       >
         <div className="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100 dark:border-gray-800">
-          <h2 className="text-lg font-bold dark:text-white">Export Transactions</h2>
+          <h2 className="text-lg font-bold dark:text-white">{t('csv.title')}</h2>
           <button type="button" onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
             <X size={16} className="text-gray-500 dark:text-gray-400" />
           </button>
@@ -990,33 +991,33 @@ function CSVExportModal({ transactions, onClose }: { transactions: import('../ty
 
         <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4">
           <div>
-            <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">Date From</label>
+            <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">{t('csv.from')}</label>
             <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
               className="w-full border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 text-sm bg-gray-50 dark:bg-gray-800 dark:text-white outline-none focus:border-green-500 transition-colors"
               style={{ colorScheme: 'auto' }} />
           </div>
           <div>
-            <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">Date To</label>
+            <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">{t('csv.to')}</label>
             <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
               className="w-full border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 text-sm bg-gray-50 dark:bg-gray-800 dark:text-white outline-none focus:border-green-500 transition-colors"
               style={{ colorScheme: 'auto' }} />
           </div>
           <div>
-            <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">Category</label>
+            <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5 block">{t('csv.category')}</label>
             <select value={category} onChange={e => setCategory(e.target.value)}
               className="w-full border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 text-sm bg-gray-50 dark:bg-gray-800 dark:text-white outline-none focus:border-green-500 transition-colors">
-              <option value="all">All Categories</option>
+              <option value="all">{t('csv.all_cats')}</option>
               {ALL_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
             </select>
           </div>
-          <p className="text-xs text-gray-400 text-left">Leave dates empty to export all transactions. CSV includes: Date, Type, Category, Description, Amount.</p>
+          <p className="text-xs text-gray-400 text-left">{t('csv.desc')}</p>
         </div>
 
         <div className="flex-shrink-0 px-5 pt-3 pb-8 border-t border-gray-100 dark:border-gray-800">
           <button type="button" onClick={handleExport}
             className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base active:scale-[0.98] transition-transform shadow-lg shadow-green-600/30 flex items-center justify-center gap-2">
             <Download size={18} />
-            Download CSV
+            {t('csv.download')}
           </button>
         </div>
       </div>

@@ -491,14 +491,14 @@ export default function BudgetPage() {
               <button type="button" onClick={handleAnalyze} disabled={!canAnalyze}
                 className="w-full py-3.5 rounded-2xl bg-green-600 text-white font-bold flex items-center justify-center gap-2 disabled:opacity-40 active:scale-[0.98] transition-all shadow-md shadow-green-600/20">
                 <Sparkles size={16} />
-                Analyze with AI
+                {t('budget.analyze_ai')}
               </button>
               {analyzeBlockReason && (
                 <p className="text-left text-xs text-amber-500 dark:text-amber-400 font-medium mt-2">⚠ {analyzeBlockReason}</p>
               )}
               {analyzed && !analyzeBlockReason && (
                 <p className="text-left text-xs text-green-600 dark:text-green-400 font-medium mt-2">
-                  ✓ Allocation generated{savingsEnabled && savingsValue ? ` · Savings locked at ${savingsPct}%` : ` · Includes ${savingsPct}% savings`}
+                  ✓ {t('budget.allocation_generated')}{savingsEnabled && savingsValue ? ` · ${t('budget.savings_locked', { pct: savingsPct })}` : ` · ${t('budget.savings_included', { pct: savingsPct })}`}
                 </p>
               )}
             </div>
@@ -507,9 +507,9 @@ export default function BudgetPage() {
             {activeGoalCount > 0 && income > 0 && (
               <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">Active Goals</p>
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">{t('budget.active_goals')}</p>
                   <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-bold px-2 py-0.5 rounded-full">
-                    {activeGoalCount} active
+                    {t('budget.x_active', { n: activeGoalCount })}
                   </span>
                 </div>
                 {savingsEnabled && savingsAmt > 0 && (
@@ -518,7 +518,7 @@ export default function BudgetPage() {
                       <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#22c55e20' }}>
                         <PiggyBank size={13} className="text-green-500" />
                       </div>
-                      <span className="text-sm text-gray-600 dark:text-gray-300">Monthly Savings</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-300">{t('budget.monthly_savings')}</span>
                     </div>
                     <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">−{formatCurrency(savingsAmt)}/mo</span>
                   </div>
@@ -540,7 +540,7 @@ export default function BudgetPage() {
                   );
                 })}
                 <div className="flex items-center justify-between pt-3 mt-1 border-t border-gray-100 dark:border-gray-800">
-                  <span className="text-sm font-bold text-gray-700 dark:text-white">Spendable</span>
+                  <span className="text-sm font-bold text-gray-700 dark:text-white">{t('budget.spendable')}</span>
                   <div>
                     <span className="text-base font-black text-green-600">{formatCurrency(netIncome)}</span>
                     <span className="text-xs text-gray-400 ml-1">/ {formatCurrency(income)}</span>
@@ -553,9 +553,9 @@ export default function BudgetPage() {
             {analyzed && (
               <div className="bg-gradient-to-br from-green-600 via-emerald-600 to-green-700 rounded-3xl p-5 border border-green-700 shadow-lg shadow-green-500/20 text-white">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-bold text-green-100 uppercase tracking-wider">Budget Allocation</p>
+                  <p className="text-xs font-bold text-green-100 uppercase tracking-wider">{t('budget.allocation')}</p>
                   <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${Math.abs(totalPct - 100) < 1 ? 'bg-white/20 text-white' : 'bg-orange-100 text-orange-500'}`}>
-                    {totalPct.toFixed(0)}% allocated
+                    {totalPct.toFixed(0)}{t('budget.pct_allocated')}
                   </span>
                 </div>
                 <div className="flex flex-col items-center gap-2">
@@ -567,7 +567,7 @@ export default function BudgetPage() {
                       onSliceClick={setActiveSlice}
                     />
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                      <span className="text-[10px] text-gray-400 font-medium">Spendable</span>
+                      <span className="text-[10px] text-gray-400 font-medium">{t('budget.spendable')}</span>
                       <span className="text-base font-black dark:text-white">{formatCurrency(chartAmount)}</span>
                     </div>
                   </div>
@@ -580,7 +580,7 @@ export default function BudgetPage() {
                         <span className="text-xs text-white/80">{sel.percentage}%</span>
                       </div>
                     ) : (
-                      <p className="text-[11px] text-green-100/80">Tap a slice to view category details</p>
+                      <p className="text-[11px] text-green-100/80">{t('budget.tap_slice')}</p>
                     );
                   })()}
                 </div>
@@ -591,11 +591,11 @@ export default function BudgetPage() {
             {analyzed && (
               <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden">
                 <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-50 dark:border-gray-800">
-                  <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">Adjust Manually</p>
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">{t('budget.adjust')}</p>
                   <button type="button" onClick={handleReset}
                     className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors">
                     <RotateCcw size={12} />
-                    Reset
+                    {t('budget.reset')}
                   </button>
                 </div>
 
@@ -647,9 +647,9 @@ export default function BudgetPage() {
                           </div>
                           {budgetAmt > 0 && (
                             <div className="flex justify-between text-xs mt-2">
-                              <span className="text-gray-400">Budget: <span className="font-semibold dark:text-white">{formatCurrency(budgetAmt)}</span></span>
+                              <span className="text-gray-400">{t('budget.budget_label')}: <span className="font-semibold dark:text-white">{formatCurrency(budgetAmt)}</span></span>
                               <span className={over ? 'text-red-500 font-semibold' : 'text-green-600 font-semibold'}>
-                                Actual: {formatCurrency(actual)} {over ? '▲ Over' : '✓ OK'}
+                                {t('budget.actual_label')}: {formatCurrency(actual)} {over ? t('budget.over') : '✓ OK'}
                               </span>
                             </div>
                           )}
@@ -665,7 +665,7 @@ export default function BudgetPage() {
                     onClick={() => setShowAllAdjust(v => !v)}
                     className="w-full py-3 border-t border-gray-100 dark:border-gray-800 text-[12px] font-semibold text-green-600 dark:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
-                    {showAllAdjust ? 'Show less' : `Show ${allocations.length - 5} more categories`}
+                    {showAllAdjust ? t('budget.show_less') : t('budget.show_more', { n: allocations.length - 5 })}
                   </button>
                 )}
               </div>
@@ -679,7 +679,7 @@ export default function BudgetPage() {
                   onClick={handleSave}
                   disabled={!isDirty}
                   className={`w-full py-4 rounded-2xl font-bold text-base shadow-lg transition-transform ${isDirty ? 'bg-green-600 text-white shadow-green-600/30 active:scale-[0.98]' : 'bg-gray-300 text-gray-700 cursor-not-allowed shadow-none'}`}>
-                  Save Budget Plan
+                  {t('budget.save_plan')}
                 </button>
               </div>
             )}
@@ -687,7 +687,7 @@ export default function BudgetPage() {
             {/* This Month Summary */}
             {analyzed && income > 0 && (
               <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800">
-                <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider mb-3">This Month Summary</p>
+                <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider mb-3">{t('budget.this_month')}</p>
                 {allocations.filter(a => a.percentage > 0 && actualByGroup[a.categoryId] > 0).map(a => {
                   const budgetAmt = Math.round(netIncome * a.percentage / 100);
                   const actual = actualByGroup[a.categoryId] || 0;
@@ -709,7 +709,7 @@ export default function BudgetPage() {
                   );
                 })}
                 {allocations.filter(a => a.percentage > 0 && actualByGroup[a.categoryId] > 0).length === 0 && (
-                  <p className="text-xs text-gray-400 text-left py-2">No expense data for this month yet</p>
+                  <p className="text-xs text-gray-400 text-left py-2">{t('budget.no_expense')}</p>
                 )}
               </div>
             )}
@@ -746,19 +746,17 @@ export default function BudgetPage() {
             >
               <div className="text-3xl mb-2 text-center">{recoIsHighGoal ? '🎯' : '🌱'}</div>
               <p className="text-sm font-bold dark:text-white mb-1.5 text-center">
-                {recoIsHighGoal ? 'High Achiever Detected!' : 'Starting Your Journey?'}
+                {recoIsHighGoal ? t('budget.high_achiever') : t('budget.starting')}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mb-4 text-center">
-                {recoIsHighGoal
-                  ? "You're very disciplined, so we've set higher savings & investment goals for you. You have what it takes — don't hold back on ambitious targets!"
-                  : "We recommend starting slowly with a conservative savings goal. Building the habit first matters more than the amount — you can always increase it later!"}
+                {recoIsHighGoal ? t('budget.high_achiever_body') : t('budget.starting_body')}
               </p>
               <button
                 type="button"
                 onClick={dismissRecoTooltip}
                 className="w-full py-3 rounded-2xl bg-green-600 text-white font-bold text-sm active:scale-[0.98] transition-all shadow-md shadow-green-600/20"
               >
-                Got it!
+                {t('budget.got_it')}
               </button>
             </div>
           </>
