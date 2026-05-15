@@ -1,5 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { Transaction, UserProfile, BudgetSettings, AutoDebitPeriod, CustomCategory, CustomGoal, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../types';
+import { Transaction, UserProfile, BudgetSettings, AutoDebitPeriod, CustomCategory, CustomGoal, EXPENSE_CATEGORIES, INCOME_CATEGORIES, LANGUAGES } from '../types';
+
+const SUPPORTED_LANG_CODES = LANGUAGES.map(l => l.code);
+
+function detectDeviceLanguage(): string {
+  for (const lang of navigator.languages ?? [navigator.language]) {
+    const code = lang.split('-')[0].toLowerCase();
+    if (SUPPORTED_LANG_CODES.includes(code)) return code;
+  }
+  return 'en';
+}
 
 function advanceDate(date: Date, period: AutoDebitPeriod): Date {
   const d = new Date(date);
@@ -85,6 +95,7 @@ const DEFAULT_PROFILE: UserProfile = {
   avatar: null,
   plan: 'free',
   currency: 'USD',
+  language: detectDeviceLanguage(),
 };
 
 const DEFAULT_BUDGET: BudgetSettings = {
@@ -129,7 +140,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (saved) {
         const data = JSON.parse(saved);
         setTransactions(processAutoDebits(data.transactions || generateSampleData()));
-        setUserProfile(data.userProfile || DEFAULT_PROFILE);
+        const savedProfile = data.userProfile || DEFAULT_PROFILE;
+        if (!savedProfile.language) savedProfile.language = detectDeviceLanguage();
+        setUserProfile(savedProfile);
         setDarkMode(data.darkMode || false);
         setBudget(data.budget || DEFAULT_BUDGET);
         setIsAuthenticated(data.isAuthenticated ?? true);

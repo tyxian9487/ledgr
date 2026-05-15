@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useTranslation } from '../context/LanguageContext';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CURRENCIES, LANGUAGES } from '../types';
 import LegalSheet from '../components/LegalSheet';
 import { computeStreaks, BADGES } from '../utils/achievements';
@@ -18,6 +19,7 @@ const DEFAULT_PW = 'ledgr123';
 function getStoredPw() { return localStorage.getItem(PW_KEY) || DEFAULT_PW; }
 
 function ScoreRing({ score }: { score: number }) {
+  const { t } = useTranslation();
   const r = 52;
   const circumference = 2 * Math.PI * r;
   const dashoffset = circumference * (1 - score / 100);
@@ -32,7 +34,7 @@ function ScoreRing({ score }: { score: number }) {
       </svg>
       <div className="absolute flex flex-col items-center">
         <span className="text-3xl font-black" style={{ color }}>{score}</span>
-        <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Score</span>
+        <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">{t('profile.score')}</span>
       </div>
     </div>
   );
@@ -89,6 +91,7 @@ function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: n
 
 export default function Profile() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { transactions, userProfile, darkMode, toggleDarkMode, updateUserProfile, getCurrencySymbol, formatCurrency, signOut, budget } = useApp();
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(userProfile.name);
@@ -133,7 +136,7 @@ export default function Profile() {
   const avgIncome = yearIncome / Math.max(monthsWithData, 1);
   const avgExpenses = yearExpenses / Math.max(monthsWithData, 1);
   const score = yearIncome > 0 ? Math.min(100, Math.max(0, Math.round(100 - (yearExpenses / yearIncome) * 100))) : 50;
-  const scoreLabel = score >= 80 ? 'Excellent Financial Health' : score >= 60 ? 'Fair Financial Health' : 'Needs Improvement';
+  const scoreLabel = score >= 80 ? t('profile.excellent_health') : score >= 60 ? t('profile.fair_health') : t('profile.needs_improvement');
   const scoreColor = score >= 80 ? '#22c55e' : score >= 60 ? '#eab308' : '#ef4444';
 
   const { current: currentStreak, best: bestStreak } = useMemo(() => computeStreaks(transactions), [transactions]);
@@ -401,7 +404,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
     <div className="pb-28 overflow-y-auto">
       {/* Header */}
       <div className="px-5 pt-12 pb-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold dark:text-white">Profile</h1>
+        <h1 className="text-xl font-bold dark:text-white">{t('profile.title')}</h1>
         <button type="button" onClick={toggleDarkMode} className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
           {darkMode ? <Sun size={18} className="text-yellow-400" /> : <Moon size={18} className="text-gray-500" />}
         </button>
@@ -443,16 +446,16 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
               return (
                 <div className="flex flex-col items-center gap-2">
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40">
-                    <span className="text-xs font-bold text-amber-700 dark:text-amber-400">Free Trial</span>
+                    <span className="text-xs font-bold text-amber-700 dark:text-amber-400">{t('profile.free_trial')}</span>
                     <span className="w-1 h-1 rounded-full bg-amber-400" />
-                    <span className="text-xs text-amber-600 dark:text-amber-500 font-medium">{daysLeft} day{daysLeft !== 1 ? 's' : ''} left</span>
+                    <span className="text-xs text-amber-600 dark:text-amber-500 font-medium">{t('profile.days_left', { n: daysLeft, s: daysLeft !== 1 ? 's' : '' })}</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => navigate('/subscription')}
                     className="text-xs font-bold text-green-600 dark:text-green-400 px-4 py-1.5 rounded-full bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 active:scale-95 transition-transform"
                   >
-                    Upgrade Now →
+                    {t('profile.upgrade')}
                   </button>
                 </div>
               );
@@ -460,7 +463,7 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
           }
           return (
             <span className="text-xs px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-semibold capitalize">
-              {userProfile.plan} plan
+              {t('profile.plan_label', { plan: userProfile.plan })}
             </span>
           );
         })()}
@@ -468,14 +471,14 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
 
       {/* Achievements */}
       <div className="mx-4 mb-4">
-        <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3">Achievements</h2>
+        <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3">{t('profile.achievements')}</h2>
 
         {/* Budget Streak Card — inline */}
         <div data-tour="profile-streak" className="rounded-3xl overflow-hidden shadow-lg mb-3"
           style={{ background: 'linear-gradient(135deg, #052e16 0%, #166534 50%, #16a34a 100%)' }}>
           <div className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-green-300/70 text-[11px] font-bold uppercase tracking-widest">Budget Streak</p>
+              <p className="text-green-300/70 text-[11px] font-bold uppercase tracking-widest">{t('profile.streak')}</p>
               <button type="button" onClick={shareStreak} disabled={sharing}
                 className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-50 active:scale-90 transition-transform"
                 style={{ background: 'rgba(255,255,255,0.15)' }}>
@@ -488,13 +491,13 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
               <div className="flex-1">
                 <div className="flex items-end gap-2">
                   <span className="text-white font-black text-5xl leading-none">{currentStreak}</span>
-                  <span className="text-green-200/80 text-sm font-medium mb-1.5">month{currentStreak !== 1 ? 's' : ''}</span>
+                  <span className="text-green-200/80 text-sm font-medium mb-1.5">{t('profile.streak_months', { s: currentStreak !== 1 ? 's' : '' })}</span>
                 </div>
-                <p className="text-green-100/60 text-xs mt-1">consecutive months spending less than income</p>
+                <p className="text-green-100/60 text-xs mt-1">{t('profile.streak_consecutive')}</p>
                 <div className="flex items-center gap-1.5 mt-3">
                   <Trophy size={12} className="text-yellow-300" />
                   <span className="text-green-100/70 text-xs">
-                    Best: <span className="text-white font-bold">{bestStreak} month{bestStreak !== 1 ? 's' : ''}</span>
+                    {t('profile.streak_best')}: <span className="text-white font-bold">{bestStreak} {t('profile.streak_months', { s: bestStreak !== 1 ? 's' : '' })}</span>
                   </span>
                 </div>
               </div>

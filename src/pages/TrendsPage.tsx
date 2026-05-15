@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { TrendingUp, TrendingDown, Minus, X, ChevronRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useTranslation } from '../context/LanguageContext';
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -102,6 +103,7 @@ function CategoryModal({
   transactions: ReturnType<typeof useApp>['transactions'];
   formatCurrency: (n: number) => string;
 }) {
+  const { t } = useTranslation();
   const [period, setPeriod] = useState<Period>('monthly');
   const color = CATEGORY_COLORS[categoryId] || '#94a3b8';
   const label = categoryId.charAt(0).toUpperCase() + categoryId.slice(1);
@@ -147,7 +149,7 @@ function CategoryModal({
   const nonZero = points.filter(p => p.value > 0);
   const avg = nonZero.length > 0 ? total / nonZero.length : 0;
   const highest = points.reduce((a, b) => (b.value > a.value ? b : a), points[0]);
-  const periodLabel = period === 'monthly' ? 'last 12 months' : period === 'quarterly' ? 'last 8 quarters' : 'last 5 years';
+  const periodLabel = period === 'monthly' ? t('trends.monthly') : period === 'quarterly' ? t('trends.quarterly') : t('trends.annually');
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/60 flex items-end justify-center" onClick={onClose}>
@@ -181,7 +183,7 @@ function CategoryModal({
                 onClick={() => setPeriod(p)}
                 className={`flex-1 py-1.5 rounded-[10px] transition-all capitalize ${period === p ? 'bg-white dark:bg-gray-700 text-gray-800 dark:text-white shadow-sm' : 'text-gray-400'}`}
               >
-                {p}
+                {p === 'monthly' ? t('trends.monthly') : p === 'quarterly' ? t('trends.quarterly') : t('trends.annually')}
               </button>
             ))}
           </div>
@@ -201,9 +203,9 @@ function CategoryModal({
         {/* Stats row */}
         <div className="flex-shrink-0 px-5 mt-2 grid grid-cols-3 gap-3 pb-4">
           {[
-            { label: 'Total', value: formatCurrency(total) },
-            { label: 'Avg / period', value: formatCurrency(avg) },
-            { label: 'Highest', value: highest && highest.value > 0 ? `${formatCurrency(highest.value)} (${highest.label})` : '—' },
+            { label: t('common.total'), value: formatCurrency(total) },
+            { label: t('trends.avg'), value: formatCurrency(avg) },
+            { label: t('trends.highest'), value: highest && highest.value > 0 ? `${formatCurrency(highest.value)} (${highest.label})` : '—' },
           ].map(s => (
             <div key={s.label} className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-3">
               <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-1">{s.label}</p>
@@ -214,7 +216,7 @@ function CategoryModal({
 
         {/* Individual transactions for this category (scrollable) */}
         <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-10">
-          <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider mb-2">Recent transactions</p>
+          <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider mb-2">{t('trends.recent')}</p>
           {catTxs.length === 0 ? (
             <p className="text-sm text-gray-400 py-4 text-center">No transactions yet</p>
           ) : (
@@ -238,6 +240,7 @@ function CategoryModal({
 
 export default function TrendsPage() {
   const { transactions, formatCurrency } = useApp();
+  const { t } = useTranslation();
   const [view, setView] = useState<'spending' | 'income'>('spending');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showAllCats, setShowAllCats] = useState(false);
@@ -287,16 +290,16 @@ export default function TrendsPage() {
     <div className="pb-28 overflow-y-auto min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
       <div className="px-5 pt-12 pb-2">
-        <h1 className="text-xl font-bold dark:text-white">Trends</h1>
-        <p className="text-xs text-gray-400 mt-0.5">Last 6 months overview</p>
+        <h1 className="text-xl font-bold dark:text-white">{t('trends.title')}</h1>
+        <p className="text-xs text-gray-400 mt-0.5">{t('trends.subtitle')}</p>
       </div>
 
       {/* Summary cards */}
       <div data-tour="trends-top" className="px-4 mt-3 grid grid-cols-2 gap-3">
         <div className="bg-red-500 rounded-2xl p-4 shadow-sm">
-          <p className="text-[11px] text-red-100 font-semibold uppercase tracking-wide mb-1">This Month</p>
+          <p className="text-[11px] text-red-100 font-semibold uppercase tracking-wide mb-1">{t('trends.this_month')}</p>
           <p className="text-xl font-black text-white">{formatCurrency(currentMonth.expenses)}</p>
-          <p className="text-[11px] text-red-100 mt-0.5">spent</p>
+          <p className="text-[11px] text-red-100 mt-0.5">{t('trends.spending')}</p>
           {prevMonth.expenses > 0 && (
             <div className="flex items-center gap-1 mt-2 text-red-100">
               {spendDiff > 0 ? <TrendingUp size={12} /> : spendDiff < 0 ? <TrendingDown size={12} /> : <Minus size={12} />}
@@ -305,9 +308,9 @@ export default function TrendsPage() {
           )}
         </div>
         <div className="bg-green-600 rounded-2xl p-4 shadow-sm">
-          <p className="text-[11px] text-green-100 font-semibold uppercase tracking-wide mb-1">This Month</p>
+          <p className="text-[11px] text-green-100 font-semibold uppercase tracking-wide mb-1">{t('trends.this_month')}</p>
           <p className="text-xl font-black text-white">{formatCurrency(currentMonth.income)}</p>
-          <p className="text-[11px] text-green-100 mt-0.5">earned</p>
+          <p className="text-[11px] text-green-100 mt-0.5">{t('trends.income')}</p>
           {currentMonth.income > 0 && (
             <div className="flex items-center gap-1 mt-2 text-green-100">
               {currentMonth.income >= currentMonth.expenses ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
@@ -322,12 +325,12 @@ export default function TrendsPage() {
       {/* Bar chart */}
       <div data-tour="trends-monthly" className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl p-5 shadow-sm border border-gray-50 dark:border-gray-800">
         <div className="flex items-center justify-between mb-4">
-          <p className="text-sm font-bold dark:text-white">Monthly Overview</p>
+          <p className="text-sm font-bold dark:text-white">{t('trends.monthly_overview')}</p>
           <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-0.5 text-[11px] font-semibold">
             {(['spending', 'income'] as const).map(v => (
               <button key={v} onClick={() => setView(v)}
                 className={`px-3 py-1 rounded-[10px] transition-all capitalize ${view === v ? 'bg-white dark:bg-gray-700 text-gray-800 dark:text-white shadow-sm' : 'text-gray-400'}`}>
-                {v}
+                {v === 'spending' ? t('trends.spending') : t('trends.income')}
               </button>
             ))}
           </div>
@@ -362,11 +365,11 @@ export default function TrendsPage() {
       {/* Top Categories — clickable + expandable */}
       <div data-tour="trends-categories" className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-gray-800">
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
-          <p className="text-sm font-bold dark:text-white">Categories</p>
-          <span className="text-[11px] text-gray-400">{currentYear} · tap to explore</span>
+          <p className="text-sm font-bold dark:text-white">{t('common.categories')}</p>
+          <span className="text-[11px] text-gray-400">{t('trends.year_explore', { year: currentYear })}</span>
         </div>
         {categoryTotals.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">No expense data yet</p>
+          <p className="text-sm text-gray-400 text-center py-6">{t('trends.no_expense')}</p>
         ) : (
           <>
             {(showAllCats ? categoryTotals : categoryTotals.slice(0, 5)).map(([id, amount]) => {
@@ -402,8 +405,8 @@ export default function TrendsPage() {
                 className="w-full py-3 border-t border-gray-100 dark:border-gray-800 text-[12px] font-semibold text-green-600 dark:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 {showAllCats
-                  ? 'Show less'
-                  : `Show ${categoryTotals.length - 5} more categor${categoryTotals.length - 5 === 1 ? 'y' : 'ies'}`}
+                  ? t('trends.show_less')
+                  : t('trends.show_more', { n: categoryTotals.length - 5 })}
               </button>
             )}
           </>
@@ -412,7 +415,7 @@ export default function TrendsPage() {
 
       {/* Income vs Expenses */}
       <div data-tour="trends-income-vs" className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl p-5 shadow-sm border border-gray-50 dark:border-gray-800">
-        <p className="text-sm font-bold dark:text-white mb-4">Income vs Expenses</p>
+        <p className="text-sm font-bold dark:text-white mb-4">{t('trends.income_vs')}</p>
         <div className="space-y-2.5">
           {[...monthlyData].reverse().map(m => {
             const maxVal = Math.max(m.income, m.expenses, 1);
@@ -444,8 +447,8 @@ export default function TrendsPage() {
           })}
         </div>
         <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-          <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-green-500" /><span className="text-[11px] text-gray-400">Income</span></div>
-          <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-red-400" /><span className="text-[11px] text-gray-400">Expenses</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-green-500" /><span className="text-[11px] text-gray-400">{t('common.income')}</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-red-400" /><span className="text-[11px] text-gray-400">{t('common.expenses')}</span></div>
         </div>
       </div>
 

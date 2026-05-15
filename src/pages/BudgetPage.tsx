@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTour } from '../context/TourContext';
+import { useTranslation } from '../context/LanguageContext';
 import {
   ArrowLeft, Sparkles, RotateCcw, ChevronDown, ChevronUp,
   Home, UtensilsCrossed, Car, Heart, Zap, Tv, ShoppingBag,
@@ -133,6 +134,7 @@ function MiniDonut({ allocations, size = 140, activeSlice, onSliceClick }: {
 
 export default function BudgetPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { budget, updateBudget, getMonthTransactions, getMonthIncome, formatCurrency, getCurrencySymbol, removeCustomGoal } = useApp();
 
   const actualIncome = getMonthIncome(NOW.getFullYear(), NOW.getMonth());
@@ -312,8 +314,8 @@ export default function BudgetPage() {
           <ArrowLeft size={18} className="text-gray-600 dark:text-gray-300" />
         </button>
         <div>
-          <h1 className="text-lg font-bold dark:text-white">Budget & Goals</h1>
-          <p className="text-xs text-gray-400">Set your financial plan</p>
+          <h1 className="text-lg font-bold dark:text-white">{t('budget.title')}</h1>
+          <p className="text-xs text-gray-400">{t('budget.subtitle')}</p>
         </div>
       </div>
 
@@ -325,7 +327,7 @@ export default function BudgetPage() {
             onClick={() => setUserTab('goals')}
             className={`flex-1 py-3.5 text-sm font-bold relative flex items-center justify-center gap-1.5 transition-colors ${activeTab === 'goals' ? 'text-green-600' : 'text-gray-400'}`}
           >
-            Goals
+            {t('budget.goals')}
             {activeGoalCount > 0 && (
               <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-green-600 text-white text-[10px] font-black">
                 {activeGoalCount}
@@ -338,7 +340,7 @@ export default function BudgetPage() {
             onClick={() => setUserTab('budget')}
             className={`flex-1 py-3.5 text-sm font-bold relative transition-colors ${activeTab === 'budget' ? 'text-green-600' : 'text-gray-400'}`}
           >
-            Budget
+            {t('budget.budget')}
             {activeTab === 'budget' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-600 rounded-t-full" />}
           </button>
         </div>
@@ -356,7 +358,7 @@ export default function BudgetPage() {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <PiggyBank size={16} className="text-green-500" />
-                    <span className="text-sm font-semibold dark:text-white">Monthly Savings Goal</span>
+                    <span className="text-sm font-semibold dark:text-white">{t('budget.monthly_savings')}</span>
                   </div>
                   <button type="button" onClick={() => setSavingsEnabled(v => !v)} className="flex items-center">
                     {savingsEnabled
@@ -369,11 +371,11 @@ export default function BudgetPage() {
                     <div className="flex gap-2 mb-3">
                       <button type="button" onClick={() => setSavingsMode('pct')}
                         className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors ${savingsMode === 'pct' ? 'bg-green-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
-                        % of income
+                        {t('budget.pct_income')}
                       </button>
                       <button type="button" onClick={() => setSavingsMode('fixed')}
                         className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors ${savingsMode === 'fixed' ? 'bg-green-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
-                        Fixed {getCurrencySymbol()}
+                        {t('budget.fixed')} {getCurrencySymbol()}
                       </button>
                     </div>
                     <div className="flex items-center border border-gray-100 dark:border-gray-700 rounded-xl px-3 py-2 gap-2 bg-gray-50 dark:bg-gray-800">
@@ -411,7 +413,7 @@ export default function BudgetPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold dark:text-white truncate">{goal.name}</p>
-                      <p className="text-xs text-gray-400">Month {currentMonthIdx + 1} of {durationMonths} · {formatCurrency(monthlyTarget)}/mo</p>
+                      <p className="text-xs text-gray-400">{t('budget.month_of', { x: currentMonthIdx + 1, y: durationMonths })} · {formatCurrency(monthlyTarget)}{t('common.per_month')}</p>
                     </div>
                     <button type="button" onClick={() => removeCustomGoal(goal.id)} className="text-gray-300 dark:text-gray-600 hover:text-red-400 transition-colors p-1">
                       <X size={14} />
@@ -419,7 +421,7 @@ export default function BudgetPage() {
                   </div>
                   <div>
                     <div className="flex justify-between text-xs mb-1.5">
-                      <span className="text-gray-500 dark:text-gray-400">This month</span>
+                      <span className="text-gray-500 dark:text-gray-400">{t('trends.this_month')}</span>
                       <span className="font-semibold" style={{ color: goal.color }}>{formatCurrency(monthSaved)} / {formatCurrency(monthlyTarget)}</span>
                     </div>
                     <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
@@ -432,7 +434,7 @@ export default function BudgetPage() {
                   </div>
                   <button type="button" onClick={() => navigate(`/goals/${goal.id}`)}
                     className="mt-3 text-xs font-semibold" style={{ color: goal.color }}>
-                    See monthly progress →
+                    {t('budget.see_progress')}
                   </button>
                 </div>
               );
@@ -445,7 +447,7 @@ export default function BudgetPage() {
               className="w-full py-4 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-center gap-2 text-sm font-semibold text-gray-400 dark:text-gray-500 hover:border-green-400 hover:text-green-600 transition-colors"
             >
               <Plus size={16} />
-              Add Goal
+              {t('budget.add_goal')}
             </button>
           </>
         )}
@@ -456,7 +458,7 @@ export default function BudgetPage() {
             {/* Income input */}
             <div data-tour="budget-income" className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">Expected Monthly Income</p>
+                <p className="text-xs font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider">{t('budget.expected_income')}</p>
                 <button
                   type="button"
                   onClick={() => setIncomeFixed(v => !v)}
@@ -467,12 +469,12 @@ export default function BudgetPage() {
                   }`}
                 >
                   {incomeFixed ? <Lock size={10} /> : <Unlock size={10} />}
-                  {incomeFixed ? 'Fixed' : 'Variable'}
+                  {incomeFixed ? t('budget.fixed') : t('budget.variable')}
                 </button>
               </div>
               {actualIncome > 0 && !budget.expectedIncome && (
                 <p className="text-xs text-green-600 dark:text-green-400 mb-2 font-medium">
-                  Auto-filled from your {new Date(NOW.getFullYear(), NOW.getMonth()).toLocaleString('default', { month: 'long' })} income
+                  {t('budget.auto_filled', { month: new Date(NOW.getFullYear(), NOW.getMonth()).toLocaleString('default', { month: 'long' }) })}
                 </p>
               )}
               <div className="flex items-center border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 focus-within:border-green-500 transition-colors bg-gray-50 dark:bg-gray-800 gap-2 mb-4">

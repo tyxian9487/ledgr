@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Check, PiggyBank } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useTranslation } from '../context/LanguageContext';
 import { iconMap } from '../components/home/CategoryIcon';
 import ManualEntryModal from '../components/home/ManualEntryModal';
 import GoalCelebration from '../components/GoalCelebration';
@@ -12,6 +13,7 @@ export default function GoalDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { budget, transactions, updateCustomGoal, formatCurrency } = useApp();
+  const { t } = useTranslation();
 
   const [showModal, setShowModal] = useState(false);
 
@@ -130,13 +132,13 @@ export default function GoalDetailPage() {
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-bold text-gray-900 dark:text-white truncate">{goal.name}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {durationMonths} month{durationMonths !== 1 ? 's' : ''} · {formatCurrency(baseMonthly)}/mo base
+            {durationMonths} {durationMonths !== 1 ? t('common.months') : t('common.month')} · {formatCurrency(baseMonthly)}{t('common.per_month')} {t('goal.base')}
           </p>
         </div>
 
         {goal.completedAt && (
           <span className="text-xs font-bold px-2.5 py-1 rounded-full text-white" style={{ background: goal.color }}>
-            Done 🏆
+            {t('goal.done_badge')}
           </span>
         )}
       </div>
@@ -219,7 +221,7 @@ export default function GoalDetailPage() {
               {/* Month label + amounts */}
               <div className="mt-2 text-center">
                 <p className={`text-sm font-semibold ${isFuture ? 'text-gray-300 dark:text-gray-600' : 'text-gray-700 dark:text-gray-200'}`}>
-                  Month {i + 1}
+                  {t('goal.month_label', { n: i + 1 })}
                 </p>
                 <p className={`text-xs mt-0.5 ${isFuture ? 'text-gray-300 dark:text-gray-600' : m.isDeficit ? 'text-amber-500' : 'text-gray-400 dark:text-gray-500'}`}>
                   {m.isComplete
@@ -232,7 +234,7 @@ export default function GoalDetailPage() {
                 </p>
                 {m.isDeficit && (
                   <p className="text-[10px] text-amber-400 font-semibold mt-0.5">
-                    Deficit carried forward
+                    {t('goal.deficit')}
                   </p>
                 )}
               </div>
@@ -246,7 +248,7 @@ export default function GoalDetailPage() {
                     className="flex items-center gap-1.5 w-full justify-center text-sm font-semibold py-2 rounded-xl border-2 border-dashed active:opacity-70 transition-opacity"
                     style={{ color: goal.color, borderColor: goal.color + '60' }}
                   >
-                    🐖 Log savings
+                    🐖 {t('goal.log')}
                   </button>
                 </div>
               )}
@@ -264,7 +266,7 @@ export default function GoalDetailPage() {
               className="w-full py-3 rounded-2xl font-bold text-sm border-2 border-dashed active:opacity-70 transition-opacity"
               style={{ color: goal.color, borderColor: goal.color + '60' }}
             >
-              🐖 Add more savings
+              🐖 {t('goal.add_more')}
             </button>
           </div>
         )}
@@ -274,12 +276,12 @@ export default function GoalDetailPage() {
       <div className="mx-4 mb-10 mt-4 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5">
         {isGoalComplete && (
           <p className="text-center text-base font-bold mb-4" style={{ color: goal.color }}>
-            {goal.completedAt ? 'Goal complete 🏆' : goal.continueAfterComplete ? 'Goal achieved — still going 💪' : 'Goal complete! 🎉'}
+            {goal.completedAt ? t('goal.complete_trophy') : goal.continueAfterComplete ? t('goal.still_going') : t('goal.complete')}
           </p>
         )}
 
         <div className="flex justify-between items-center mb-3">
-          <span className="text-sm text-gray-500 dark:text-gray-400">Total saved</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('goal.total_saved')}</span>
           <span className="text-sm font-semibold text-gray-800 dark:text-white">
             {formatCurrency(goal.savedAmount)}{' '}
             <span className="text-gray-400 dark:text-gray-500 font-normal">/ {formatCurrency(goal.targetAmount)}</span>
@@ -304,12 +306,12 @@ export default function GoalDetailPage() {
         {/* Adjusted monthly target for current month */}
         {!isGoalComplete && monthData[currentMonthIdx] && (
           <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
-            <span className="text-xs text-gray-400">This month's target</span>
+            <span className="text-xs text-gray-400">{t('goal.this_month_target')}</span>
             <span className="text-sm font-bold" style={{ color: goal.color }}>
               {formatCurrency(monthData[currentMonthIdx].adjustedTarget)}
               {hasTransactionData && monthData[currentMonthIdx].adjustedTarget !== baseMonthly && (
                 <span className="text-[10px] text-gray-400 font-normal ml-1">
-                  (adjusted)
+                  ({t('goal.adjusted')})
                 </span>
               )}
             </span>

@@ -3,6 +3,7 @@ import { TrendingUp, Target, PiggyBank } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import LegalSheet from '../components/LegalSheet';
+import { useTranslation } from '../context/LanguageContext';
 
 function GoogleIcon() {
   return (
@@ -23,17 +24,20 @@ function AppleIcon() {
   );
 }
 
-const FEATURES = [
-  { icon: TrendingUp, label: 'Track every expense' },
-  { icon: Target,     label: 'Budget with smart goals' },
-  { icon: PiggyBank,  label: 'Watch your savings grow' },
-];
+const FEATURE_ICONS = [TrendingUp, Target, PiggyBank];
 
 export default function LoginPage() {
   const { signIn } = useApp();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState<'google' | 'apple' | null>(null);
   const [legal, setLegal] = useState<'terms' | 'privacy' | null>(null);
+
+  const FEATURES = [
+    { icon: FEATURE_ICONS[0], label: t('login.track') },
+    { icon: FEATURE_ICONS[1], label: t('login.budget_goals') },
+    { icon: FEATURE_ICONS[2], label: t('login.watch_savings') },
+  ];
 
   async function handleSignIn(provider: 'google' | 'apple') {
     setLoading(provider);
@@ -58,7 +62,7 @@ export default function LoginPage() {
             <span className="text-white font-black text-3xl tracking-tighter">l</span>
           </div>
           <h1 className="text-white font-black text-4xl tracking-tight mt-0.5">Kachingo</h1>
-          <p className="text-green-100/75 text-sm font-medium">Your money, simplified.</p>
+          <p className="text-green-100/75 text-sm font-medium">{t('login.tagline')}</p>
         </div>
 
         {/* Feature chips */}
@@ -79,8 +83,8 @@ export default function LoginPage() {
         className="flex-shrink-0 bg-white dark:bg-gray-900 rounded-t-[28px] px-6 pt-6 shadow-2xl"
         style={{ paddingBottom: 'max(28px, env(safe-area-inset-bottom, 28px))' }}
       >
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Get started</h2>
-        <p className="text-sm text-gray-400 mt-0.5 mb-5">Sign in or create your free account</p>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('login.get_started')}</h2>
+        <p className="text-sm text-gray-400 mt-0.5 mb-5">{t('login.sign_in_desc')}</p>
 
         <div className="space-y-3">
           {/* Google */}
@@ -95,7 +99,7 @@ export default function LoginPage() {
                 : <GoogleIcon />}
             </div>
             <span className="flex-1 text-sm font-semibold text-gray-700 dark:text-gray-200 text-center pr-5">
-              {loading === 'google' ? 'Signing in…' : 'Continue with Google'}
+              {loading === 'google' ? t('login.signing_in') : t('login.google')}
             </span>
           </button>
 
@@ -111,7 +115,7 @@ export default function LoginPage() {
                 : <AppleIcon />}
             </div>
             <span className="flex-1 text-sm font-semibold text-white text-center pr-5">
-              {loading === 'apple' ? 'Signing in…' : 'Continue with Apple'}
+              {loading === 'apple' ? t('login.signing_in') : t('login.apple')}
             </span>
           </button>
         </div>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft, ChevronDown, ChevronUp, Minus, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useTranslation } from '../context/LanguageContext';
 import { ICON_OPTIONS, COLOR_OPTIONS } from '../types';
 import { iconMap } from '../components/home/CategoryIcon';
 import { PiggyBank } from 'lucide-react';

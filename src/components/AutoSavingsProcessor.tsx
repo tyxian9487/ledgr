@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
+import { useTranslation } from '../context/LanguageContext';
 
 const STORAGE_KEY = 'ledgr_auto_savings_processed';
 
 export default function AutoSavingsProcessor() {
   const { transactions, budget, addTransaction, updateCustomGoal, formatCurrency } = useApp();
+  const { t } = useTranslation();
   const processed = useRef(false);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -98,7 +100,7 @@ export default function AutoSavingsProcessor() {
       <div className="bg-gray-900 dark:bg-gray-800 text-white text-sm font-medium px-4 py-3 rounded-2xl shadow-xl flex items-start gap-2.5">
         <span className="text-base flex-shrink-0 mt-0.5">🐖</span>
         <div>
-          <p className="font-bold mb-0.5">Last month's surplus auto-saved!</p>
+          <p className="font-bold mb-0.5">{t('auto.title')}</p>
           <p className="text-gray-300 dark:text-gray-400 text-xs leading-relaxed">{toast}</p>
         </div>
       </div>

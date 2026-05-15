@@ -6,6 +6,7 @@ import Categories from '../components/home/Categories';
 import ManualEntryModal from '../components/home/ManualEntryModal';
 import GoalTrackerCard from '../components/home/GoalTrackerCard';
 import { useApp } from '../context/AppContext';
+import { useTranslation } from '../context/LanguageContext';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, Transaction } from '../types';
 
 const ALL_CATEGORIES = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
@@ -23,6 +24,7 @@ export default function Home() {
   const [month, setMonth] = useState(now.getMonth());
   const [showEntry, setShowEntry] = useState(false);
   const { budget, getMonthExpenses, userProfile, transactions, formatCurrency } = useApp();
+  const { t } = useTranslation();
 
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -93,8 +95,8 @@ export default function Home() {
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-12 pb-2">
         <div>
-          <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">Good {getGreeting()}</p>
-          <h1 className="text-xl font-bold dark:text-white">My Finances</h1>
+          <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">{t(getGreeting())}</p>
+          <h1 className="text-xl font-bold dark:text-white">{t('home.my_finances')}</h1>
         </div>
         <button
           onClick={() => navigate('/profile')}
@@ -124,7 +126,7 @@ export default function Home() {
           <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0">
             <Plus size={18} className="text-white" strokeWidth={2.5} />
           </div>
-          <span className="text-sm font-semibold text-gray-600 dark:text-gray-300 text-left leading-tight">Add Transaction</span>
+          <span className="text-sm font-semibold text-gray-600 dark:text-gray-300 text-left leading-tight">{t('home.add_transaction')}</span>
         </button>
 
         <button
@@ -151,11 +153,11 @@ export default function Home() {
                 : isOverBudget ? 'text-red-700 dark:text-red-400'
                 : 'text-green-700 dark:text-green-400'
             }`}>
-              {!hasBudget ? 'Set Budget & Goals' : isOverBudget ? 'Over Budget' : 'On Track'}
+              {!hasBudget ? t('home.set_budget') : isOverBudget ? t('home.over_budget') : t('home.on_track')}
             </p>
             {hasBudget && (
               <p className={`text-[11px] font-semibold mt-0.5 ${isOverBudget ? 'text-red-400' : 'text-green-500'}`}>
-                {budgetUsedPct.toFixed(0)}% used
+                {budgetUsedPct.toFixed(0)}{t('home.pct_used')}
               </p>
             )}
           </div>
@@ -179,7 +181,7 @@ export default function Home() {
           }`}
         >
           <Search size={15} />
-          Search
+          {t('common.search')}
           {showSearch && q && (
             <span className="ml-auto text-xs opacity-80">{searchResults.length}</span>
           )}
@@ -195,7 +197,7 @@ export default function Home() {
           }`}
         >
           <SlidersHorizontal size={15} />
-          Filter
+          {t('home.filter')}
           {activeFilterCount > 0 && (
             <span className={`ml-auto w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center ${
               showFilter ? 'bg-white text-green-600' : 'bg-green-600 text-white'
@@ -212,7 +214,7 @@ export default function Home() {
           <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5 mb-3">
             <Search size={14} className="text-gray-400 flex-shrink-0" />
             <input
-              placeholder="Description, category, or amount..."
+              placeholder={t('home.search_placeholder')}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="flex-1 bg-transparent text-sm outline-none dark:text-white placeholder:text-gray-400"
@@ -226,11 +228,11 @@ export default function Home() {
           </div>
 
           {!q && (
-            <p className="text-xs text-gray-400 text-center">Search across all your transactions</p>
+            <p className="text-xs text-gray-400 text-center">{t('home.search_desc')}</p>
           )}
 
           {q && searchResults.length === 0 && (
-            <p className="text-xs text-gray-400 text-center py-1">No transactions found</p>
+            <p className="text-xs text-gray-400 text-center py-1">{t('home.no_transactions')}</p>
           )}
 
           {searchResults.length > 0 && (
@@ -260,14 +262,14 @@ export default function Home() {
         <div className="mx-4 mt-2 bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-800 space-y-4">
           {/* Type */}
           <div>
-            <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider mb-2">Type</p>
+            <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider mb-2">{t('common.type')}</p>
             <div className="flex gap-2">
-              {(['all', 'income', 'expense'] as const).map(t => (
-                <button key={t} type="button" onClick={() => setFilterType(t)}
+              {(['all', 'income', 'expense'] as const).map(ft => (
+                <button key={ft} type="button" onClick={() => setFilterType(ft)}
                   className={`flex-1 py-2 rounded-xl text-xs font-bold capitalize transition-colors ${
-                    filterType === t ? 'bg-green-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                    filterType === ft ? 'bg-green-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                   }`}>
-                  {t}
+                  {ft === 'all' ? t('common.all') : ft === 'income' ? t('common.income') : t('common.expense')}
                 </button>
               ))}
             </div>
@@ -275,7 +277,7 @@ export default function Home() {
 
           {/* Amount range */}
           <div>
-            <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider mb-2">Amount Range</p>
+            <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider mb-2">{t('home.amount_range')}</p>
             <div className="grid grid-cols-2 gap-2">
               <input type="number" placeholder="Min $" value={filterMin} onChange={e => setFilterMin(e.target.value)}
                 className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm outline-none dark:text-white placeholder:text-gray-400 border border-gray-100 dark:border-gray-700"
@@ -288,10 +290,10 @@ export default function Home() {
 
           {/* Category */}
           <div>
-            <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider mb-2">Category</p>
+            <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider mb-2">{t('common.categories')}</p>
             <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
               className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm outline-none dark:text-white border border-gray-100 dark:border-gray-700">
-              <option value="">All Categories</option>
+              <option value="">{t('home.all_categories')}</option>
               {ALL_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
             </select>
           </div>
@@ -299,7 +301,7 @@ export default function Home() {
           {activeFilterCount > 0 && (
             <button type="button" onClick={clearFilters}
               className="w-full py-2.5 text-xs text-red-500 dark:text-red-400 font-semibold rounded-xl bg-red-50 dark:bg-red-900/20">
-              Clear {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''}
+              {t('home.clear_n_filters', { n: activeFilterCount, s: activeFilterCount !== 1 ? 's' : '' })}
             </button>
           )}
         </div>
@@ -308,10 +310,10 @@ export default function Home() {
       {/* Categories / Transactions header */}
       <div className="mx-4 mt-5 mb-3 flex items-center gap-2">
         <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex-1">
-          {activeFilterCount > 0 ? 'Filtered Results' : (txView === 'category' ? 'Categories' : 'By Date')}
+          {activeFilterCount > 0 ? t('home.filtered') : (txView === 'category' ? t('common.categories') : t('home.by_date'))}
         </h2>
         {activeFilterCount > 0 && (
-          <button type="button" onClick={clearFilters} className="text-xs text-green-600 font-semibold mr-1">Clear</button>
+          <button type="button" onClick={clearFilters} className="text-xs text-green-600 font-semibold mr-1">{t('home.clear')}</button>
         )}
         {/* Calendar icon — only in date view, left of toggle */}
         {txView === 'date' && (
@@ -341,9 +343,10 @@ export default function Home() {
   );
 }
 
-function getGreeting() {
+function getGreeting(): 'home.greeting_morning' | 'home.greeting_afternoon' | 'home.greeting_evening' | 'home.greeting_night' {
   const h = new Date().getHours();
-  if (h < 12) return 'morning';
-  if (h < 17) return 'afternoon';
-  return 'evening';
+  if (h < 12) return 'home.greeting_morning';
+  if (h < 17) return 'home.greeting_afternoon';
+  if (h < 21) return 'home.greeting_evening';
+  return 'home.greeting_night';
 }

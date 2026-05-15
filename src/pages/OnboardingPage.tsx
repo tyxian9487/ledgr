@@ -3,28 +3,29 @@ import { Camera, ChevronRight, Search, X, Check, ChevronLeft } from 'lucide-reac
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { CURRENCIES } from '../types';
+import { useTranslation } from '../context/LanguageContext';
 
 const SPEND_ON_OPTIONS = [
-  { id: 'self',     label: 'Myself',   emoji: '🙋' },
-  { id: 'family',   label: 'Family',   emoji: '👨‍👩‍👧' },
-  { id: 'partner',  label: 'Partner',  emoji: '💑' },
-  { id: 'children', label: 'Children', emoji: '🧒' },
-  { id: 'friends',  label: 'Friends',  emoji: '👫' },
-  { id: 'others',   label: 'Others',   emoji: '🌍' },
+  { id: 'self',     labelKey: 'onboard.myself'   as const, emoji: '🙋' },
+  { id: 'family',   labelKey: 'onboard.family'   as const, emoji: '👨‍👩‍👧' },
+  { id: 'partner',  labelKey: 'onboard.partner'  as const, emoji: '💑' },
+  { id: 'children', labelKey: 'onboard.children' as const, emoji: '🧒' },
+  { id: 'friends',  labelKey: 'onboard.friends'  as const, emoji: '👫' },
+  { id: 'others',   labelKey: 'onboard.others'   as const, emoji: '🌍' },
 ];
 
 const SPEND_WHAT_OPTIONS = [
-  { id: 'food',          label: 'Food & Dining',       emoji: '🍽️' },
-  { id: 'housing',       label: 'Housing & Rent',      emoji: '🏠' },
-  { id: 'transport',     label: 'Transport',           emoji: '🚗' },
-  { id: 'shopping',      label: 'Shopping',            emoji: '🛍️' },
-  { id: 'entertainment', label: 'Entertainment',       emoji: '🎬' },
-  { id: 'health',        label: 'Health & Fitness',    emoji: '💪' },
-  { id: 'education',     label: 'Education',           emoji: '📚' },
-  { id: 'subscriptions', label: 'Subscriptions',       emoji: '📱' },
-  { id: 'travel',        label: 'Travel',              emoji: '✈️' },
-  { id: 'investments',   label: 'Savings & Investing', emoji: '💰' },
-  { id: 'personal',      label: 'Personal Care',       emoji: '💆' },
+  { id: 'food',          emoji: '🍽️' },
+  { id: 'housing',       emoji: '🏠' },
+  { id: 'transport',     emoji: '🚗' },
+  { id: 'shopping',      emoji: '🛍️' },
+  { id: 'entertainment', emoji: '🎬' },
+  { id: 'health',        emoji: '💪' },
+  { id: 'education',     emoji: '📚' },
+  { id: 'subscriptions', emoji: '📱' },
+  { id: 'travel',        emoji: '✈️' },
+  { id: 'investments',   emoji: '💰' },
+  { id: 'personal',      emoji: '💆' },
 ];
 
 export interface OnboardingReco {
@@ -56,24 +57,25 @@ function computeReco(satisfaction: number, disciplined: boolean): OnboardingReco
 
 const TOTAL_STEPS = 5;
 
-const STEP_TITLES = [
-  'Set up your profile',
-  'Your financial state',
-  'Your discipline',
-  'Who do you spend on?',
-  'What do you spend on?',
-];
-const STEP_SUBS = [
-  'Personalise your Kachingo experience',
-  'How satisfied are you with your current finances?',
-  'How would you describe your financial discipline?',
-  'Select all that apply',
-  'Select all that apply',
-];
-
 export default function OnboardingPage() {
   const { updateUserProfile, completeOnboarding, userProfile } = useApp();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const STEP_TITLES = [
+    t('onboard.setup'),
+    t('onboard.financial_state'),
+    t('onboard.discipline'),
+    t('onboard.spend_on'),
+    t('onboard.spend_what'),
+  ];
+  const STEP_SUBS = [
+    t('onboard.personalise'),
+    t('onboard.how_satisfied'),
+    t('onboard.describe'),
+    '',
+    '',
+  ];
 
   const [step, setStep] = useState(1);
   const [showWelcome, setShowWelcome] = useState(false);
@@ -142,7 +144,7 @@ export default function OnboardingPage() {
               : <span className="text-white font-black text-3xl">{initial}</span>}
           </div>
           <h1 className="text-2xl font-bold dark:text-white text-center">
-            Welcome, {name.trim()}! 👋
+            {t('onboard.welcome', { name: name.trim() })}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 text-center leading-relaxed">
             To get to know you better, we'd like to ask a few quick questions about your finances.
@@ -152,7 +154,7 @@ export default function OnboardingPage() {
             onClick={() => { setShowWelcome(false); setStep(2); }}
             className="w-full mt-4 py-4 rounded-2xl bg-green-600 text-white font-bold text-base active:scale-[0.98] shadow-lg shadow-green-600/30 transition-all flex items-center justify-center gap-2"
           >
-            Let's Go <ChevronRight size={18} />
+            {t('onboard.lets_go')} <ChevronRight size={18} />
           </button>
         </div>
       </div>
@@ -202,11 +204,11 @@ export default function OnboardingPage() {
                 </button>
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
               </div>
-              <p className="text-xs text-gray-400">Tap to upload a photo</p>
+              <p className="text-xs text-gray-400">{t('onboard.upload_photo')}</p>
             </div>
 
             <div>
-              <label className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 block">Your Name</label>
+              <label className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 block">{t('onboard.your_name')}</label>
               <input value={name}
                 onChange={e => { setName(e.target.value); setTouched(false); }}
                 onBlur={() => setTouched(true)}
@@ -217,7 +219,7 @@ export default function OnboardingPage() {
             </div>
 
             <div>
-              <label className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 block">Preferred Currency</label>
+              <label className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 block">{t('onboard.currency')}</label>
               <button type="button" onClick={() => setShowPicker(true)}
                 className="w-full bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-4 flex items-center justify-between hover:border-green-300 dark:hover:border-green-800 active:scale-[0.98] transition-all">
                 <div className="text-left">
@@ -313,7 +315,7 @@ export default function OnboardingPage() {
                       </div>
                     )}
                     <span className="text-3xl">{opt.emoji}</span>
-                    <p className={`text-sm font-semibold ${sel ? 'text-green-700 dark:text-green-400' : 'dark:text-white'}`}>{opt.label}</p>
+                    <p className={`text-sm font-semibold ${sel ? 'text-green-700 dark:text-green-400' : 'dark:text-white'}`}>{t(opt.labelKey)}</p>
                   </button>
                 );
               })}
@@ -337,7 +339,7 @@ export default function OnboardingPage() {
                       </div>
                     )}
                     <span className="text-2xl leading-none">{opt.emoji}</span>
-                    <p className={`text-xs font-semibold flex-1 text-left pr-2 ${sel ? 'text-green-700 dark:text-green-400' : 'dark:text-white'}`}>{opt.label}</p>
+                    <p className={`text-xs font-semibold flex-1 text-left pr-2 ${sel ? 'text-green-700 dark:text-green-400' : 'dark:text-white'}`}>{t(('cat.' + opt.id) as Parameters<typeof t>[0])}</p>
                   </button>
                 );
               })}

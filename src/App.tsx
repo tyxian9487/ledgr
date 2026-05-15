@@ -1,6 +1,7 @@
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import { TourProvider } from './context/TourContext';
+import { LanguageProvider } from './context/LanguageContext';
 import TourOverlay from './components/TourOverlay';
 import ErrorBoundary from './components/ErrorBoundary';
 import BottomNav from './components/BottomNav';
@@ -74,9 +75,11 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AppProvider>
-        <TourProvider>
-          <AppRoutes />
-        </TourProvider>
+        <LanguageProvider>
+          <TourProvider>
+            <AppRoutes />
+          </TourProvider>
+        </LanguageProvider>
       </AppProvider>
     </ErrorBoundary>
   );

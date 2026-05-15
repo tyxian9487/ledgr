@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Activity, ChevronDown, PiggyBank } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
+import { useTranslation } from '../../context/LanguageContext';
 import { iconMap } from './CategoryIcon';
 import StatusCelebration from '../StatusCelebration';
 
@@ -34,6 +35,7 @@ function getMonthlyCustomProgress(savedAmount: number, targetAmount: number, dur
 export default function GoalTrackerCard({ year, month }: Props) {
   const navigate = useNavigate();
   const { budget, getMonthTransactions, formatCurrency } = useApp();
+  const { t } = useTranslation();
   const [currentIdx, setCurrentIdx] = useState(0);
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebratedGoals, setCelebratedGoals] = useState<Set<string>>(new Set());
@@ -50,7 +52,7 @@ export default function GoalTrackerCard({ year, month }: Props) {
     const goalAmount = savingsGoal.amount || 0;
     const monthName = new Date(year, month).toLocaleDateString('en-US', { month: 'long' });
     allGoals.push({
-      id: 'savings', title: 'Monthly Savings', subtitle: monthName,
+      id: 'savings', title: t('gtc.monthly'), subtitle: monthName,
       iconKey: 'PiggyBank', color: '#22c55e',
       actualAmount, goalAmount,
       progress: goalAmount > 0 ? Math.min((actualAmount / goalAmount) * 100, 100) : 0,
@@ -64,7 +66,7 @@ export default function GoalTrackerCard({ year, month }: Props) {
     );
     allGoals.push({
       id: goal.id, title: goal.name,
-      subtitle: `Month ${currentMonthIdx + 1} of ${durationMonths}`,
+      subtitle: t('gtc.month_of', { x: currentMonthIdx + 1, y: durationMonths }),
       iconKey: goal.icon, color: goal.color,
       actualAmount: monthSaved, goalAmount: monthlyTarget,
       progress: monthlyTarget > 0 ? Math.min((monthSaved / monthlyTarget) * 100, 100) : 0,
@@ -177,7 +179,7 @@ export default function GoalTrackerCard({ year, month }: Props) {
             {goal.isCustom && (
               <button type="button" onClick={() => navigate(`/goals/${goal.id}`)}
                 className="mt-1.5 text-[10px] font-semibold" style={{ color: goal.color }}>
-                See all months →
+                {t('gtc.see_all')}
               </button>
             )}
           </div>

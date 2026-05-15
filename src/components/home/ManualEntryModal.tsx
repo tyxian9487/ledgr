@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, ChevronDown, RefreshCw, Calendar, ImageIcon, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useTranslation } from '../../context/LanguageContext';
 import { TransactionType, AutoDebitPeriod, CustomCategory } from '../../types';
 import { playCoinSound } from '../../utils/sounds';
 import { QuickAddCategorySheet } from '../CategoryManagerSheet';
@@ -59,6 +60,7 @@ function todayString() {
 
 export default function ManualEntryModal({ onClose, transactionId, prefill }: Props) {
   const { addTransaction, updateTransaction, getCurrencySymbol, expenseCategories, incomeCategories, budget, updateCustomGoal } = useApp();
+  const { t } = useTranslation();
 
   const [showAddTxHint, setShowAddTxHint] = useState(() => !localStorage.getItem('ledgr_addtx_hint_seen'));
 
@@ -135,7 +137,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
               <div className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
             </div>
             <div className="flex items-center justify-between px-5 py-3">
-              <h2 className="text-lg font-bold dark:text-white">{transactionId ? 'Edit Record' : 'New Record'}</h2>
+              <h2 className="text-lg font-bold dark:text-white">{transactionId ? t('tx.edit') : t('tx.new')}</h2>
               <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                 <X size={16} className="text-gray-500 dark:text-gray-400" />
               </button>
@@ -150,9 +152,9 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
               <div className="mt-3 mb-1 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-900/40 rounded-2xl p-3 flex gap-3 items-start">
                 <span className="text-lg flex-shrink-0">💡</span>
                 <div className="flex-1">
-                  <p className="text-xs font-bold text-green-800 dark:text-green-300 mb-0.5">Quick tip</p>
+                  <p className="text-xs font-bold text-green-800 dark:text-green-300 mb-0.5">{t('tx.quick_tip')}</p>
                   <p className="text-[11px] text-green-700 dark:text-green-400 leading-relaxed">
-                    Choose a <strong>category</strong> to keep your transactions organised. Enable <strong>Auto Debit</strong> for recurring bills like rent or subscriptions!
+                    {t('tx.tip_body')}
                   </p>
                 </div>
                 <button

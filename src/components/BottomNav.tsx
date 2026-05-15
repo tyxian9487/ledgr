@@ -1,22 +1,24 @@
 import { Home, Camera, User, LineChart, Target } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-
-const NAV_ITEMS = [
-  { label: 'Home', icon: Home, path: '/', tourId: 'nav-home' },
-  { label: 'Trends', icon: LineChart, path: '/trends', tourId: 'nav-trends' },
-];
-
-const RIGHT_ITEMS = [
-  { label: 'Budgets', icon: Target, path: '/budget', tourId: 'nav-budget' },
-  { label: 'Profile', icon: User, path: '/profile', tourId: 'nav-profile' },
-];
+import { useTranslation } from '../context/LanguageContext';
 
 export default function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const active = location.pathname;
   const { budget } = useApp();
+  const { t } = useTranslation();
+
+  const NAV_ITEMS = [
+    { label: t('nav.home'), icon: Home, path: '/', tourId: 'nav-home' },
+    { label: t('nav.trends'), icon: LineChart, path: '/trends', tourId: 'nav-trends' },
+  ];
+
+  const RIGHT_ITEMS = [
+    { label: t('nav.budget'), icon: Target, path: '/budget', tourId: 'nav-budget' },
+    { label: t('nav.profile'), icon: User, path: '/profile', tourId: 'nav-profile' },
+  ];
 
   const activeGoalCount = (budget.savingsGoal?.enabled ? 1 : 0) + (budget.customGoals?.length ?? 0);
 
@@ -62,7 +64,7 @@ export default function BottomNav() {
           <div className="w-14 h-14 rounded-full bg-green-600 shadow-lg shadow-green-600/40 flex items-center justify-center">
             <Camera size={26} className="text-white" strokeWidth={2} />
           </div>
-          <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 mt-0.5">Capture</span>
+          <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 mt-0.5">{t('nav.capture')}</span>
         </button>
 
         {RIGHT_ITEMS.map(item => <NavBtn key={item.path} {...item} />)}

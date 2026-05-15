@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, Trash2, X, Receipt, Edit2, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useTranslation } from '../../context/LanguageContext';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, Transaction } from '../../types';
 import CategoryIcon from './CategoryIcon';
 import ManualEntryModal from './ManualEntryModal';
@@ -22,15 +23,15 @@ function formatDate(iso: string) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function formatDayLabel(dateStr: string): string {
+function formatDayLabel(dateStr: string, todayStr: string, yesterdayStr: string): string {
   const d = new Date(dateStr + 'T12:00:00');
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
 
   const toStr = (dt: Date) => dt.toISOString().slice(0, 10);
-  if (dateStr === toStr(today)) return 'Today';
-  if (dateStr === toStr(yesterday)) return 'Yesterday';
+  if (dateStr === toStr(today)) return todayStr;
+  if (dateStr === toStr(yesterday)) return yesterdayStr;
 
   const diffMs = today.getTime() - d.getTime();
   const diffDays = Math.floor(diffMs / 86400000);
@@ -50,6 +51,7 @@ function CalendarOverlay({
   onClose: () => void;
 }) {
   const { expenseCategories, incomeCategories, stopAutoDebit, restartAutoDebit } = useApp();
+  const { t } = useTranslation();
   const allCategories = [...expenseCategories, ...incomeCategories];
 
   const [calYear, setCalYear] = useState(year);
@@ -185,7 +187,7 @@ function CalendarOverlay({
           <p className="text-[10px] text-gray-400">Low → High spend</p>
           <div className="flex items-center gap-1">
             <div className="w-4 h-4 rounded-md" style={{ background: 'rgba(34,197,94,0.18)' }} />
-            <p className="text-[10px] text-gray-400">Income</p>
+            <p className="text-[10px] text-gray-400">{t('common.income')}</p>
           </div>
           <button type="button" onClick={onClose} className="ml-auto w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
             <X size={13} className="text-gray-500" />
@@ -244,7 +246,7 @@ function CalendarOverlay({
                                       {tx.description || cat?.label || catId}
                                     </p>
                                     <span className={`inline-block mt-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isIncome ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-red-100 dark:bg-red-900/30 text-red-500'}`}>
-                                      {isIncome ? 'Income' : 'Expense'}
+                                      {isIncome ? t('common.income') : t('common.expense')}
                                     </span>
                                   </div>
                                   <span className={`text-xs font-bold flex-shrink-0 ${isIncome ? 'text-green-600' : 'text-gray-700 dark:text-gray-200'}`}>
@@ -253,7 +255,7 @@ function CalendarOverlay({
                                 </div>
                                 {tx.isAutoDebit && (
                                   <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-gray-100 dark:border-gray-700">
-                                    <span className="text-[10px] text-gray-400 font-medium">Enable auto debit</span>
+                                    <span className="text-[10px] text-gray-400 font-medium">{t('tx.auto_debit')}</span>
                                     <button
                                       type="button"
                                       onClick={() => autoEnabled ? stopAutoDebit(tx.id) : restartAutoDebit(baseId)}
@@ -285,6 +287,7 @@ function CalendarOverlay({
 // ─── Main component ──────────────────────────────────────────────────────────
 export default function Categories({ year, month, filterFn, view = 'category', showCalendar = false, onCloseCalendar }: Props) {
   const { getMonthTransactions, removeTransaction, formatCurrency, expenseCategories, incomeCategories, transactions } = useApp();
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
@@ -307,7 +310,7 @@ export default function Categories({ year, month, filterFn, view = 'category', s
     if (rows.length === 0) {
       return (
         <div className="mx-4 py-8 text-center text-gray-400 dark:text-gray-600 text-sm">
-          No transactions this month
+          {t('misc.no_tx_month')}
         </div>
       );
     }
@@ -381,7 +384,7 @@ export default function Categories({ year, month, filterFn, view = 'category', s
   if (dateRows.length === 0) {
     return (
       <div className="mx-4 py-8 text-center text-gray-400 dark:text-gray-600 text-sm">
-        No transactions this month
+        {t('misc.no_tx_month')}
       </div>
     );
   }
@@ -409,9 +412,9 @@ export default function Categories({ year, month, filterFn, view = 'category', s
                 </div>
 
                 <div className="flex-1 text-left">
-                  <p className="text-sm font-semibold dark:text-white">{formatDayLabel(dateStr)}</p>
+                  <p className="text-sm font-semibold dark:text-white">{formatDayLabel(dateStr, t('day.today'), t('day.yesterday'))}</p>
                   <p className="text-[11px] text-gray-400">
-                    {dayTxs.length} transaction{dayTxs.length !== 1 ? 's' : ''}
+                    {dayTxs.length} {t('misc.transactions', { s: dayTxs.length !== 1 ? 's' : '' })}
                   </p>
                 </div>
 
@@ -525,12 +528,13 @@ function TxRow({
   viewMonth?: number;
 }) {
   const { stopAutoDebit, endAutoDebitAt, budget } = useApp();
+  const { t } = useTranslation();
   const [showAutoAction, setShowAutoAction] = useState(false);
   const cat = allCategories.find(c => c.id === tx.category);
 
   const linkedGoalName = (tx.category === 'savings' && tx.linkedGoalId)
     ? tx.linkedGoalId === '__monthly__'
-      ? 'Monthly Savings'
+      ? t('tx.monthly_savings_goal')
       : (budget.customGoals ?? []).find(g => g.id === tx.linkedGoalId)?.name ?? null
     : null;
 
@@ -575,7 +579,7 @@ function TxRow({
             {tx.receiptImage && (
               <div className="flex items-center gap-0.5">
                 <Receipt size={9} className="text-green-500" />
-                <span className="text-[9px] text-green-500 font-medium">receipt</span>
+                <span className="text-[9px] text-green-500 font-medium">{t('misc.receipt')}</span>
               </div>
             )}
             {tx.isAutoDebit && (
@@ -586,7 +590,7 @@ function TxRow({
               >
                 <RefreshCw size={9} className={isGenerated ? 'text-purple-400' : 'text-blue-500'} />
                 <span className={`text-[9px] font-medium ${isGenerated ? 'text-purple-400' : 'text-blue-500'}`}>
-                  {isGenerated ? (showAutoAction_trigger ? 'tap to manage' : 'auto') : (tx.autoDebitPeriod ?? 'recurring')}
+                  {isGenerated ? (showAutoAction_trigger ? t('misc.tap_manage') : t('misc.auto')) : (tx.autoDebitPeriod ?? t('misc.recurring'))}
                 </span>
               </button>
             )}

@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronDown, Trophy, Share2 } from 'lucide-react';
+import { useTranslation } from '../context/LanguageContext';
 
 function rrPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
@@ -22,16 +23,17 @@ function streakEmoji(n: number) {
   if (n >= 1)  return '🔥';
   return '❄️';
 }
-function streakLabel(n: number) {
-  if (n >= 12) return 'Legendary';
-  if (n >= 6)  return 'On Fire';
-  if (n >= 3)  return 'Hot Streak';
-  if (n >= 1)  return 'Going!';
-  return 'Start now';
+function streakLabelKey(n: number): 'ach.legendary' | 'ach.on_fire' | 'ach.hot_streak' | 'ach.going' | 'ach.start_now' {
+  if (n >= 12) return 'ach.legendary';
+  if (n >= 6)  return 'ach.on_fire';
+  if (n >= 3)  return 'ach.hot_streak';
+  if (n >= 1)  return 'ach.going';
+  return 'ach.start_now';
 }
 
 export default function AchievementsPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { transactions, budget } = useApp();
   const [expandedTip, setExpandedTip] = useState<number | null>(null);
   const [currentBadge, setCurrentBadge] = useState<(BadgeDef & { unlocked: boolean }) | null>(null);
@@ -87,8 +89,8 @@ export default function AchievementsPage() {
   }
 
   const scoreColor = score >= 80 ? '#22c55e' : score >= 60 ? '#eab308' : '#ef4444';
-  const scoreLabel = score >= 80 ? 'Excellent' : score >= 60 ? 'Fair' : 'Critical';
-  const nextLabel  = score >= 80 ? 'keep it up' : score >= 60 ? 'Excellent' : 'Fair';
+  const scoreLabel = score >= 80 ? t('ach.excellent') : score >= 60 ? t('ach.fair') : t('ach.critical');
+  const nextLabel  = score >= 80 ? t('ach.excellent') : score >= 60 ? t('ach.excellent') : t('ach.fair');
 
   const tips = tipsForScore(score);
   const [sharing, setSharing] = useState(false);
@@ -112,7 +114,7 @@ export default function AchievementsPage() {
       ctx.fillStyle = 'rgba(134,239,172,0.7)';
       ctx.font = 'bold 11px -apple-system, sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText('BUDGET STREAK', PAD, 34);
+      ctx.fillText(t('ach.streak').toUpperCase(), PAD, 34);
 
       // Big streak number
       ctx.font = 'bold 72px -apple-system, sans-serif';
@@ -125,21 +127,22 @@ export default function AchievementsPage() {
       // "months" suffix
       ctx.font = '20px -apple-system, sans-serif';
       ctx.fillStyle = 'rgba(187,247,208,0.8)';
-      ctx.fillText('month' + (currentStreak !== 1 ? 's' : ''), PAD + numW + 10, 97);
+      ctx.fillText(currentStreak !== 1 ? t('ach.months') : t('ach.month'), PAD + numW + 10, 97);
 
       // Description
       ctx.font = '13px -apple-system, sans-serif';
       ctx.fillStyle = 'rgba(209,250,229,0.6)';
-      ctx.fillText('consecutive months spending less than income', PAD, 134);
+      ctx.fillText(t('ach.consecutive'), PAD, 134);
 
       // Best streak
       ctx.font = '13px -apple-system, sans-serif';
       ctx.fillStyle = 'rgba(209,250,229,0.7)';
-      ctx.fillText('Best: ', PAD, 160);
-      const bestLabel = `${bestStreak} month${bestStreak !== 1 ? 's' : ''}`;
+      const bestPrefix = t('ach.best') + ': ';
+      ctx.fillText(bestPrefix, PAD, 160);
+      const bestLabel = `${bestStreak} ${bestStreak !== 1 ? t('ach.months') : t('ach.month')}`;
       ctx.font = 'bold 13px -apple-system, sans-serif';
       ctx.fillStyle = 'white';
-      ctx.fillText(bestLabel, PAD + ctx.measureText('Best: ').width, 160);
+      ctx.fillText(bestLabel, PAD + ctx.measureText(bestPrefix).width, 160);
 
       // 12-dot progress bar
       const gap = 6;
@@ -153,7 +156,7 @@ export default function AchievementsPage() {
       ctx.fillStyle = 'rgba(187,247,208,0.4)';
       ctx.font = '11px -apple-system, sans-serif';
       ctx.textAlign = 'right';
-      ctx.fillText('12-month track', W - PAD, 210);
+      ctx.fillText(t('ach.track'), W - PAD, 210);
 
       // Footer
       const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -192,8 +195,8 @@ export default function AchievementsPage() {
           <ChevronLeft size={20} className="text-gray-700 dark:text-gray-300" />
         </button>
         <div>
-          <h1 className="text-xl font-bold dark:text-white">Achievements</h1>
-          <p className="text-xs text-gray-400 mt-0.5">{unlockedCount} of {badges.length} badges earned</p>
+          <h1 className="text-xl font-bold dark:text-white">{t('ach.title')}</h1>
+          <p className="text-xs text-gray-400 mt-0.5">{t('ach.earned', { n: unlockedCount, total: badges.length })}</p>
         </div>
       </div>
 
@@ -205,7 +208,7 @@ export default function AchievementsPage() {
         <div className="p-5">
           <div className="flex items-center justify-between mb-3">
             <p className="text-green-300/70 text-[11px] font-bold uppercase tracking-widest">
-              Budget Streak
+              {t('ach.streak')}
             </p>
             <button
               type="button"
@@ -227,21 +230,21 @@ export default function AchievementsPage() {
               <div className="flex items-end gap-2">
                 <span className="text-white font-black text-5xl leading-none">{currentStreak}</span>
                 <span className="text-green-200/80 text-sm font-medium mb-1.5">
-                  month{currentStreak !== 1 ? 's' : ''}
+                  {currentStreak !== 1 ? t('ach.months') : t('ach.month')}
                 </span>
               </div>
-              <p className="text-green-100/60 text-xs mt-1">consecutive months spending less than income</p>
+              <p className="text-green-100/60 text-xs mt-1">{t('ach.consecutive')}</p>
               <div className="flex items-center gap-1.5 mt-3">
                 <Trophy size={12} className="text-yellow-300" />
                 <span className="text-green-100/70 text-xs">
-                  Best: <span className="text-white font-bold">{bestStreak} month{bestStreak !== 1 ? 's' : ''}</span>
+                  {t('ach.best')}: <span className="text-white font-bold">{bestStreak} {bestStreak !== 1 ? t('ach.months') : t('ach.month')}</span>
                 </span>
               </div>
             </div>
 
             <div className="w-20 h-20 rounded-2xl bg-white/10 border border-white/15 flex flex-col items-center justify-center flex-shrink-0">
               <span className="text-3xl">{streakEmoji(currentStreak)}</span>
-              <span className="text-white/60 text-[10px] mt-1 font-semibold">{streakLabel(currentStreak)}</span>
+              <span className="text-white/60 text-[10px] mt-1 font-semibold">{t(streakLabelKey(currentStreak))}</span>
             </div>
           </div>
 
@@ -254,13 +257,13 @@ export default function AchievementsPage() {
               />
             ))}
           </div>
-          <p className="text-green-200/40 text-[10px] mt-1.5 text-right">12-month track</p>
+          <p className="text-green-200/40 text-[10px] mt-1.5 text-right">{t('ach.track')}</p>
         </div>
       </div>
 
       {/* ── Badges ── */}
       <div className="mx-4 mb-4">
-        <h2 className="text-sm font-bold dark:text-white mb-3">Badges</h2>
+        <h2 className="text-sm font-bold dark:text-white mb-3">{t('ach.badges')}</h2>
         <div className="grid grid-cols-3 gap-3">
           {badges.map(badge => (
             <div
@@ -299,9 +302,11 @@ export default function AchievementsPage() {
       <div className="mx-4 mb-4">
         <div className="flex items-start justify-between mb-3">
           <div>
-            <h2 className="text-sm font-bold dark:text-white">Knowledge Base</h2>
+            <h2 className="text-sm font-bold dark:text-white">{t('ach.knowledge')}</h2>
             <p className="text-[11px] text-gray-400 mt-0.5">
-              Tips to move{score < 80 ? ` from ${scoreLabel} to ${nextLabel}` : ' and stay at Excellent'}
+              {score < 80
+                ? t('ach.tips', { from: scoreLabel, to: nextLabel })
+                : t('ach.tips', { from: scoreLabel, to: t('ach.excellent') })}
             </p>
           </div>
           <div
