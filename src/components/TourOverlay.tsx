@@ -54,6 +54,13 @@ export default function TourOverlay() {
   const cardW = Math.min(300, vw - 32);
   const cardLeft = Math.max(16, (vw - cardW) / 2);
 
+  // If spotlight is in the bottom 45% of the screen, float the card near the top
+  // so it doesn't cover bottom nav or the highlighted element.
+  const cardAtTop = rect ? rect.top > vh * 0.55 : false;
+  const cardPos = cardAtTop
+    ? { top: 80, bottom: 'auto' as const }
+    : { bottom: 24, top: 'auto' as const };
+
   // Spotlight geometry
   const sl = rect ? rect.left - PAD : 0;
   const st = rect ? rect.top - PAD : 0;
@@ -83,9 +90,9 @@ export default function TourOverlay() {
         <div onClick={skipTour} style={{ position: 'fixed', inset: 0, background: OVL, zIndex: 99990 }} />
       )}
 
-      {/* Tour card */}
+      {/* Tour card — floats top or bottom depending on where the spotlight is */}
       <div
-        style={{ position: 'fixed', bottom: 24, left: cardLeft, width: cardW, zIndex: 99999, pointerEvents: 'all' }}
+        style={{ position: 'fixed', ...cardPos, left: cardLeft, width: cardW, zIndex: 99999, pointerEvents: 'all' }}
         onClick={e => e.stopPropagation()}
       >
         <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 -4px 24px rgba(0,0,0,0.22), 0 8px 32px rgba(0,0,0,0.15)', border: '1px solid rgba(0,0,0,0.07)' }}>
