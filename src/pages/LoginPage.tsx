@@ -58,10 +58,13 @@ export default function LoginPage() {
       <div className="flex-1 min-h-0 flex flex-col items-center justify-center px-8 overflow-hidden py-6 gap-5">
         {/* Logo + wordmark */}
         <div className="flex flex-col items-center gap-1.5">
-          <div className="w-16 h-16 rounded-[22px] bg-white/15 backdrop-blur-sm border border-white/25 flex items-center justify-center shadow-2xl">
-            <span className="text-white font-black text-3xl tracking-tighter">l</span>
-          </div>
-          <h1 className="text-white font-black text-4xl tracking-tight mt-0.5">Kachingo</h1>
+          <img
+            src="/mascot.png"
+            alt="Kachingo mascot"
+            className="w-36 h-36 object-contain drop-shadow-2xl select-none"
+            draggable={false}
+          />
+          <h1 className="text-white font-black text-4xl tracking-tight mt-1">Kachingo</h1>
           <p className="text-green-100/75 text-sm font-medium">{t('login.tagline')}</p>
         </div>
 
