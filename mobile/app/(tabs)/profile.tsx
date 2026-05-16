@@ -8,7 +8,7 @@ import {
   Modal,
   Alert,
   TextInput,
-  Pressable,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -27,11 +27,15 @@ import {
   X,
   Tag,
   Globe,
-  Bell,
-  Trophy,
+  Star,
+  RotateCcw,
+  Settings,
+  Zap,
 } from 'lucide-react-native';
+import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
+import { usePurchases, isUserCancelledError } from '../../context/PurchasesContext';
 import { CURRENCIES, LANGUAGES, EXPENSE_CATEGORIES, INCOME_CATEGORIES, CustomCategory, COLOR_OPTIONS, ICON_OPTIONS } from '../../types';
 
 // ─── Score Ring (pure RN, no SVG) ────────────────────────────────────────────
@@ -417,6 +421,162 @@ function CategoryManagerSheet({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ─── Subscription Card ────────────────────────────────────────────────────────
+function SubscriptionCard() {
+  const { isPro, isLoading, presentPaywallIfNeeded, presentCustomerCenter, restorePurchases } =
+    usePurchases();
+  const [working, setWorking] = useState(false);
+
+  async function handleUpgrade() {
+    setWorking(true);
+    try {
+      const result = await presentPaywallIfNeeded();
+      if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
+        Alert.alert('Welcome to Kachingo Pro!', 'All premium features are now unlocked.');
+      }
+    } catch (e) {
+      if (!isUserCancelledError(e)) {
+        Alert.alert('Purchase failed', 'Something went wrong. Please try again.');
+      }
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function handleManage() {
+    try {
+      await presentCustomerCenter();
+    } catch (e) {
+      console.warn('[RevenueCat] Customer Center error:', e);
+    }
+  }
+
+  async function handleRestore() {
+    setWorking(true);
+    try {
+      const hasPro = await restorePurchases();
+      Alert.alert(
+        hasPro ? 'Restored!' : 'Nothing to restore',
+        hasPro
+          ? 'Kachingo Pro has been restored.'
+          : 'No previous purchases were found for this account.',
+      );
+    } catch (e) {
+      Alert.alert('Restore failed', 'Something went wrong. Please try again.');
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <View className="mx-4 mb-4 bg-white rounded-2xl p-5 items-center shadow-sm border border-gray-50">
+        <ActivityIndicator size="small" color="#16a34a" />
+      </View>
+    );
+  }
+
+  if (isPro) {
+    return (
+      <View className="mx-4 mb-4 rounded-2xl overflow-hidden shadow-sm">
+        {/* Pro banner */}
+        <View
+          className="px-5 py-4 items-center"
+          style={{ backgroundColor: '#052e16' }}
+        >
+          <View className="flex-row items-center gap-2 mb-1">
+            <Star size={16} color="#4ade80" fill="#4ade80" />
+            <Text className="text-green-400 font-black text-sm uppercase tracking-widest">
+              Kachingo Pro
+            </Text>
+          </View>
+          <Text className="text-white/60 text-xs text-center">
+            You have access to all premium features
+          </Text>
+        </View>
+
+        {/* Actions */}
+        <View className="bg-white border-t border-gray-50">
+          <TouchableOpacity
+            onPress={handleManage}
+            className="flex-row items-center gap-3 px-5 py-3.5 border-b border-gray-50"
+            activeOpacity={0.7}
+          >
+            <View className="w-8 h-8 rounded-xl bg-green-50 items-center justify-center">
+              <Settings size={15} color="#16a34a" />
+            </View>
+            <Text className="flex-1 text-sm font-medium text-gray-900">Manage Subscription</Text>
+            <ChevronRight size={14} color="#d1d5db" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleRestore}
+            disabled={working}
+            className="flex-row items-center gap-3 px-5 py-3.5"
+            activeOpacity={0.7}
+          >
+            <View className="w-8 h-8 rounded-xl bg-gray-100 items-center justify-center">
+              <RotateCcw size={15} color="#6b7280" />
+            </View>
+            <Text className="flex-1 text-sm font-medium text-gray-900">Restore Purchases</Text>
+            {working ? <ActivityIndicator size="small" color="#6b7280" /> : <ChevronRight size={14} color="#d1d5db" />}
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View className="mx-4 mb-4 rounded-2xl overflow-hidden shadow-sm">
+      {/* Upgrade banner */}
+      <View className="bg-gradient-to-b px-5 py-5 items-center" style={{ backgroundColor: '#14532d' }}>
+        <View className="w-12 h-12 rounded-2xl bg-green-400/20 items-center justify-center mb-3">
+          <Zap size={24} color="#4ade80" />
+        </View>
+        <Text className="text-white font-black text-base mb-1">Unlock Kachingo Pro</Text>
+        <Text className="text-white/60 text-xs text-center leading-relaxed mb-4">
+          Advanced analytics, unlimited goals, AI receipt scanning & more
+        </Text>
+        <TouchableOpacity
+          onPress={handleUpgrade}
+          disabled={working}
+          className="w-full bg-green-400 rounded-xl py-3 items-center"
+          activeOpacity={0.85}
+        >
+          {working
+            ? <ActivityIndicator size="small" color="#052e16" />
+            : <Text className="text-green-950 font-black text-sm">Upgrade to Pro</Text>}
+        </TouchableOpacity>
+      </View>
+
+      {/* Pro features list */}
+      <View className="bg-white px-5 py-3 border-t border-gray-50">
+        {[
+          'Unlimited savings goals',
+          'AI-powered receipt scanning',
+          'Advanced spending trends',
+          'Priority support',
+        ].map(feat => (
+          <View key={feat} className="flex-row items-center gap-2 py-1.5">
+            <Star size={12} color="#16a34a" fill="#16a34a" />
+            <Text className="text-xs text-gray-600">{feat}</Text>
+          </View>
+        ))}
+      </View>
+
+      {/* Restore */}
+      <TouchableOpacity
+        onPress={handleRestore}
+        disabled={working}
+        className="bg-white border-t border-gray-50 px-5 py-3 flex-row items-center justify-center gap-1.5"
+        activeOpacity={0.7}
+      >
+        <RotateCcw size={12} color="#9ca3af" />
+        <Text className="text-xs text-gray-400">Restore previous purchases</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 // ─── Main Profile Screen ──────────────────────────────────────────────────────
 export default function ProfileScreen() {
   const { t } = useTranslation();
@@ -618,6 +778,12 @@ export default function ProfileScreen() {
             </View>
           </View>
         </View>
+
+        {/* Subscription */}
+        <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mx-4 mb-2">
+          Subscription
+        </Text>
+        <SubscriptionCard />
 
         {/* Settings sections */}
         <View className="mx-4 gap-3 mb-4">
