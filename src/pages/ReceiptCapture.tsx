@@ -14,20 +14,22 @@ interface ParsedReceipt {
   description: string;
 }
 
-function parseReceiptMock(imageDataUrl: string): Promise<ParsedReceipt> {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const hash = imageDataUrl.length % 5;
-      const mocks: ParsedReceipt[] = [
-        { type: 'expense', amount: 42.50, category: 'food', description: 'Restaurant meal' },
-        { type: 'expense', amount: 89.99, category: 'shopping', description: 'Retail purchase' },
-        { type: 'expense', amount: 15.00, category: 'transport', description: 'Ride service' },
-        { type: 'expense', amount: 120.00, category: 'health', description: 'Pharmacy' },
-        { type: 'expense', amount: 65.75, category: 'utilities', description: 'Service bill' },
-      ];
-      resolve(mocks[hash]);
-    }, 2000);
+async function parseReceiptWithClaude(imageDataUrl: string): Promise<ParsedReceipt> {
+  const [header, base64] = imageDataUrl.split(',');
+  const mediaType = header.split(':')[1].split(';')[0] as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
+
+  const res = await fetch('/api/scan-receipt', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ base64, mediaType }),
   });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Scan failed' }));
+    throw new Error((err as { error?: string }).error ?? 'Receipt scan failed');
+  }
+
+  return res.json() as Promise<ParsedReceipt>;
 }
 
 export default function ReceiptCapture() {
@@ -42,6 +44,7 @@ export default function ReceiptCapture() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [parsed, setParsed] = useState<ParsedReceipt | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
 
   const startCamera = useCallback(async () => {
@@ -80,10 +83,16 @@ export default function ReceiptCapture() {
     const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
     stopCamera();
     setCapturedImage(dataUrl);
+    setScanError(null);
     setStage('processing');
-    const result = await parseReceiptMock(dataUrl);
-    setParsed(result);
-    setStage('review');
+    try {
+      const result = await parseReceiptWithClaude(dataUrl);
+      setParsed(result);
+      setStage('review');
+    } catch (err) {
+      setScanError(err instanceof Error ? err.message : 'Scan failed');
+      setStage('preview');
+    }
   }, [stopCamera]);
 
   const handleGalleryUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,10 +103,16 @@ export default function ReceiptCapture() {
     reader.onload = async (ev) => {
       const dataUrl = ev.target?.result as string;
       setCapturedImage(dataUrl);
+      setScanError(null);
       setStage('processing');
-      const result = await parseReceiptMock(dataUrl);
-      setParsed(result);
-      setStage('review');
+      try {
+        const result = await parseReceiptWithClaude(dataUrl);
+        setParsed(result);
+        setStage('review');
+      } catch (err) {
+        setScanError(err instanceof Error ? err.message : 'Scan failed');
+        setStage('preview');
+      }
     };
     reader.readAsDataURL(file);
     e.target.value = '';
@@ -108,6 +123,7 @@ export default function ReceiptCapture() {
     setCapturedImage(null);
     setParsed(null);
     setCameraError(null);
+    setScanError(null);
     setStage('preview');
     setCameraActive(false);
   }, [stopCamera]);
@@ -163,6 +179,11 @@ export default function ReceiptCapture() {
             {cameraError && (
               <div className="bg-red-500/20 border border-red-500/30 rounded-2xl px-4 py-3 w-full">
                 <p className="text-red-300 text-xs text-center">{cameraError}</p>
+              </div>
+            )}
+            {scanError && (
+              <div className="bg-red-500/20 border border-red-500/30 rounded-2xl px-4 py-3 w-full">
+                <p className="text-red-300 text-xs text-center">{scanError}</p>
               </div>
             )}
           </div>
