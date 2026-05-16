@@ -39,20 +39,20 @@ const YEARLY_MONTHLY = (YEARLY_PRICE / 12).toFixed(2);
 const YEARLY_SAVE    = Math.round((1 - YEARLY_PRICE / (MONTHLY_PRICE * 12)) * 100);
 const TRIAL_DAYS     = 7;
 
-const FEATURES = [
-  { icon: BarChart2,  label: 'Advanced analytics & trends',    sub: 'Monthly breakdowns & category insights' },
-  { icon: Sparkles,   label: 'AI receipt capture',              sub: 'Snap a receipt — AI fills the rest' },
-  { icon: Calendar,   label: 'Auto-debit scheduling',           sub: 'Never miss a recurring bill' },
-  { icon: Zap,        label: 'Smart budget goals',              sub: 'Savings & investment targets' },
-  { icon: Download,   label: 'Export to CSV & PDF',             sub: 'Your data, your format' },
-];
-
 export default function SubscriptionPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { userProfile, updateUserProfile } = useApp();
   const { startTour } = useTour();
   const { t } = useTranslation();
+
+  const FEATURES = [
+    { icon: BarChart2, label: t('sub.feat_analytics_label'), sub: t('sub.feat_analytics_sub') },
+    { icon: Sparkles,  label: t('sub.feat_ai_label'),        sub: t('sub.feat_ai_sub') },
+    { icon: Calendar,  label: t('sub.feat_autodebit_label'), sub: t('sub.feat_autodebit_sub') },
+    { icon: Zap,       label: t('sub.feat_budget_label'),    sub: t('sub.feat_budget_sub') },
+    { icon: Download,  label: t('sub.feat_export_label'),    sub: t('sub.feat_export_sub') },
+  ];
 
   const [plan, setPlan]           = useState<'monthly' | 'yearly'>('yearly');
   const [loading, setLoading]     = useState(false);
@@ -167,11 +167,11 @@ export default function SubscriptionPage() {
             <span className="text-white font-black text-2xl tracking-tighter">l</span>
           </div>
           <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-1">
-            {isPremium ? 'You\'re on Premium' : 'Try Kachingo Premium'}
+            {isPremium ? t('sub.on_premium') : t('sub.try_premium')}
           </h1>
           {!isPremium && (
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {TRIAL_DAYS} days free · cancel anytime
+              {t('sub.trial_tagline', { n: TRIAL_DAYS })}
             </p>
           )}
         </div>
@@ -190,8 +190,8 @@ export default function SubscriptionPage() {
                     : ''
                 }`}
               >
-                <span className={`text-sm font-bold capitalize ${plan === p ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
-                  {p}
+                <span className={`text-sm font-bold ${plan === p ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
+                  {p === 'yearly' ? t('sub.plan_yearly') : t('sub.plan_monthly')}
                 </span>
                 <span className={`text-xs font-semibold ${plan === p ? 'text-green-600' : 'text-gray-300 dark:text-gray-600'}`}>
                   {p === 'monthly' ? `$${MONTHLY_PRICE}/mo` : `$${YEARLY_MONTHLY}/mo`}
@@ -202,7 +202,7 @@ export default function SubscriptionPage() {
                       ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400'
                       : 'text-gray-300 dark:text-gray-600'
                   }`}>
-                    Save {YEARLY_SAVE}%
+                    {t('sub.save_pct', { pct: YEARLY_SAVE })}
                   </span>
                 )}
               </button>
@@ -217,15 +217,15 @@ export default function SubscriptionPage() {
               <span className="text-3xl font-black text-gray-900 dark:text-white">
                 ${plan === 'monthly' ? MONTHLY_PRICE : YEARLY_MONTHLY}
               </span>
-              <span className="text-sm text-gray-400 font-medium">/month</span>
+              <span className="text-sm text-gray-400 font-medium">{t('sub.per_month')}</span>
               {plan === 'yearly' && (
                 <span className="text-xs text-gray-400 ml-1 font-medium">
-                  (${YEARLY_PRICE} billed yearly)
+                  {t('sub.billed_yearly', { price: `$${YEARLY_PRICE}` })}
                 </span>
               )}
             </div>
             <p className="text-xs text-green-700 dark:text-green-400 font-semibold mt-0.5">
-              First {TRIAL_DAYS} days free — no charge until trial ends
+              {t('sub.trial_free', { n: TRIAL_DAYS })}
             </p>
           </div>
         )}
@@ -237,8 +237,8 @@ export default function SubscriptionPage() {
               <Check size={18} className="text-white" strokeWidth={3} />
             </div>
             <div>
-              <p className="text-sm font-bold text-green-800 dark:text-green-300">All features unlocked</p>
-              <p className="text-xs text-green-600 dark:text-green-500 mt-0.5">Thank you for being a Premium member</p>
+              <p className="text-sm font-bold text-green-800 dark:text-green-300">{t('sub.unlocked')}</p>
+              <p className="text-xs text-green-600 dark:text-green-500 mt-0.5">{t('sub.premium_thanks')}</p>
             </div>
           </div>
         )}
@@ -267,15 +267,15 @@ export default function SubscriptionPage() {
           <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-3 border border-gray-100 dark:border-gray-800 flex items-center gap-2.5">
             <Shield size={14} className="text-green-600 flex-shrink-0" />
             <div>
-              <p className="text-[11px] font-bold text-gray-700 dark:text-white leading-tight">Secure payment</p>
-              <p className="text-[10px] text-gray-400 leading-tight">Powered by RevenueCat</p>
+              <p className="text-[11px] font-bold text-gray-700 dark:text-white leading-tight">{t('sub.secure_payment')}</p>
+              <p className="text-[10px] text-gray-400 leading-tight">{t('sub.powered_rc')}</p>
             </div>
           </div>
           <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-3 border border-gray-100 dark:border-gray-800 flex items-center gap-2.5">
             <RefreshCw size={14} className="text-green-600 flex-shrink-0" />
             <div>
-              <p className="text-[11px] font-bold text-gray-700 dark:text-white leading-tight">Cancel anytime</p>
-              <p className="text-[10px] text-gray-400 leading-tight">No lock-in, no hassle</p>
+              <p className="text-[11px] font-bold text-gray-700 dark:text-white leading-tight">{t('sub.cancel_anytime')}</p>
+              <p className="text-[10px] text-gray-400 leading-tight">{t('sub.no_lock')}</p>
             </div>
           </div>
         </div>
@@ -294,22 +294,21 @@ export default function SubscriptionPage() {
               {loading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  <span>Processing…</span>
+                  <span>{t('sub.processing')}</span>
                 </>
               ) : (
-                `Start ${TRIAL_DAYS}-Day Free Trial`
+                t('sub.trial_start', { n: TRIAL_DAYS })
               )}
             </button>
             <p className="text-center text-[10px] text-gray-400 mt-2 leading-relaxed">
-              No charge until trial ends. Auto-renews at{' '}
-              {plan === 'yearly' ? `$${YEARLY_PRICE}/year` : `$${MONTHLY_PRICE}/month`}.
+              {t('sub.auto_renews', { price: plan === 'yearly' ? `$${YEARLY_PRICE}/year` : `$${MONTHLY_PRICE}/month` })}
             </p>
             <button
               type="button"
               onClick={handleRestore}
               className="w-full mt-2 py-2 text-xs text-gray-400 font-medium"
             >
-              Restore Purchases
+              {t('sub.restore')}
             </button>
           </>
         ) : (
@@ -318,7 +317,7 @@ export default function SubscriptionPage() {
             onClick={handleBack}
             className="w-full py-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-base active:scale-[0.98] transition-transform"
           >
-            Back to App
+            {t('sub.back_to_app')}
           </button>
         )}
       </div>

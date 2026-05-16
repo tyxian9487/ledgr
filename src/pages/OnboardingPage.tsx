@@ -212,10 +212,10 @@ export default function OnboardingPage() {
               <input value={name}
                 onChange={e => { setName(e.target.value); setTouched(false); }}
                 onBlur={() => setTouched(true)}
-                placeholder="Enter your name"
+                placeholder={t('onboard.name_placeholder')}
                 className={`w-full bg-white dark:bg-gray-900 border-2 rounded-2xl px-4 py-4 text-sm font-medium dark:text-white outline-none transition-colors placeholder:text-gray-300 dark:placeholder:text-gray-600 ${touched && !hasName ? 'border-red-400 focus:border-red-400' : 'border-gray-100 dark:border-gray-800 focus:border-green-500'}`}
               />
-              {touched && !hasName && <p className="text-xs text-red-500 mt-1.5 ml-1">Please enter your name to continue</p>}
+              {touched && !hasName && <p className="text-xs text-red-500 mt-1.5 ml-1">{t('onboard.name_required')}</p>}
             </div>
 
             <div>
@@ -231,11 +231,11 @@ export default function OnboardingPage() {
             </div>
 
             <div className="bg-green-50 dark:bg-green-900/20 rounded-2xl p-4 border border-green-100 dark:border-green-900/30">
-              <p className="text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider mb-2">What to expect</p>
-              {['Sample data helps you explore the app', 'Replace with your real transactions anytime', 'All data stays on your device'].map(t => (
-                <div key={t} className="flex items-start gap-2 mt-1.5">
+              <p className="text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider mb-2">{t('onboard.what_expect')}</p>
+              {[t('onboard.sample_data'), t('onboard.replace_real'), t('onboard.data_stays')].map(item => (
+                <div key={item} className="flex items-start gap-2 mt-1.5">
                   <Check size={13} className="text-green-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-green-700/80 dark:text-green-400/80">{t}</p>
+                  <p className="text-xs text-green-700/80 dark:text-green-400/80">{item}</p>
                 </div>
               ))}
             </div>

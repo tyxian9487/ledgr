@@ -121,22 +121,23 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-[11px] text-gray-400 mt-5 leading-relaxed">
-          By continuing you agree to our{' '}
+          {t('login.agree')}{' '}
           <button
             type="button"
             onClick={() => setLegal('terms')}
             className="text-green-600 font-medium underline underline-offset-2"
           >
-            Terms of Service
+            {t('login.terms')}
           </button>
-          {' '}and{' '}
+          {' '}{t('login.and')}{' '}
           <button
             type="button"
             onClick={() => setLegal('privacy')}
             className="text-green-600 font-medium underline underline-offset-2"
           >
-            Privacy Policy
+            {t('login.privacy')}
           </button>
+          {t('login.agree_suffix') ? ` ${t('login.agree_suffix')}` : ''}
         </p>
       </div>
 

@@ -473,6 +473,7 @@ function AutoDebitActionSheet({
   onEndHere: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="fixed inset-0 z-[140] flex items-end justify-center bg-black/60 animate-fade-in" onClick={onCancel}>
       <div className="w-full max-w-[430px] bg-white dark:bg-gray-900 rounded-t-3xl animate-slide-up pb-10"
@@ -485,25 +486,25 @@ function AutoDebitActionSheet({
             <RefreshCw size={14} className="text-purple-400" />
             <p className="text-sm font-bold dark:text-white">{tx.description || 'Auto-debit'}</p>
           </div>
-          <p className="text-[11px] text-gray-400 mb-5">This is a future recurring transaction. Choose an action:</p>
+          <p className="text-[11px] text-gray-400 mb-5">{t('recur.future_prompt')}</p>
           <button
             type="button"
             onClick={onEndHere}
             className="w-full py-3.5 rounded-2xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 text-left px-4 mb-3"
           >
-            <p className="text-sm font-bold text-orange-600 dark:text-orange-400">End after this period</p>
-            <p className="text-[11px] text-gray-400 mt-0.5">Keep this occurrence and all past ones; cancel future ones</p>
+            <p className="text-sm font-bold text-orange-600 dark:text-orange-400">{t('recur.end_title')}</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">{t('recur.end_desc')}</p>
           </button>
           <button
             type="button"
             onClick={onStop}
             className="w-full py-3.5 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-left px-4"
           >
-            <p className="text-sm font-bold text-red-600 dark:text-red-400">Stop recurring entirely</p>
-            <p className="text-[11px] text-gray-400 mt-0.5">Remove all future occurrences of this recurring item</p>
+            <p className="text-sm font-bold text-red-600 dark:text-red-400">{t('recur.stop_title')}</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">{t('recur.stop_desc')}</p>
           </button>
           <button type="button" onClick={onCancel} className="w-full mt-3 py-3 text-sm text-gray-400 font-medium">
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       </div>
