@@ -18,7 +18,8 @@
       "bundleIdentifier": "com.kachingo.app",
       "infoPlist": {
         "NSCameraUsageDescription": "Used to scan receipts with AI",
-        "NSPhotoLibraryUsageDescription": "Used to select receipt images"
+        "NSPhotoLibraryUsageDescription": "Used to select receipt images",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
