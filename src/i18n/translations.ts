@@ -311,6 +311,11 @@ export const en = {
   'faq.close': 'Close',
 
   // Login
+  'tour.title': 'Quick tour?',
+  'tour.desc': "We'll walk you through Kachingo's key features in about 2 minutes. Skip anytime.",
+  'tour.start': 'Show me around →',
+  'tour.skip': 'Skip for now',
+
   'login.tagline': 'Your money, simplified.',
   'login.get_started': 'Get started',
   'login.sign_in_desc': 'Sign in or create your free account',
@@ -722,6 +727,7 @@ const zh: Record<TKey, string> = {
   'csv.category': '类别', 'csv.all_cats': '全部类别', 'csv.export': '导出 CSV',
   'csv.desc': '不填写日期则导出全部记录。包含：日期、类型、类别、备注、金额。',
   'faq.title': '帮助与常见问题', 'faq.subtitle': '点击问题展开', 'faq.close': '关闭',
+  'tour.title': '快速导览？', 'tour.desc': '我们将在约 2 分钟内带您了解 Kachingo 的主要功能。随时可跳过。', 'tour.start': '带我参观 →', 'tour.skip': '暂时跳过',
   'login.tagline': '让您的财务更简单。', 'login.get_started': '开始使用', 'login.sign_in_desc': '登录或注册免费账户',
   'login.google': '使用 Google 登录', 'login.apple': '使用 Apple 登录', 'login.signing_in': '登录中…',
   'login.track': '追踪每笔支出', 'login.budget_goals': '智能预算目标', 'login.watch_savings': '见证储蓄增长',
@@ -995,6 +1001,7 @@ const ja: Record<TKey, string> = {
   'csv.category': 'カテゴリ', 'csv.all_cats': '全カテゴリ', 'csv.export': 'CSV エクスポート',
   'csv.desc': '日付を空白にすると全取引をエクスポートします。含まれる項目：日付、種類、カテゴリ、メモ、金額。',
   'faq.title': 'ヘルプと FAQ', 'faq.subtitle': 'タップして展開', 'faq.close': '閉じる',
+  'tour.title': 'クイックツアー？', 'tour.desc': 'Kachingo の主な機能を約 2 分でご紹介します。いつでもスキップできます。', 'tour.start': '案内してもらう →', 'tour.skip': '後で',
   'login.tagline': 'お金の管理をシンプルに。', 'login.get_started': '始める', 'login.sign_in_desc': 'サインインまたは無料アカウントを作成',
   'login.google': 'Google で続ける', 'login.apple': 'Apple で続ける', 'login.signing_in': 'サインイン中…',
   'login.track': 'すべての支出を記録', 'login.budget_goals': 'スマートな予算目標', 'login.watch_savings': '貯蓄の成長を見守る',
@@ -1268,6 +1275,7 @@ const ko: Record<TKey, string> = {
   'csv.category': '카테고리', 'csv.all_cats': '모든 카테고리', 'csv.export': 'CSV 내보내기',
   'csv.desc': '날짜를 비워 두면 모든 거래를 내보냅니다. CSV 포함: 날짜, 유형, 카테고리, 설명, 금액.',
   'faq.title': '도움말 및 FAQ', 'faq.subtitle': '질문을 탭하여 펼치기', 'faq.close': '닫기',
+  'tour.title': '빠른 투어?', 'tour.desc': '약 2분 안에 Kachingo의 주요 기능을 안내해 드립니다. 언제든지 건너뛸 수 있습니다.', 'tour.start': '둘러보기 →', 'tour.skip': '나중에',
   'login.tagline': '돈 관리를 더 쉽게.', 'login.get_started': '시작하기', 'login.sign_in_desc': '로그인 또는 무료 계정 만들기',
   'login.google': 'Google로 계속', 'login.apple': 'Apple로 계속', 'login.signing_in': '로그인 중…',
   'login.track': '모든 지출 추적', 'login.budget_goals': '스마트 예산 목표', 'login.watch_savings': '저축 성장 확인',
@@ -1541,6 +1549,7 @@ const ms: Record<TKey, string> = {
   'csv.category': 'Kategori', 'csv.all_cats': 'Semua Kategori', 'csv.export': 'Eksport CSV',
   'csv.desc': 'Biarkan tarikh kosong untuk eksport semua transaksi. CSV termasuk: Tarikh, Jenis, Kategori, Keterangan, Jumlah.',
   'faq.title': 'Bantuan & FAQ', 'faq.subtitle': 'Ketik soalan untuk kembangkan', 'faq.close': 'Tutup',
+  'tour.title': 'Lawatan Pantas?', 'tour.desc': 'Kami akan membimbing anda melalui ciri-ciri utama Kachingo dalam masa kira-kira 2 minit. Langkau bila-bila masa.', 'tour.start': 'Tunjukkan kepada saya →', 'tour.skip': 'Langkau buat masa ini',
   'login.tagline': 'Wang anda, dipermudahkan.', 'login.get_started': 'Mulakan', 'login.sign_in_desc': 'Log masuk atau cipta akaun percuma',
   'login.google': 'Teruskan dengan Google', 'login.apple': 'Teruskan dengan Apple', 'login.signing_in': 'Log masuk…',
   'login.track': 'Jejak setiap perbelanjaan', 'login.budget_goals': 'Belanjawan dengan matlamat pintar', 'login.watch_savings': 'Saksikan simpanan berkembang',

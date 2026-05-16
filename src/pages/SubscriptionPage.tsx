@@ -3,6 +3,7 @@ import { ArrowLeft, Check, Sparkles, Shield, RefreshCw, Zap, BarChart2, Calendar
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useTour } from '../context/TourContext';
+import { useTranslation } from '../context/LanguageContext';
 
 // ── RevenueCat Web SDK ─────────────────────────────────────────────────────────
 // To enable real purchases, uncomment and fill in your credentials:
@@ -51,6 +52,7 @@ export default function SubscriptionPage() {
   const location = useLocation();
   const { userProfile, updateUserProfile } = useApp();
   const { startTour } = useTour();
+  const { t } = useTranslation();
 
   const [plan, setPlan]           = useState<'monthly' | 'yearly'>('yearly');
   const [loading, setLoading]     = useState(false);
@@ -107,17 +109,17 @@ export default function SubscriptionPage() {
   if (showTourOffer) {
     return (
       <div
-        className="flex flex-col items-center justify-center px-6"
-        style={{ height: '100dvh', background: '#f9fafb' }}
+        className="flex flex-col items-center justify-center px-6 bg-gray-50 dark:bg-gray-950"
+        style={{ height: '100dvh' }}
       >
         <div className="flex flex-col items-center gap-5 w-full max-w-[340px]">
-          <div className="w-20 h-20 rounded-3xl bg-green-100 flex items-center justify-center shadow-sm">
+          <div className="w-20 h-20 rounded-3xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center shadow-sm">
             <span className="text-5xl">🗺️</span>
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-black text-gray-900 mb-2">Quick tour?</h1>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              We'll walk you through Kachingo's key features in about 2 minutes. Skip anytime.
+            <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-2">{t('tour.title')}</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+              {t('tour.desc')}
             </p>
           </div>
           <button
@@ -125,14 +127,14 @@ export default function SubscriptionPage() {
             onClick={() => { startTour(); navigate('/', { replace: true }); }}
             className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base shadow-lg shadow-green-600/25 active:scale-[0.98] transition-all"
           >
-            Show me around →
+            {t('tour.start')}
           </button>
           <button
             type="button"
             onClick={() => navigate('/', { replace: true })}
-            className="w-full py-3 rounded-2xl bg-white border border-gray-200 text-gray-500 font-semibold text-sm"
+            className="w-full py-3 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 font-semibold text-sm"
           >
-            Skip for now
+            {t('tour.skip')}
           </button>
         </div>
       </div>
