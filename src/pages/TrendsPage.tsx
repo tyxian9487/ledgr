@@ -106,7 +106,8 @@ function CategoryModal({
   const { t } = useTranslation();
   const [period, setPeriod] = useState<Period>('monthly');
   const color = CATEGORY_COLORS[categoryId] || '#94a3b8';
-  const label = categoryId.charAt(0).toUpperCase() + categoryId.slice(1);
+  const rawKey = 'cat.' + categoryId;
+  const label = (() => { const tr = t(rawKey as any); return tr !== rawKey ? tr : categoryId.charAt(0).toUpperCase() + categoryId.slice(1); })();
   const now = new Date();
 
   const catTxs = transactions.filter(t => t.type === 'expense' && t.category === categoryId);
@@ -193,7 +194,7 @@ function CategoryModal({
         <div className="flex-shrink-0 px-3 overflow-hidden">
           {total === 0 ? (
             <div className="h-40 flex items-center justify-center">
-              <p className="text-sm text-gray-400">No data for this period</p>
+              <p className="text-sm text-gray-400">{t('trends.no_data')}</p>
             </div>
           ) : (
             <LinePath points={points} W={380} H={160} color={color} formatCurrency={formatCurrency} />
@@ -218,7 +219,7 @@ function CategoryModal({
         <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-10">
           <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider mb-2">{t('trends.recent')}</p>
           {catTxs.length === 0 ? (
-            <p className="text-sm text-gray-400 py-4 text-center">No transactions yet</p>
+            <p className="text-sm text-gray-400 py-4 text-center">{t('trends.no_txs')}</p>
           ) : (
             <div className="space-y-2">
               {[...catTxs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10).map(t => (
@@ -303,7 +304,7 @@ export default function TrendsPage() {
           {prevMonth.expenses > 0 && (
             <div className="flex items-center gap-1 mt-2 text-red-100">
               {spendDiff > 0 ? <TrendingUp size={12} /> : spendDiff < 0 ? <TrendingDown size={12} /> : <Minus size={12} />}
-              <span className="text-[11px] font-semibold">{spendDiff === 0 ? 'Same' : `${spendPct}% ${spendDiff > 0 ? 'more' : 'less'} than last month`}</span>
+              <span className="text-[11px] font-semibold">{spendDiff === 0 ? t('trends.same') : spendDiff > 0 ? t('trends.more_pct', { n: spendPct }) : t('trends.less_pct', { n: spendPct })}</span>
             </div>
           )}
         </div>
@@ -315,7 +316,7 @@ export default function TrendsPage() {
             <div className="flex items-center gap-1 mt-2 text-green-100">
               {currentMonth.income >= currentMonth.expenses ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
               <span className="text-[11px] font-semibold">
-                {currentMonth.income >= currentMonth.expenses ? 'Surplus' : 'Deficit'} {formatCurrency(Math.abs(currentMonth.income - currentMonth.expenses))}
+                {currentMonth.income >= currentMonth.expenses ? t('common.surplus') : t('common.deficit')} {formatCurrency(Math.abs(currentMonth.income - currentMonth.expenses))}
               </span>
             </div>
           )}
@@ -375,7 +376,8 @@ export default function TrendsPage() {
             {(showAllCats ? categoryTotals : categoryTotals.slice(0, 5)).map(([id, amount]) => {
               const pct = totalExpensesThisYear > 0 ? (amount / totalExpensesThisYear) * 100 : 0;
               const color = CATEGORY_COLORS[id] || '#94a3b8';
-              const catLabel = id.charAt(0).toUpperCase() + id.slice(1);
+              const ck = 'cat.' + id;
+              const catLabel = (() => { const tr = t(ck as any); return tr !== ck ? tr : id.charAt(0).toUpperCase() + id.slice(1); })();
               return (
                 <button
                   key={id}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { X, Share2 } from 'lucide-react';
 import { playRewardSound, playWarningSound } from '../utils/sounds';
+import { useTranslation } from '../context/LanguageContext';
 
 function rrPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
@@ -139,6 +140,7 @@ export default function StatusCelebration({ status, onClose }: Props) {
   const cc = CANVAS_CONFIG[status];
   const { Coin } = cfg;
   const [sharing, setSharing] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (status === 'excellent') playRewardSound();
@@ -265,15 +267,15 @@ export default function StatusCelebration({ status, onClose }: Props) {
             background: cfg.sparkleColor + '22',
           }}
         >
-          Score {cfg.scoreRange}
+          {t('status.score_pill', { range: cfg.scoreRange })}
         </div>
 
         <div className="text-center">
           <p className="text-4xl font-black tracking-tight mb-3" style={{ color: cfg.labelColor }}>
-            {cfg.label}
+            {t(('card.status_' + status) as any)}
           </p>
           <p className="text-white/70 text-sm leading-relaxed whitespace-pre-line">
-            {cfg.message}
+            {t(('status.' + status + '.msg') as any)}
           </p>
         </div>
       </div>
@@ -300,11 +302,11 @@ export default function StatusCelebration({ status, onClose }: Props) {
           ? <div className="w-4 h-4 border border-white/40 border-t-white rounded-full animate-spin" />
           : <Share2 size={14} />
         }
-        {sharing ? 'Sharing…' : 'Share'}
+        {sharing ? t('status.sharing') : t('status.share')}
       </button>
 
       <p className="absolute bottom-8 left-0 right-0 text-center text-white/30 text-xs">
-        Tap anywhere to dismiss
+        {t('badge.tap_dismiss')}
       </p>
     </div>
   );

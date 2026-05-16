@@ -127,7 +127,7 @@ function generateSampleData(): Transaction[] {
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile>(DEFAULT_PROFILE);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false);
   const [budget, setBudget] = useState<BudgetSettings>(DEFAULT_BUDGET);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
@@ -143,7 +143,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const savedProfile = data.userProfile || DEFAULT_PROFILE;
         if (!savedProfile.language) savedProfile.language = detectDeviceLanguage();
         setUserProfile(savedProfile);
-        setDarkMode(data.darkMode || false);
+        setDarkMode(data.darkMode !== undefined ? data.darkMode : (window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false));
         setBudget(data.budget || DEFAULT_BUDGET);
         setIsAuthenticated(data.isAuthenticated ?? true);
         setHasCompletedOnboarding(data.hasCompletedOnboarding ?? true);
@@ -164,6 +164,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
+
+  useEffect(() => {
+    const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
+    if (!mq) return;
+    const handler = (e: MediaQueryListEvent) => setDarkMode(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({

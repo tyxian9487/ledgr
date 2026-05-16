@@ -599,6 +599,19 @@ export const en = {
   'tag.gift': 'Birthday gift|Holiday gift|Cash gift|Gift card',
   'tag.other_income': 'Bonus|Refund|Cashback|Side hustle|Rental income|Dividend',
   'gform.fmt_1month': '1 month', 'gform.fmt_nmonths': '{n} months', 'gform.fmt_1year': '1 year', 'gform.fmt_nyears': '{n} years', 'gform.fmt_ym': '{y}y {mo}m',
+  'trends.no_data': 'No data for this period',
+  'trends.no_txs': 'No transactions yet',
+  'trends.same': 'Same as last month',
+  'trends.more_pct': '{n}% more than last month',
+  'trends.less_pct': '{n}% less than last month',
+  'common.surplus': 'Surplus',
+  'common.deficit': 'Deficit',
+  'status.score_pill': 'Score {range}',
+  'status.excellent.msg': "Your finances are in great shape!\nYou're spending well under your income.",
+  'status.sustained.msg': "You're managing your finances well.\nA little more saving will get you to Excellent!",
+  'status.critical.msg': "Your expenses exceed your income.\nCheck the Knowledge Base for tips to improve.",
+  'status.share': 'Share',
+  'status.sharing': 'Sharing…',
 } as const;
 
 export type TKey = keyof typeof en;
@@ -858,6 +871,19 @@ const zh: Record<TKey, string> = {
   'tag.gift': '生日礼物|节日礼物|现金礼物|礼品卡',
   'tag.other_income': '奖金|退款|返现|副业|租金收入|股息',
   'gform.fmt_1month': '1 个月', 'gform.fmt_nmonths': '{n} 个月', 'gform.fmt_1year': '1 年', 'gform.fmt_nyears': '{n} 年', 'gform.fmt_ym': '{y}年{mo}个月',
+  'trends.no_data': '本时段暂无数据',
+  'trends.no_txs': '暂无交易记录',
+  'trends.same': '与上月相同',
+  'trends.more_pct': '比上月多 {n}%',
+  'trends.less_pct': '比上月少 {n}%',
+  'common.surplus': '盈余',
+  'common.deficit': '赤字',
+  'status.score_pill': '评分 {range}',
+  'status.excellent.msg': "您的财务状况良好！\n您的支出远低于收入。",
+  'status.sustained.msg': '您的财务管理不错。\n再多一些储蓄就能达到"优秀"！',
+  'status.critical.msg': "您的支出超出了收入。\n请查看知识库获取改善建议。",
+  'status.share': '分享',
+  'status.sharing': '分享中…',
 };
 
 // ─── Japanese ────────────────────────────────────────────────────────────────
@@ -1115,6 +1141,19 @@ const ja: Record<TKey, string> = {
   'tag.gift': '誕生日プレゼント|季節のプレゼント|現金プレゼント|ギフトカード',
   'tag.other_income': 'ボーナス|返金|キャッシュバック|副業|家賃収入|配当',
   'gform.fmt_1month': '1 ヶ月', 'gform.fmt_nmonths': '{n} ヶ月', 'gform.fmt_1year': '1 年', 'gform.fmt_nyears': '{n} 年', 'gform.fmt_ym': '{y}年{mo}ヶ月',
+  'trends.no_data': 'この期間のデータはありません',
+  'trends.no_txs': '取引がありません',
+  'trends.same': '先月と同じ',
+  'trends.more_pct': '先月より {n}% 多い',
+  'trends.less_pct': '先月より {n}% 少ない',
+  'common.surplus': '黒字',
+  'common.deficit': '赤字',
+  'status.score_pill': 'スコア {range}',
+  'status.excellent.msg': "財務状況は良好です！\n支出が収入より大幅に低く抑えられています。",
+  'status.sustained.msg': "財務管理はうまくできています。\nもう少し貯蓄を増やせば「優秀」に到達できます！",
+  'status.critical.msg': "支出が収入を上回っています。\nナレッジベースで改善のヒントを確認してください。",
+  'status.share': '共有',
+  'status.sharing': '共有中…',
 };
 
 // ─── Korean ──────────────────────────────────────────────────────────────────
@@ -1372,6 +1411,19 @@ const ko: Record<TKey, string> = {
   'tag.gift': '생일 선물|명절 선물|현금 선물|상품권',
   'tag.other_income': '보너스|환불|캐시백|부업|임대 수입|배당금',
   'gform.fmt_1month': '1개월', 'gform.fmt_nmonths': '{n}개월', 'gform.fmt_1year': '1년', 'gform.fmt_nyears': '{n}년', 'gform.fmt_ym': '{y}년 {mo}개월',
+  'trends.no_data': '이 기간의 데이터가 없습니다',
+  'trends.no_txs': '아직 거래 내역이 없습니다',
+  'trends.same': '지난달과 동일',
+  'trends.more_pct': '지난달보다 {n}% 더 많음',
+  'trends.less_pct': '지난달보다 {n}% 더 적음',
+  'common.surplus': '흑자',
+  'common.deficit': '적자',
+  'status.score_pill': '점수 {range}',
+  'status.excellent.msg': "재정 상태가 훌륭합니다!\n지출이 수입보다 훨씬 적습니다.",
+  'status.sustained.msg': "재정 관리를 잘 하고 있습니다.\n조금 더 저축하면 '우수'에 도달할 수 있습니다!",
+  'status.critical.msg': "지출이 수입을 초과하고 있습니다.\n지식 베이스에서 개선 팁을 확인하세요.",
+  'status.share': '공유',
+  'status.sharing': '공유 중…',
 };
 
 // ─── Malay ───────────────────────────────────────────────────────────────────
@@ -1629,6 +1681,19 @@ const ms: Record<TKey, string> = {
   'tag.gift': 'Hadiah hari lahir|Hadiah perayaan|Hadiah tunai|Kad hadiah',
   'tag.other_income': 'Bonus|Bayaran balik|Cashback|Kerja sampingan|Pendapatan sewa|Dividen',
   'gform.fmt_1month': '1 bulan', 'gform.fmt_nmonths': '{n} bulan', 'gform.fmt_1year': '1 tahun', 'gform.fmt_nyears': '{n} tahun', 'gform.fmt_ym': '{y}t {mo}b',
+  'trends.no_data': 'Tiada data untuk tempoh ini',
+  'trends.no_txs': 'Tiada transaksi lagi',
+  'trends.same': 'Sama seperti bulan lalu',
+  'trends.more_pct': '{n}% lebih daripada bulan lalu',
+  'trends.less_pct': '{n}% kurang daripada bulan lalu',
+  'common.surplus': 'Lebihan',
+  'common.deficit': 'Defisit',
+  'status.score_pill': 'Skor {range}',
+  'status.excellent.msg': "Kewangan anda dalam keadaan baik!\nPerbelanjaan anda jauh lebih rendah daripada pendapatan.",
+  'status.sustained.msg': "Anda menguruskan kewangan dengan baik.\nSimpan sedikit lagi untuk mencapai Cemerlang!",
+  'status.critical.msg': "Perbelanjaan anda melebihi pendapatan.\nSemak Pangkalan Pengetahuan untuk tips penambahbaikan.",
+  'status.share': 'Kongsi',
+  'status.sharing': 'Mengongsi…',
 };
 
 export const translations: Record<string, Record<TKey, string>> = { en, zh, ja, ko, ms };
