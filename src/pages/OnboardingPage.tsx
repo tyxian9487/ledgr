@@ -147,7 +147,7 @@ export default function OnboardingPage() {
             {t('onboard.welcome', { name: name.trim() })}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 text-center leading-relaxed">
-            To get to know you better, we'd like to ask a few quick questions about your finances.
+            {t('onboard.intro')}
           </p>
           <button
             type="button"

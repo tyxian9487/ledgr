@@ -512,17 +512,17 @@ tr:nth-child(even){background:#f9fafb}tr:nth-child(odd){background:white}
                 <div key={i} className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${i < currentStreak ? 'bg-green-300' : 'bg-white/15'}`} />
               ))}
             </div>
-            <p className="text-green-200/40 text-[10px] mt-1.5 text-right">12-month track</p>
+            <p className="text-green-200/40 text-[10px] mt-1.5 text-right">{t('profile.track_12mo')}</p>
           </div>
         </div>
 
         {/* Badges summary */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm border border-gray-50 dark:border-gray-800">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-bold dark:text-white">{unlockedBadges} / {BADGES.length} Badges</p>
+            <p className="text-sm font-bold dark:text-white">{t('profile.n_badges', { n: unlockedBadges, total: BADGES.length })}</p>
             <button type="button" onClick={() => navigate('/achievements')}
               className="text-xs text-green-600 dark:text-green-400 font-semibold flex items-center gap-0.5">
-              View all <ChevronRight size={11} />
+              {t('profile.view_all')} <ChevronRight size={11} />
             </button>
           </div>
           <div className="grid grid-cols-6 gap-2">

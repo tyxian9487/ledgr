@@ -127,14 +127,14 @@ export default function SubscriptionPage() {
             onClick={() => { startTour(); navigate('/', { replace: true }); }}
             className="w-full py-4 rounded-2xl bg-green-600 text-white font-bold text-base shadow-lg shadow-green-600/25 active:scale-[0.98] transition-all"
           >
-            {t('tour.start')}
+            {t('tour.offer_start')}
           </button>
           <button
             type="button"
             onClick={() => navigate('/', { replace: true })}
             className="w-full py-3 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 font-semibold text-sm"
           >
-            {t('tour.skip')}
+            {t('tour.offer_skip')}
           </button>
         </div>
       </div>
