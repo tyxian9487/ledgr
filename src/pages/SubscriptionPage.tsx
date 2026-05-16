@@ -113,9 +113,12 @@ export default function SubscriptionPage() {
         style={{ height: '100dvh' }}
       >
         <div className="flex flex-col items-center gap-5 w-full max-w-[340px]">
-          <div className="w-20 h-20 rounded-3xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center shadow-sm">
-            <span className="text-5xl">🗺️</span>
-          </div>
+          <img
+            src="/mascot-tour.png"
+            alt="Kachingo tour mascot"
+            className="w-40 h-40 object-contain drop-shadow-xl select-none"
+            draggable={false}
+          />
           <div className="text-center">
             <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-2">{t('tour.title')}</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
