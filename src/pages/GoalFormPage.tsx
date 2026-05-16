@@ -95,7 +95,7 @@ export default function GoalFormPage() {
           </label>
           <input
             type="text"
-            placeholder="e.g. New Laptop, Vacation, Emergency Fund"
+            placeholder={t('gform.name_ph')}
             value={name}
             onChange={e => setName(e.target.value)}
             className="w-full px-4 py-3 rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 text-sm font-semibold dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-600 outline-none focus:border-green-500 transition-colors"
@@ -121,7 +121,7 @@ export default function GoalFormPage() {
               <SelectedIcon size={18} style={{ color }} />
             </div>
             <span className="flex-1 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
-              {iconExpanded ? 'Tap an icon to select' : 'Tap to change icon'}
+              {iconExpanded ? t('gform.tap_select') : t('gform.tap_change')}
             </span>
             {iconExpanded
               ? <ChevronUp size={16} className="text-gray-400 flex-shrink-0" />
@@ -190,7 +190,7 @@ export default function GoalFormPage() {
             <span className="text-gray-400 font-semibold text-lg">{getCurrencySymbol()}</span>
             <input
               type="number"
-              placeholder="e.g. 2000"
+              placeholder={t('gform.amount_ph')}
               value={targetAmount}
               onChange={e => setTargetAmount(e.target.value)}
               className="flex-1 bg-transparent text-xl font-bold outline-none dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-600"
