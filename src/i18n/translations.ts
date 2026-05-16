@@ -612,6 +612,9 @@ export const en = {
   'status.critical.msg': "Your expenses exceed your income.\nCheck the Knowledge Base for tips to improve.",
   'status.share': 'Share',
   'status.sharing': 'Sharing…',
+  'home.filter_min': 'Min',
+  'home.filter_max': 'Max',
+  'budget.group_other': 'Other',
 } as const;
 
 export type TKey = keyof typeof en;
@@ -884,6 +887,9 @@ const zh: Record<TKey, string> = {
   'status.critical.msg': "您的支出超出了收入。\n请查看知识库获取改善建议。",
   'status.share': '分享',
   'status.sharing': '分享中…',
+  'home.filter_min': '最小',
+  'home.filter_max': '最大',
+  'budget.group_other': '其他',
 };
 
 // ─── Japanese ────────────────────────────────────────────────────────────────
@@ -1154,6 +1160,9 @@ const ja: Record<TKey, string> = {
   'status.critical.msg': "支出が収入を上回っています。\nナレッジベースで改善のヒントを確認してください。",
   'status.share': '共有',
   'status.sharing': '共有中…',
+  'home.filter_min': '最小',
+  'home.filter_max': '最大',
+  'budget.group_other': 'その他',
 };
 
 // ─── Korean ──────────────────────────────────────────────────────────────────
@@ -1424,6 +1433,9 @@ const ko: Record<TKey, string> = {
   'status.critical.msg': "지출이 수입을 초과하고 있습니다.\n지식 베이스에서 개선 팁을 확인하세요.",
   'status.share': '공유',
   'status.sharing': '공유 중…',
+  'home.filter_min': '최소',
+  'home.filter_max': '최대',
+  'budget.group_other': '기타',
 };
 
 // ─── Malay ───────────────────────────────────────────────────────────────────
@@ -1694,6 +1706,9 @@ const ms: Record<TKey, string> = {
   'status.critical.msg': "Perbelanjaan anda melebihi pendapatan.\nSemak Pangkalan Pengetahuan untuk tips penambahbaikan.",
   'status.share': 'Kongsi',
   'status.sharing': 'Mengongsi…',
+  'home.filter_min': 'Min',
+  'home.filter_max': 'Maks',
+  'budget.group_other': 'Lain-lain',
 };
 
 export const translations: Record<string, Record<TKey, string>> = { en, zh, ja, ko, ms };

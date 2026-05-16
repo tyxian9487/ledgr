@@ -279,10 +279,10 @@ export default function Home() {
           <div>
             <p className="text-[11px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider mb-2">{t('home.amount_range')}</p>
             <div className="grid grid-cols-2 gap-2">
-              <input type="number" placeholder="Min $" value={filterMin} onChange={e => setFilterMin(e.target.value)}
+              <input type="number" placeholder={t('home.filter_min')} value={filterMin} onChange={e => setFilterMin(e.target.value)}
                 className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm outline-none dark:text-white placeholder:text-gray-400 border border-gray-100 dark:border-gray-700"
                 inputMode="decimal" />
-              <input type="number" placeholder="Max $" value={filterMax} onChange={e => setFilterMax(e.target.value)}
+              <input type="number" placeholder={t('home.filter_max')} value={filterMax} onChange={e => setFilterMax(e.target.value)}
                 className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm outline-none dark:text-white placeholder:text-gray-400 border border-gray-100 dark:border-gray-700"
                 inputMode="decimal" />
             </div>
@@ -294,7 +294,11 @@ export default function Home() {
             <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
               className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm outline-none dark:text-white border border-gray-100 dark:border-gray-700">
               <option value="">{t('home.all_categories')}</option>
-              {ALL_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+              {ALL_CATEGORIES.map(c => {
+                const ck = 'cat.' + c.id;
+                const cl = t(ck as any);
+                return <option key={c.id} value={c.id}>{cl !== ck ? cl : c.label}</option>;
+              })}
             </select>
           </div>
 

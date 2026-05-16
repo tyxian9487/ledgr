@@ -4,6 +4,7 @@ import { playRewardSound } from '../utils/sounds';
 import { useTranslation } from '../context/LanguageContext';
 
 interface BadgeInfo {
+  id: string;
   icon: string;
   label: string;
   description: string;
@@ -55,8 +56,8 @@ export default function BadgeCelebration({ badge, remaining, onClose }: Props) {
         </div>
 
         <div className="text-center">
-          <p className="text-white font-black text-2xl mb-2">{badge.label}</p>
-          <p className="text-white/55 text-sm leading-relaxed">{badge.description}</p>
+          <p className="text-white font-black text-2xl mb-2">{t(('badge.' + badge.id + '.label') as any) || badge.label}</p>
+          <p className="text-white/55 text-sm leading-relaxed">{t(('badge.' + badge.id + '.desc') as any) || badge.description}</p>
         </div>
 
         {remaining > 0 && (

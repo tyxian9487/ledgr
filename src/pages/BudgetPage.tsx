@@ -576,7 +576,7 @@ export default function BudgetPage() {
                     return sel ? (
                       <div className="flex items-center gap-2 glass rounded-full px-3 py-1">
                         <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: sel.color }} />
-                        <span className="text-xs text-white font-medium">{sel.label}</span>
+                        <span className="text-xs text-white font-medium">{(() => { const g = BUDGET_GROUPS.find(x => x.categoryIds[0] === sel.categoryId); if (g && g.categoryIds.length > 1) return t('budget.group_other'); const k = 'cat.' + sel.categoryId; const tr = t(k as any); return tr !== k ? tr : sel.label; })()}</span>
                         <span className="text-xs text-white/80">{sel.percentage}%</span>
                       </div>
                     ) : (
@@ -616,7 +616,7 @@ export default function BudgetPage() {
                         </span>
                         <div className="flex-1 min-w-0 text-left">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium dark:text-white">{alloc.label}</span>
+                            <span className="text-sm font-medium dark:text-white">{(() => { const g = BUDGET_GROUPS[idx]; if (g && g.categoryIds.length > 1) return t('budget.group_other'); const k = 'cat.' + alloc.categoryId; const tr = t(k as any); return tr !== k ? tr : alloc.label; })()}</span>
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-bold" style={{ color: alloc.color }}>{alloc.percentage}%</span>
                               {budgetAmt > 0 && (

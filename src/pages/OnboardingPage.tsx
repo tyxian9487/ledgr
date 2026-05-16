@@ -342,11 +342,11 @@ export default function OnboardingPage() {
       <div className="flex-shrink-0 px-6 pt-4" style={{ paddingBottom: 'max(32px, env(safe-area-inset-bottom, 32px))' }}>
         <button type="button" onClick={handleNext}
           className={`w-full py-4 rounded-2xl font-bold text-base transition-all ${canProceed ? 'bg-green-600 text-white active:scale-[0.98] shadow-lg shadow-green-600/30' : 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'}`}>
-          {step === TOTAL_STEPS ? 'Get Started' : 'Continue'}
+          {step === TOTAL_STEPS ? t('onboard.get_started') : t('onboard.continue')}
         </button>
-        {step === 1 && <p className="text-center text-[11px] text-gray-400 mt-3">You can update these settings anytime in Profile</p>}
+        {step === 1 && <p className="text-center text-[11px] text-gray-400 mt-3">{t('onboard.update_anytime')}</p>}
         {(step === 4 || step === 5) && spendOn.length === 0 && step === 4 && (
-          <p className="text-center text-[11px] text-gray-400 mt-2">Select at least one option</p>
+          <p className="text-center text-[11px] text-gray-400 mt-2">{t('onboard.select_one')}</p>
         )}
       </div>
 
@@ -357,7 +357,7 @@ export default function OnboardingPage() {
             style={{ maxHeight: '85vh' }}
             onClick={e => e.stopPropagation()}>
             <div className="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100 dark:border-gray-800">
-              <h2 className="text-lg font-bold dark:text-white">Select Currency</h2>
+              <h2 className="text-lg font-bold dark:text-white">{t('onboard.select_currency')}</h2>
               <button type="button" onClick={() => setShowPicker(false)} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                 <X size={16} className="text-gray-500 dark:text-gray-400" />
               </button>
@@ -365,7 +365,7 @@ export default function OnboardingPage() {
             <div className="flex-shrink-0 px-5 py-3 border-b border-gray-100 dark:border-gray-800">
               <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5">
                 <Search size={14} className="text-gray-400 flex-shrink-0" />
-                <input placeholder="Search currency…" value={search} onChange={e => setSearch(e.target.value)}
+                <input placeholder={t('onboard.search_currency')} value={search} onChange={e => setSearch(e.target.value)}
                   className="flex-1 bg-transparent text-sm outline-none dark:text-white placeholder:text-gray-400" autoFocus />
                 {search && <button type="button" onClick={() => setSearch('')}><X size={14} className="text-gray-400" /></button>}
               </div>
