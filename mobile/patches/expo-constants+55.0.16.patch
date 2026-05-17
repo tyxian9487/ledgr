@@ -1,0 +1,13 @@
+diff --git a/node_modules/expo-constants/scripts/get-app-config-android.gradle b/node_modules/expo-constants/scripts/get-app-config-android.gradle
+index 7758672..0449eb6 100644
+--- a/node_modules/expo-constants/scripts/get-app-config-android.gradle
++++ b/node_modules/expo-constants/scripts/get-app-config-android.gradle
+@@ -15,7 +15,7 @@ afterEvaluate {
+   def expoGradleExtension = gradle.extensions.findByName("expoGradle")
+   def customProjectRoot = expoGradleExtension?.projectRoot
+   def projectRoot = file("${customProjectRoot ?: rootProject.projectDir}")
+-  def assetsDir = file("$buildDir/generated/assets/expo-constants")
++  def assetsDir = file("${project.layout.buildDirectory.get().asFile}/generated/assets/expo-constants")
+ 
+   def currentCreateConfigTask = tasks.register('createExpoConfig', Exec) {
+     description = 'expo-constants: Create app.config.'
