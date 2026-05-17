@@ -6,6 +6,7 @@ import { LanguageProvider } from '../context/LanguageContext';
 import { PurchasesProvider, usePurchases } from '../context/PurchasesContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import ConsentBanner from '../components/ConsentBanner';
 
 function NavigationGuard() {
   const { isAuthenticated, hasCompletedOnboarding } = useApp();
@@ -47,6 +48,7 @@ export default function RootLayout() {
             <LanguageProvider>
               <EntitlementSyncBridge />
               <NavigationGuard />
+              <ConsentBanner />
             </LanguageProvider>
           </AppProvider>
         </PurchasesProvider>

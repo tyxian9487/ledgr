@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
 import { Transaction, UserProfile, BudgetSettings, AutoDebitPeriod, CustomCategory, CustomGoal, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../types';
+import { initMixpanel, trackEvent, identifyUser, resetAnalytics } from '../utils/analytics';
 
 function advanceDate(date: Date, period: AutoDebitPeriod): Date {
   const d = new Date(date);
@@ -75,6 +76,9 @@ interface AppContextType {
   addCustomGoal: (goal: Omit<CustomGoal, 'id'>) => void;
   updateCustomGoal: (id: string, data: Partial<Omit<CustomGoal, 'id'>>) => void;
   removeCustomGoal: (id: string) => void;
+  analyticsConsent: boolean | null;
+  grantAnalyticsConsent: () => void;
+  denyAnalyticsConsent: () => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -126,6 +130,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
   const [disabledCategories, setDisabledCategories] = useState<string[]>([]);
+  const [analyticsConsent, setAnalyticsConsent] = useState<boolean | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -143,6 +148,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setHasCompletedOnboarding(data.hasCompletedOnboarding ?? true);
           setCustomCategories(data.customCategories || []);
           setDisabledCategories(data.disabledCategories || []);
+          const consent = data.analyticsConsent ?? null;
+          setAnalyticsConsent(consent);
+          if (consent === true) {
+            initMixpanel().then(() => identifyUser(data.userProfile || DEFAULT_PROFILE));
+          }
         } else {
           setTransactions(processAutoDebits(generateSampleData()));
         }
@@ -159,10 +169,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         transactions, userProfile, darkMode, budget,
         isAuthenticated, hasCompletedOnboarding,
         customCategories, disabledCategories,
+        analyticsConsent,
       }));
     };
     save();
-  }, [transactions, userProfile, darkMode, budget, isAuthenticated, hasCompletedOnboarding, customCategories, disabledCategories]);
+  }, [transactions, userProfile, darkMode, budget, isAuthenticated, hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent]);
 
   const expenseCategories = useMemo<Category[]>(() => [
     ...EXPENSE_CATEGORIES.filter(c => !disabledCategories.includes(c.id)),
@@ -195,6 +206,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     setTransactions(prev => [...transactionsToAdd, ...prev]);
+    trackEvent('transaction_added', {
+      type: t.type,
+      category: t.category,
+      is_auto_debit: t.isAutoDebit ?? false,
+    });
   }, []);
 
   const removeTransaction = useCallback((id: string) => {
@@ -276,14 +292,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = useCallback((_provider: 'google' | 'apple') => {
     setIsAuthenticated(true);
-  }, []);
+    if (analyticsConsent === true) {
+      identifyUser(userProfile);
+    }
+  }, [analyticsConsent, userProfile]);
 
   const signOut = useCallback(() => {
     setIsAuthenticated(false);
+    resetAnalytics();
   }, []);
 
   const completeOnboarding = useCallback(() => {
     setHasCompletedOnboarding(true);
+    // sign_up_completed is tracked after consent is granted via grantAnalyticsConsent
   }, []);
 
   const getCurrencySymbol = useCallback(() => {
@@ -369,6 +390,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
+  const grantAnalyticsConsent = useCallback(() => {
+    setAnalyticsConsent(true);
+    initMixpanel().then(() => {
+      identifyUser(userProfile);
+      trackEvent('sign_up_completed', { plan: userProfile.plan, currency: userProfile.currency });
+    });
+  }, [userProfile]);
+
+  const denyAnalyticsConsent = useCallback(() => {
+    setAnalyticsConsent(false);
+  }, []);
+
   return (
     <AppContext.Provider value={{
       transactions,
@@ -405,6 +438,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addCustomGoal,
       updateCustomGoal,
       removeCustomGoal,
+      analyticsConsent,
+      grantAnalyticsConsent,
+      denyAnalyticsConsent,
     }}>
       {children}
     </AppContext.Provider>
