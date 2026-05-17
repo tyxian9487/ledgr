@@ -49,17 +49,6 @@
     "experiments": {
       "typedRoutes": true
     },
-    "install": {
-      "exclude": [
-        "react-native-gesture-handler",
-        "react-native-reanimated",
-        "react-native-safe-area-context",
-        "react-native-screens",
-        "react-native-worklets",
-        "react-native-svg",
-        "@types/react"
-      ]
-    },
     "extra": {
       "eas": {
         "projectId": "23a464b0-73b1-47f1-98b1-75cd66886380"
