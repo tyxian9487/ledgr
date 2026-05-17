@@ -1,0 +1,18 @@
+diff --git a/node_modules/react-native-reanimated/android/build.gradle b/node_modules/react-native-reanimated/android/build.gradle
+index 8167d16..4269c6f 100644
+--- a/node_modules/react-native-reanimated/android/build.gradle
++++ b/node_modules/react-native-reanimated/android/build.gradle
+@@ -190,13 +190,6 @@ android {
+             path "CMakeLists.txt"
+         }
+     }
+-    buildTypes {
+-        debug {
+-            packagingOptions {
+-                doNotStrip "**/**/*.so"
+-            }
+-        }
+-    }
+     lintOptions {
+         abortOnError false
+     }

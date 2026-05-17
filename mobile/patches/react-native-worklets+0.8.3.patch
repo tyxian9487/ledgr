@@ -1,0 +1,14 @@
+diff --git a/node_modules/react-native-worklets/android/build.gradle b/node_modules/react-native-worklets/android/build.gradle
+index e189e1c..292049e 100644
+--- a/node_modules/react-native-worklets/android/build.gradle
++++ b/node_modules/react-native-worklets/android/build.gradle
+@@ -255,9 +255,6 @@ android {
+                     }
+                 }
+             }
+-            packagingOptions {
+-                doNotStrip "**/**/*.so"
+-            }
+         }
+     }
+     lintOptions {
