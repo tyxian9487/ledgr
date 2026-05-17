@@ -1,5 +1,5 @@
 diff --git a/node_modules/react-native-gesture-handler/android/build.gradle b/node_modules/react-native-gesture-handler/android/build.gradle
-index 6348d17..505fc77 100644
+index 6348d17..e796473 100644
 --- a/node_modules/react-native-gesture-handler/android/build.gradle
 +++ b/node_modules/react-native-gesture-handler/android/build.gradle
 @@ -168,6 +168,9 @@ android {
@@ -7,7 +7,7 @@ index 6348d17..505fc77 100644
          targetCompatibility JavaVersion.VERSION_1_8
      }
 +    kotlinOptions {
-+        jvmTarget = '1.8'
++        jvmTarget = '17'
 +    }
  
      if (isNewArchitectureEnabled()) {
