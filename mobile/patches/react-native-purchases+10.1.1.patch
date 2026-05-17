@@ -1,0 +1,13 @@
+diff --git a/node_modules/react-native-purchases/android/build.gradle b/node_modules/react-native-purchases/android/build.gradle
+index 5cee90c..82e38f4 100644
+--- a/node_modules/react-native-purchases/android/build.gradle
++++ b/node_modules/react-native-purchases/android/build.gradle
+@@ -25,6 +25,8 @@ def getExtOrIntegerDefault(name) {
+ android {
+     compileSdkVersion getExtOrIntegerDefault('compileSdkVersion')
+ 
++    namespace "com.revenuecat.purchases.react"
++
+     defaultConfig {
+         minSdkVersion getExtOrIntegerDefault('minSdkVersion')
+         targetSdkVersion getExtOrIntegerDefault('targetSdkVersion')
