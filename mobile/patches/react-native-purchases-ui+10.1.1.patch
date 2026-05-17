@@ -1,0 +1,14 @@
+diff --git a/node_modules/react-native-purchases-ui/android/build.gradle b/node_modules/react-native-purchases-ui/android/build.gradle
+index 5f780f8..13f60e2 100644
+--- a/node_modules/react-native-purchases-ui/android/build.gradle
++++ b/node_modules/react-native-purchases-ui/android/build.gradle
+@@ -76,6 +76,9 @@ android {
+     sourceCompatibility JavaVersion.VERSION_1_8
+     targetCompatibility JavaVersion.VERSION_1_8
+   }
++  kotlinOptions {
++    jvmTarget = '1.8'
++  }
+ }
+ 
+ repositories {
