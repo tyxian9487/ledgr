@@ -1,6 +1,7 @@
 node_modules/
 dist/
 package-lock.json
+!mobile/package-lock.json
 .env
 .env.local
 *.local
