@@ -35,7 +35,6 @@
       "expo-image-picker",
       "expo-web-browser",
       "expo-secure-store",
-      "react-native-purchases",
       [
         "expo-build-properties",
         {
