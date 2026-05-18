@@ -1,7 +1,13 @@
-import { View, Text, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { useState } from 'react';
+import { View, Text, TouchableOpacity, Image, Dimensions, ActivityIndicator, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
+import { supabase } from '../../utils/supabase';
+import * as WebBrowser from 'expo-web-browser';
+import { makeRedirectUri } from 'expo-auth-session';
+import * as AppleAuthentication from 'expo-apple-authentication';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const { width } = Dimensions.get('window');
 
@@ -13,14 +19,58 @@ const FEATURES = [
 ];
 
 export default function LoginScreen() {
-  const { signIn } = useApp();
   const { t } = useTranslation();
+  const [loading, setLoading] = useState<'google' | 'apple' | null>(null);
+
+  const handleGoogleSignIn = async () => {
+    setLoading('google');
+    try {
+      const redirectTo = makeRedirectUri({ scheme: 'kachingo', path: 'auth/callback' });
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo, skipBrowserRedirect: true },
+      });
+      if (error) throw error;
+      if (!data.url) throw new Error('No auth URL returned');
+
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      if (result.type === 'success') {
+        await supabase.auth.exchangeCodeForSession(result.url);
+      }
+    } catch (err) {
+      Alert.alert('Sign in failed', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    setLoading('apple');
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      if (!credential.identityToken) throw new Error('No identity token from Apple');
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: credential.identityToken,
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      if (err?.code !== 'ERR_REQUEST_CANCELED') {
+        Alert.alert('Sign in failed', err instanceof Error ? err.message : 'Please try again.');
+      }
+    } finally {
+      setLoading(null);
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
-      {/* ── Top section ───────────────────────────────────────────── */}
       <View className="flex-1 items-center justify-center px-8">
-        {/* Mascot */}
         <View className="items-center justify-center mb-2" style={{ width: width * 0.55, height: width * 0.55 }}>
           <Image
             source={require('../../assets/mascot.png')}
@@ -29,7 +79,6 @@ export default function LoginScreen() {
           />
         </View>
 
-        {/* Brand */}
         <Text className="text-4xl font-black text-gray-900 tracking-tight">
           Kachingo
         </Text>
@@ -37,7 +86,6 @@ export default function LoginScreen() {
           {t('login.tagline')}
         </Text>
 
-        {/* Feature pills */}
         <View className="flex-row flex-wrap justify-center gap-2 mt-6">
           {FEATURES.map(({ emoji, text }) => (
             <View
@@ -51,50 +99,47 @@ export default function LoginScreen() {
         </View>
       </View>
 
-      {/* ── Bottom section ─────────────────────────────────────────── */}
       <View className="px-6 pb-6 gap-y-3">
         {/* Google */}
         <TouchableOpacity
-          onPress={() => signIn('google')}
+          onPress={handleGoogleSignIn}
+          disabled={loading !== null}
           activeOpacity={0.8}
           className="flex-row items-center justify-center border border-gray-200 rounded-2xl py-4 bg-white"
           style={{ shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 }}
         >
-          <View className="w-6 h-6 rounded-full bg-red-500 items-center justify-center mr-3">
-            <Text className="text-white text-xs font-black">G</Text>
-          </View>
+          {loading === 'google' ? (
+            <ActivityIndicator size="small" color="#4B5563" style={{ marginRight: 10 }} />
+          ) : (
+            <View className="w-6 h-6 rounded-full bg-red-500 items-center justify-center mr-3">
+              <Text className="text-white text-xs font-black">G</Text>
+            </View>
+          )}
           <Text className="text-gray-700 text-base font-semibold">
             {t('login.google')}
           </Text>
         </TouchableOpacity>
 
-        {/* Apple */}
-        <TouchableOpacity
-          onPress={() => signIn('apple')}
-          activeOpacity={0.8}
-          className="flex-row items-center justify-center bg-gray-900 rounded-2xl py-4"
-        >
-          <Text className="text-white mr-3 text-lg" style={{ lineHeight: 22 }}>
+        {/* Apple — iOS only */}
+        {Platform.OS === 'ios' && (
+          <TouchableOpacity
+            onPress={handleAppleSignIn}
+            disabled={loading !== null}
+            activeOpacity={0.8}
+            className="flex-row items-center justify-center bg-gray-900 rounded-2xl py-4"
+          >
+            {loading === 'apple' ? (
+              <ActivityIndicator size="small" color="#fff" style={{ marginRight: 10 }} />
+            ) : (
+              <Text className="text-white mr-3 text-lg" style={{ lineHeight: 22 }}></Text>
+            )}
+            <Text className="text-white text-base font-semibold">
+              {t('login.apple')}
+            </Text>
+          </TouchableOpacity>
+        )}
 
-          </Text>
-          <Text className="text-white text-base font-semibold">
-            {t('login.apple')}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Guest */}
-        <TouchableOpacity
-          onPress={() => signIn('google')}
-          activeOpacity={0.7}
-          className="items-center py-2"
-        >
-          <Text className="text-green-600 text-sm font-medium">
-            {t('login.guest')}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Legal */}
-        <Text className="text-gray-300 text-xs text-center leading-5">
+        <Text className="text-gray-300 text-xs text-center leading-5 mt-1">
           {t('login.agree')}{' '}
           <Text className="text-gray-400">{t('login.terms')}</Text>
           {' '}{t('login.and')}{' '}

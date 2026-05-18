@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
 import { Transaction, UserProfile, BudgetSettings, AutoDebitPeriod, CustomCategory, CustomGoal, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../types';
 import { initMixpanel, trackEvent, identifyUser, resetAnalytics } from '../utils/analytics';
+import { supabase } from '../utils/supabase';
 
 function advanceDate(date: Date, period: AutoDebitPeriod): Date {
   const d = new Date(date);
@@ -63,7 +64,6 @@ interface AppContextType {
   getMonthExpenses: (year: number, month: number) => number;
   formatCurrency: (amount: number) => string;
   getCurrencySymbol: () => string;
-  signIn: (provider: 'google' | 'apple') => void;
   signOut: () => void;
   completeOnboarding: () => void;
   addCustomCategory: (cat: Omit<CustomCategory, 'id'>) => CustomCategory;
@@ -144,7 +144,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setUserProfile(savedProfile);
           setDarkMode(data.darkMode !== undefined ? data.darkMode : systemColorScheme === 'dark');
           setBudget(data.budget || DEFAULT_BUDGET);
-          setIsAuthenticated(data.isAuthenticated ?? true);
           setHasCompletedOnboarding(data.hasCompletedOnboarding ?? true);
           setCustomCategories(data.customCategories || []);
           setDisabledCategories(data.disabledCategories || []);
@@ -161,19 +160,51 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     };
     load();
+
+    // Auth: check for existing Supabase session (persisted in SecureStore)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setIsAuthenticated(true);
+        const meta = session.user.user_metadata ?? {};
+        setUserProfile(prev => ({
+          ...prev,
+          name: meta.full_name || meta.name || prev.name,
+          email: session.user.email || prev.email,
+          avatar: meta.avatar_url || meta.picture || prev.avatar,
+        }));
+      }
+    });
+
+    // Auth: listen for sign-in / sign-out events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setIsAuthenticated(true);
+        const meta = session.user.user_metadata ?? {};
+        setUserProfile(prev => ({
+          ...prev,
+          name: meta.full_name || meta.name || prev.name,
+          email: session.user.email || prev.email,
+          avatar: meta.avatar_url || meta.picture || prev.avatar,
+        }));
+      } else {
+        setIsAuthenticated(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
     const save = async () => {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
         transactions, userProfile, darkMode, budget,
-        isAuthenticated, hasCompletedOnboarding,
+        hasCompletedOnboarding,
         customCategories, disabledCategories,
         analyticsConsent,
       }));
     };
     save();
-  }, [transactions, userProfile, darkMode, budget, isAuthenticated, hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent]);
+  }, [transactions, userProfile, darkMode, budget, hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent]);
 
   const expenseCategories = useMemo<Category[]>(() => [
     ...EXPENSE_CATEGORIES.filter(c => !disabledCategories.includes(c.id)),
@@ -290,15 +321,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [userProfile.currency]);
 
-  const signIn = useCallback((_provider: 'google' | 'apple') => {
-    setIsAuthenticated(true);
-    if (analyticsConsent === true) {
-      identifyUser(userProfile);
-    }
-  }, [analyticsConsent, userProfile]);
-
   const signOut = useCallback(() => {
-    setIsAuthenticated(false);
+    supabase.auth.signOut();
     resetAnalytics();
   }, []);
 
@@ -425,7 +449,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       getMonthExpenses,
       formatCurrency,
       getCurrencySymbol,
-      signIn,
       signOut,
       completeOnboarding,
       addCustomCategory,

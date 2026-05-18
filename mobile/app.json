@@ -33,6 +33,7 @@
       "expo-router",
       "expo-camera",
       "expo-image-picker",
+      "expo-web-browser",
       [
         "expo-build-properties",
         {

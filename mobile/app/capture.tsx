@@ -1,6 +1,3 @@
-// TODO: route through your backend proxy in production
-// Calling the Anthropic API directly from the client exposes your API key.
-
 import { useRef, useState, useCallback } from 'react';
 import {
   View,
@@ -30,43 +27,20 @@ interface ParsedReceipt {
 const PENDING_RECEIPT_KEY = 'kachingo_pending_receipt';
 
 async function parseReceiptWithClaude(base64: string, mediaType: string): Promise<ParsedReceipt> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const workerUrl = process.env.EXPO_PUBLIC_WORKER_URL;
+  if (!workerUrl) throw new Error('EXPO_PUBLIC_WORKER_URL is not set');
+
+  const res = await fetch(`${workerUrl}/api/scan-receipt`, {
     method: 'POST',
-    headers: {
-      'x-api-key': process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY ?? '',
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'claude-opus-4-7',
-      max_tokens: 512,
-      system: [
-        {
-          type: 'text',
-          text: 'Extract transaction details from this receipt. Return ONLY valid JSON: {"type":"expense"|"income","amount":number,"category":"food|transport|shopping|entertainment|health|housing|utilities|education|travel|personal|subscriptions|insurance|savings|investment|others","description":"merchant or item name max 40 chars"}',
-          cache_control: { type: 'ephemeral' },
-        },
-      ],
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: { type: 'base64', media_type: mediaType, data: base64 },
-            },
-            { type: 'text', text: 'Extract transaction details and return JSON only.' },
-          ],
-        },
-      ],
-    }),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ base64, mediaType }),
   });
 
-  if (!res.ok) throw new Error('Scan failed');
-  const data = await res.json();
-  const text = data.content?.[0]?.text ?? '';
-  const match = text.match(/\{[\s\S]*\}/);
-  return JSON.parse(match ? match[0] : text);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any).error || 'Scan failed');
+  }
+  return res.json();
 }
 
 export default function CaptureScreen() {
