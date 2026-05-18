@@ -176,16 +176,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Auth: listen for sign-in / sign-out events
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setIsAuthenticated(true);
         const meta = session.user.user_metadata ?? {};
-        setUserProfile(prev => ({
-          ...prev,
-          name: meta.full_name || meta.name || prev.name,
-          email: session.user.email || prev.email,
-          avatar: meta.avatar_url || meta.picture || prev.avatar,
-        }));
+        const name = meta.full_name || meta.name || 'User';
+        const email = session.user.email || '';
+        const avatar = meta.avatar_url || meta.picture || null;
+        setUserProfile(prev => ({ ...prev, name, email, avatar }));
+
+        // Upsert profile row on first sign-in (replaces the DB trigger)
+        if (event === 'SIGNED_IN') {
+          supabase.from('profiles').upsert({
+            id: session.user.id,
+            email,
+            name,
+            avatar,
+          }, { onConflict: 'id', ignoreDuplicates: true });
+        }
       } else {
         setIsAuthenticated(false);
       }
