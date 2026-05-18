@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TrendingUp, TrendingDown, Minus, ChevronRight, X } from 'lucide-react-native';
+import { useColorScheme } from 'nativewind';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 
@@ -35,7 +36,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   others: '#94a3b8',
 };
 
-const MAX_BAR_HEIGHT = 96; // points
+const MAX_BAR_HEIGHT = 96;
 
 // ─── Category Detail Modal ────────────────────────────────────────────────────
 
@@ -48,6 +49,8 @@ function CategoryModal({
 }) {
   const { transactions, formatCurrency } = useApp();
   const { t } = useTranslation();
+  const { colorScheme } = useColorScheme();
+  const dark = colorScheme === 'dark';
 
   const color = CATEGORY_COLORS[categoryId] || '#94a3b8';
   const rawKey = ('cat.' + categoryId) as any;
@@ -88,28 +91,28 @@ function CategoryModal({
 
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View className="flex-1 bg-white">
+      <View className="flex-1 bg-white dark:bg-gray-900">
         {/* Header */}
-        <View className="flex-row items-center justify-between px-5 pt-6 pb-4 border-b border-gray-100">
+        <View className="flex-row items-center justify-between px-5 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800">
           <View className="flex-row items-center gap-3">
-            <View className="w-9 h-9 rounded-xl items-center justify-center" style={{ backgroundColor: color + '20' }}>
+            <View className="w-9 h-9 rounded-xl items-center justify-center" style={{ backgroundColor: color + '30' }}>
               <View className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
             </View>
             <View>
-              <Text className="text-base font-bold text-gray-900">{label}</Text>
+              <Text className="text-base font-bold text-gray-900 dark:text-white">{label}</Text>
               <Text className="text-xs text-gray-400">{t('trends.monthly')}</Text>
             </View>
           </View>
           <TouchableOpacity
             onPress={onClose}
-            className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center"
+            className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
           >
-            <X size={16} color="#6b7280" />
+            <X size={16} color={dark ? '#9ca3af' : '#6b7280'} />
           </TouchableOpacity>
         </View>
 
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          {/* Mini bar chart for this category */}
+          {/* Mini bar chart */}
           <View className="px-5 pt-5 pb-4">
             <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
               {t('trends.monthly_overview')}
@@ -119,6 +122,7 @@ function CategoryModal({
                 const heightPct = maxBarVal > 0 ? point.value / maxBarVal : 0;
                 const barH = Math.max(heightPct * MAX_BAR_HEIGHT, point.value > 0 ? 4 : 0);
                 const isLast = i === last6.length - 1;
+                const barBg = isLast ? color : (dark ? color + '40' : color + '30');
                 return (
                   <View key={point.label + i} className="flex-1 items-center gap-1">
                     {point.value > 0 && (
@@ -129,10 +133,7 @@ function CategoryModal({
                     <View className="flex-1 justify-end w-full">
                       <View
                         className="w-full rounded-t-sm"
-                        style={{
-                          height: barH,
-                          backgroundColor: isLast ? color : color + '40',
-                        }}
+                        style={{ height: barH, backgroundColor: barBg }}
                       />
                     </View>
                     <Text
@@ -153,9 +154,9 @@ function CategoryModal({
               { label: t('common.total'), value: formatCurrency(total) },
               { label: t('trends.avg'), value: formatCurrency(avg) },
             ].map((s) => (
-              <View key={s.label} className="flex-1 bg-gray-50 rounded-2xl p-3">
+              <View key={s.label} className="flex-1 bg-gray-50 dark:bg-gray-800 rounded-2xl p-3">
                 <Text className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-1">{s.label}</Text>
-                <Text className="text-sm font-bold text-gray-900">{s.value}</Text>
+                <Text className="text-sm font-bold text-gray-900 dark:text-white">{s.value}</Text>
               </View>
             ))}
           </View>
@@ -171,10 +172,12 @@ function CategoryModal({
               catTxs.slice(0, 10).map((tx) => (
                 <View
                   key={tx.id}
-                  className="flex-row items-center justify-between py-2.5 border-b border-gray-50"
+                  className="flex-row items-center justify-between py-2.5 border-b border-gray-100 dark:border-gray-800"
                 >
                   <View className="flex-1 min-w-0 mr-3">
-                    <Text className="text-sm font-medium text-gray-900" numberOfLines={1}>{tx.description || label}</Text>
+                    <Text className="text-sm font-medium text-gray-900 dark:text-white" numberOfLines={1}>
+                      {tx.description || label}
+                    </Text>
                     <Text className="text-[11px] text-gray-400">
                       {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </Text>
@@ -197,6 +200,9 @@ function CategoryModal({
 export default function TrendsScreen() {
   const { transactions, formatCurrency } = useApp();
   const { t } = useTranslation();
+  const { colorScheme } = useColorScheme();
+  const dark = colorScheme === 'dark';
+
   const [view, setView] = useState<'spending' | 'income'>('spending');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showAllCats, setShowAllCats] = useState(false);
@@ -204,7 +210,6 @@ export default function TrendsScreen() {
   const now = new Date();
   const currentYear = now.getFullYear();
 
-  // Last 6 months data
   const monthlyData = useMemo(() => {
     return Array.from({ length: 6 }, (_, i) => {
       const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
@@ -224,7 +229,6 @@ export default function TrendsScreen() {
     });
   }, [transactions]);
 
-  // Category totals for this year
   const categoryTotals = useMemo(() => {
     const yearTxs = transactions.filter((tx) => {
       const d = new Date(tx.date);
@@ -248,13 +252,14 @@ export default function TrendsScreen() {
   const maxBar = Math.max(...bars, 1);
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-gray-100 dark:bg-gray-950" edges={['top']}>
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
-        {/* Header */}
+
+        {/* ── Header ── */}
         <View className="px-5 pt-3 pb-2 flex-row items-center justify-between">
           <View>
-            <Text className="text-xl font-bold text-gray-900">{t('trends.title')}</Text>
-            <Text className="text-xs text-gray-400 mt-0.5">{t('trends.subtitle')}</Text>
+            <Text className="text-2xl font-black text-gray-900 dark:text-white">{t('trends.title')}</Text>
+            <Text className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('trends.subtitle')}</Text>
           </View>
           <Image
             source={require('../../assets/m_magnifier.png')}
@@ -264,24 +269,26 @@ export default function TrendsScreen() {
         </View>
 
         {/* ── Summary Cards ── */}
-        <View className="px-4 mt-2 flex-row gap-3">
-          {/* Spending */}
-          <View className="flex-1 bg-red-500 rounded-2xl p-4 shadow-sm">
-            <Text className="text-[11px] text-red-100 font-semibold uppercase tracking-wide mb-1">
+        <View className="px-4 mt-1 flex-row gap-3">
+          {/* Spending card */}
+          <View className="flex-1 bg-red-500 rounded-2xl p-4">
+            <Text className="text-[10px] text-red-100 font-bold uppercase tracking-widest mb-1">
               {t('trends.this_month')}
             </Text>
-            <Text className="text-xl font-black text-white">{formatCurrency(currentMonth.expenses)}</Text>
-            <Text className="text-[11px] text-red-100 mt-0.5">{t('trends.spending')}</Text>
+            <Text className="text-2xl font-black text-white leading-tight">
+              {formatCurrency(currentMonth.expenses)}
+            </Text>
+            <Text className="text-[11px] text-red-200 mt-0.5">{t('trends.spending')}</Text>
             {prevMonth.expenses > 0 && (
               <View className="flex-row items-center gap-1 mt-2">
                 {spendDiff > 0 ? (
-                  <TrendingUp size={12} color="rgba(254,226,226,0.8)" />
+                  <TrendingUp size={11} color="rgba(254,226,226,0.9)" />
                 ) : spendDiff < 0 ? (
-                  <TrendingDown size={12} color="rgba(254,226,226,0.8)" />
+                  <TrendingDown size={11} color="rgba(254,226,226,0.9)" />
                 ) : (
-                  <Minus size={12} color="rgba(254,226,226,0.8)" />
+                  <Minus size={11} color="rgba(254,226,226,0.9)" />
                 )}
-                <Text className="text-[11px] text-red-100 font-semibold">
+                <Text className="text-[10px] text-red-100 font-semibold">
                   {spendDiff === 0
                     ? t('trends.same')
                     : spendDiff > 0
@@ -292,21 +299,23 @@ export default function TrendsScreen() {
             )}
           </View>
 
-          {/* Income */}
-          <View className="flex-1 bg-green-600 rounded-2xl p-4 shadow-sm">
-            <Text className="text-[11px] text-green-100 font-semibold uppercase tracking-wide mb-1">
+          {/* Income card */}
+          <View className="flex-1 bg-green-600 rounded-2xl p-4">
+            <Text className="text-[10px] text-green-100 font-bold uppercase tracking-widest mb-1">
               {t('trends.this_month')}
             </Text>
-            <Text className="text-xl font-black text-white">{formatCurrency(currentMonth.income)}</Text>
-            <Text className="text-[11px] text-green-100 mt-0.5">{t('trends.income')}</Text>
+            <Text className="text-2xl font-black text-white leading-tight">
+              {formatCurrency(currentMonth.income)}
+            </Text>
+            <Text className="text-[11px] text-green-200 mt-0.5">{t('trends.income')}</Text>
             {currentMonth.income > 0 && (
               <View className="flex-row items-center gap-1 mt-2">
                 {currentMonth.income >= currentMonth.expenses ? (
-                  <TrendingUp size={12} color="rgba(220,252,231,0.8)" />
+                  <TrendingUp size={11} color="rgba(220,252,231,0.9)" />
                 ) : (
-                  <TrendingDown size={12} color="rgba(220,252,231,0.8)" />
+                  <TrendingDown size={11} color="rgba(220,252,231,0.9)" />
                 )}
-                <Text className="text-[11px] text-green-100 font-semibold">
+                <Text className="text-[10px] text-green-100 font-semibold">
                   {currentMonth.income >= currentMonth.expenses ? t('common.surplus') : t('common.deficit')}{' '}
                   {formatCurrency(Math.abs(currentMonth.income - currentMonth.expenses))}
                 </Text>
@@ -316,18 +325,25 @@ export default function TrendsScreen() {
         </View>
 
         {/* ── Monthly Bar Chart ── */}
-        <View className="mx-4 mt-4 bg-white rounded-2xl p-5 shadow-sm border border-gray-50">
-          {/* Toggle */}
+        <View className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl p-5">
           <View className="flex-row items-center justify-between mb-4">
-            <Text className="text-sm font-bold text-gray-900">{t('trends.monthly_overview')}</Text>
-            <View className="flex-row bg-gray-100 rounded-xl p-0.5 gap-0.5">
+            <Text className="text-sm font-bold text-gray-900 dark:text-white">
+              {t('trends.monthly_overview')}
+            </Text>
+            <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-xl p-0.5 gap-0.5">
               {(['spending', 'income'] as const).map((v) => (
                 <TouchableOpacity
                   key={v}
                   onPress={() => setView(v)}
-                  className={`px-3 py-1 rounded-[10px] ${view === v ? 'bg-white shadow-sm' : ''}`}
+                  className={`px-3 py-1 rounded-[10px] ${view === v ? 'bg-white dark:bg-gray-700' : ''}`}
                 >
-                  <Text className={`text-[11px] font-semibold capitalize ${view === v ? 'text-gray-800' : 'text-gray-400'}`}>
+                  <Text
+                    className={`text-[11px] font-semibold capitalize ${
+                      view === v
+                        ? 'text-gray-800 dark:text-white'
+                        : 'text-gray-400 dark:text-gray-500'
+                    }`}
+                  >
                     {v === 'spending' ? t('trends.spending') : t('trends.income')}
                   </Text>
                 </TouchableOpacity>
@@ -342,10 +358,13 @@ export default function TrendsScreen() {
               const heightPct = maxBar > 0 ? val / maxBar : 0;
               const barH = Math.max(heightPct * MAX_BAR_HEIGHT, val > 0 ? 4 : 0);
               const isLast = i === monthlyData.length - 1;
-              const barColor =
-                view === 'spending'
-                  ? isLast ? '#ef4444' : '#fee2e2'
-                  : isLast ? '#16a34a' : '#dcfce7';
+
+              let barColor: string;
+              if (view === 'spending') {
+                barColor = isLast ? '#ef4444' : (dark ? 'rgba(239,68,68,0.25)' : '#fee2e2');
+              } else {
+                barColor = isLast ? '#16a34a' : (dark ? 'rgba(22,163,74,0.25)' : '#dcfce7');
+              }
 
               return (
                 <View key={`${m.year}-${m.month}`} className="flex-1 items-center gap-1">
@@ -365,8 +384,8 @@ export default function TrendsScreen() {
                       isLast
                         ? view === 'spending'
                           ? 'text-red-500'
-                          : 'text-green-600'
-                        : 'text-gray-400'
+                          : 'text-green-500'
+                        : 'text-gray-400 dark:text-gray-600'
                     }`}
                   >
                     {m.label}
@@ -378,16 +397,20 @@ export default function TrendsScreen() {
         </View>
 
         {/* ── Category Breakdown ── */}
-        <View className="mx-4 mt-4 bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-50">
+        <View className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden">
           <View className="flex-row items-center justify-between px-5 pt-5 pb-3">
-            <Text className="text-sm font-bold text-gray-900">{t('common.categories')}</Text>
+            <Text className="text-sm font-bold text-gray-900 dark:text-white">
+              {t('common.categories')}
+            </Text>
             <Text className="text-[11px] text-gray-400">
               {t('trends.year_explore', { year: currentYear })}
             </Text>
           </View>
 
           {categoryTotals.length === 0 ? (
-            <Text className="text-sm text-gray-400 text-center py-6 px-5">{t('trends.no_expense')}</Text>
+            <Text className="text-sm text-gray-400 text-center py-6 px-5 pb-6">
+              {t('trends.no_expense')}
+            </Text>
           ) : (
             <>
               {(showAllCats ? categoryTotals : categoryTotals.slice(0, 5)).map(([id, amount]) => {
@@ -403,20 +426,22 @@ export default function TrendsScreen() {
                   <TouchableOpacity
                     key={id}
                     onPress={() => setSelectedCategory(id)}
-                    className="px-5 py-3 border-b border-gray-50 active:bg-gray-50"
+                    className="px-5 py-3 border-b border-gray-50 dark:border-gray-800 active:bg-gray-50 dark:active:bg-gray-800"
                   >
                     <View className="flex-row items-center justify-between mb-1.5">
                       <View className="flex-row items-center gap-2">
                         <View className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-                        <Text className="text-sm font-medium text-gray-900">{catLabel}</Text>
+                        <Text className="text-sm font-medium text-gray-900 dark:text-white">{catLabel}</Text>
                       </View>
                       <View className="flex-row items-center gap-2">
                         <Text className="text-[11px] text-gray-400">{pct.toFixed(0)}%</Text>
-                        <Text className="text-sm font-bold text-gray-900">{formatCurrency(amount)}</Text>
-                        <ChevronRight size={13} color="#d1d5db" />
+                        <Text className="text-sm font-bold text-gray-900 dark:text-white">
+                          {formatCurrency(amount)}
+                        </Text>
+                        <ChevronRight size={13} color={dark ? '#4b5563' : '#d1d5db'} />
                       </View>
                     </View>
-                    <View className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <View className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                       <View
                         className="h-full rounded-full"
                         style={{ width: `${pct}%`, backgroundColor: color }}
@@ -429,9 +454,9 @@ export default function TrendsScreen() {
               {categoryTotals.length > 5 && (
                 <TouchableOpacity
                   onPress={() => setShowAllCats((v) => !v)}
-                  className="py-3 border-t border-gray-100 items-center"
+                  className="py-3.5 border-t border-gray-100 dark:border-gray-800 items-center"
                 >
-                  <Text className="text-[12px] font-semibold text-green-600">
+                  <Text className="text-[12px] font-semibold text-green-500">
                     {showAllCats
                       ? t('trends.show_less')
                       : t('trends.show_more', { n: categoryTotals.length - 5 })}
@@ -443,8 +468,10 @@ export default function TrendsScreen() {
         </View>
 
         {/* ── Income vs Expenses ── */}
-        <View className="mx-4 mt-4 bg-white rounded-2xl p-5 shadow-sm border border-gray-50">
-          <Text className="text-sm font-bold text-gray-900 mb-4">{t('trends.income_vs')}</Text>
+        <View className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl p-5">
+          <Text className="text-sm font-bold text-gray-900 dark:text-white mb-4">
+            {t('trends.income_vs')}
+          </Text>
           <View className="gap-3">
             {[...monthlyData].reverse().map((m) => {
               const maxVal = Math.max(m.income, m.expenses, 1);
@@ -452,22 +479,22 @@ export default function TrendsScreen() {
               return (
                 <View key={`${m.year}-${m.month}`}>
                   <View className="flex-row items-center">
-                    <Text className="text-[11px] font-semibold text-gray-500 w-8">{m.label}</Text>
+                    <Text className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 w-8">
+                      {m.label}
+                    </Text>
                     <View className="flex-1 mx-3 gap-1">
-                      {/* Income bar */}
                       <View className="flex-row items-center gap-1.5">
                         <View className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
-                        <View className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <View className="flex-1 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                           <View
                             className="h-full rounded-full bg-green-500"
                             style={{ width: `${(m.income / maxVal) * 100}%` }}
                           />
                         </View>
                       </View>
-                      {/* Expense bar */}
                       <View className="flex-row items-center gap-1.5">
                         <View className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
-                        <View className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <View className="flex-1 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                           <View
                             className="h-full rounded-full bg-red-400"
                             style={{ width: `${(m.expenses / maxVal) * 100}%` }}
@@ -477,7 +504,7 @@ export default function TrendsScreen() {
                     </View>
                     <Text
                       className={`text-[11px] font-bold w-16 text-right ${
-                        surplus > 0 ? 'text-green-600' : surplus < 0 ? 'text-red-500' : 'text-gray-400'
+                        surplus > 0 ? 'text-green-500' : surplus < 0 ? 'text-red-500' : 'text-gray-400'
                       }`}
                     >
                       {surplus === 0
@@ -490,8 +517,7 @@ export default function TrendsScreen() {
             })}
           </View>
 
-          {/* Legend */}
-          <View className="flex-row gap-4 mt-4 pt-3 border-t border-gray-100">
+          <View className="flex-row gap-4 mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
             <View className="flex-row items-center gap-1.5">
               <View className="w-2.5 h-2.5 rounded-full bg-green-500" />
               <Text className="text-[11px] text-gray-400">{t('common.income')}</Text>
@@ -502,9 +528,9 @@ export default function TrendsScreen() {
             </View>
           </View>
         </View>
+
       </ScrollView>
 
-      {/* Category detail modal */}
       {selectedCategory && (
         <CategoryModal
           categoryId={selectedCategory}
