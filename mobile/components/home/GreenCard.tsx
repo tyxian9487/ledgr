@@ -1,6 +1,7 @@
-import { View, Text, TouchableOpacity } from 'react-native';
-import Svg, { Circle, Text as SvgText } from 'react-native-svg';
-import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { useState } from 'react';
+import { View, Text, TouchableOpacity, Share } from 'react-native';
+import Svg, { Circle, Circle as SvgCircle, Text as SvgText } from 'react-native-svg';
+import { ChevronLeft, ChevronRight, ChevronDown, Share2 } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { EXPENSE_CATEGORIES, FinancialStatus } from '../../types';
@@ -10,6 +11,7 @@ interface Props {
   month: number;
   onPrevMonth: () => void;
   onNextMonth: () => void;
+  onYearChange?: (year: number) => void;
 }
 
 const MONTH_KEYS = [
@@ -23,6 +25,34 @@ const MONTH_SHORT_KEYS = [
   'month.may.short', 'month.jun.short', 'month.jul.short', 'month.aug.short',
   'month.sep.short', 'month.oct.short', 'month.nov.short', 'month.dec.short',
 ] as const;
+
+function GoldCoin({ size = 28 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 28 28">
+      <SvgCircle cx="14" cy="14" r="13" fill="#f59e0b" stroke="#d97706" strokeWidth="1.5"/>
+      <SvgCircle cx="14" cy="14" r="9" fill="none" stroke="#fbbf24" strokeWidth="1" opacity={0.6}/>
+      <SvgText x="14" y="18.5" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#92400e">$</SvgText>
+    </Svg>
+  );
+}
+function SilverCoin({ size = 28 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 28 28">
+      <SvgCircle cx="14" cy="14" r="13" fill="#94a3b8" stroke="#64748b" strokeWidth="1.5"/>
+      <SvgCircle cx="14" cy="14" r="9" fill="none" stroke="#cbd5e1" strokeWidth="1" opacity={0.6}/>
+      <SvgText x="14" y="18.5" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#1e293b">$</SvgText>
+    </Svg>
+  );
+}
+function CopperCoin({ size = 28 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 28 28">
+      <SvgCircle cx="14" cy="14" r="13" fill="#b45309" stroke="#92400e" strokeWidth="1.5"/>
+      <SvgCircle cx="14" cy="14" r="9" fill="none" stroke="#d97706" strokeWidth="1" opacity={0.6}/>
+      <SvgText x="14" y="18.5" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#fef3c7">$</SvgText>
+    </Svg>
+  );
+}
 
 function getStatus(income: number, expenses: number): FinancialStatus {
   if (income === 0) return expenses === 0 ? 'excellent' : 'critical';
@@ -120,12 +150,12 @@ function DonutRing({ slices, size = 120, centerLabel, centerValue }: DonutRingPr
 }
 
 const STATUS_CONFIG = {
-  excellent: { coinColor: '#f59e0b', textColor: '#fbbf24', score: '90+' },
-  sustained: { coinColor: '#94a3b8', textColor: '#cbd5e1', score: '60-79' },
-  critical:  { coinColor: '#b45309', textColor: '#f97316', score: '<60' },
+  excellent: { Coin: GoldCoin, textColor: '#fbbf24', score: '90+' },
+  sustained: { Coin: SilverCoin, textColor: '#cbd5e1', score: '60-79' },
+  critical:  { Coin: CopperCoin, textColor: '#f97316', score: '<60' },
 } as const;
 
-export default function GreenCard({ year, month, onPrevMonth, onNextMonth }: Props) {
+export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYearChange }: Props) {
   const { getMonthTransactions, getMonthIncome, getMonthExpenses, formatCurrency } = useApp();
   const { t } = useTranslation();
 
@@ -135,10 +165,22 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth }: Pro
   const remaining = totalIncome - totalExpenses;
 
   const status = getStatus(totalIncome, totalExpenses);
-  const { coinColor, textColor, score } = STATUS_CONFIG[status];
+  const { Coin, textColor, score } = STATUS_CONFIG[status];
 
   const now = new Date();
   const isFuture = new Date(year, month) >= new Date(now.getFullYear(), now.getMonth());
+
+  const todayLabel = String(new Date().getDate()).padStart(2, '0');
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 6 }, (_, idx) => currentYear - idx);
+  const [showYearPicker, setShowYearPicker] = useState(false);
+
+  const statusLabel =
+    status === 'excellent'
+      ? t('card.status_excellent')
+      : status === 'sustained'
+      ? t('card.status_sustained')
+      : t('card.status_critical');
 
   // Build category slices
   const categoryTotals: Record<string, number> = {};
@@ -156,54 +198,53 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth }: Pro
 
   const topSlices = slices.slice(0, 4);
 
-  const statusLabel =
-    status === 'excellent'
-      ? t('card.status_excellent')
-      : status === 'sustained'
-      ? t('card.status_sustained')
-      : t('card.status_critical');
-
   return (
     <View className="bg-green-700 rounded-3xl mx-4 overflow-hidden">
       {/* Header row: month navigation */}
       <View className="flex-row items-center px-5 pt-4 pb-2 gap-2">
-        {/* Month nav */}
+        {/* Left: today's date pill */}
+        <View className="bg-white/20 rounded-xl px-3 py-1.5">
+          <Text className="text-white font-bold text-sm">{todayLabel}</Text>
+        </View>
+
+        {/* Center: month navigation */}
         <View className="flex-1 flex-row items-center justify-center gap-3">
-          <TouchableOpacity
-            onPress={onPrevMonth}
-            className="w-7 h-7 rounded-full bg-white/20 items-center justify-center"
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity onPress={onPrevMonth} className="w-7 h-7 rounded-full bg-white/20 items-center justify-center" activeOpacity={0.7}>
             <ChevronLeft size={16} color="white" />
           </TouchableOpacity>
-
           <Text className="text-white font-semibold text-sm tracking-widest uppercase">
-            {t(MONTH_SHORT_KEYS[month] as any)} {year}
+            {t(MONTH_SHORT_KEYS[month] as any)}
           </Text>
-
-          <TouchableOpacity
-            onPress={onNextMonth}
-            disabled={isFuture}
-            className="w-7 h-7 rounded-full bg-white/20 items-center justify-center"
-            activeOpacity={0.7}
-            style={{ opacity: isFuture ? 0.3 : 1 }}
-          >
+          <TouchableOpacity onPress={onNextMonth} disabled={isFuture} className="w-7 h-7 rounded-full bg-white/20 items-center justify-center" activeOpacity={0.7} style={{ opacity: isFuture ? 0.3 : 1 }}>
             <ChevronRight size={16} color="white" />
           </TouchableOpacity>
         </View>
+
+        {/* Right: year selector */}
+        <TouchableOpacity onPress={() => setShowYearPicker(v => !v)} className="bg-white/20 rounded-xl px-3 py-1.5 flex-row items-center gap-1">
+          <Text className="text-white font-bold text-sm">{year}</Text>
+          <ChevronDown size={12} color="white" />
+        </TouchableOpacity>
       </View>
+
+      {showYearPicker && (
+        <View className="mx-4 mb-2 bg-white/10 rounded-2xl overflow-hidden">
+          {yearOptions.map(y => (
+            <TouchableOpacity
+              key={y}
+              onPress={() => { onYearChange?.(y); setShowYearPicker(false); }}
+              className={`px-4 py-2.5 flex-row items-center justify-between ${y === year ? 'bg-white/20' : ''}`}
+            >
+              <Text className={`text-sm font-semibold ${y === year ? 'text-white' : 'text-white/60'}`}>{y}</Text>
+              {y === year && <Text className="text-white text-xs">✓</Text>}
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       {/* Financial status glass box */}
       <View className="mx-4 mb-3 rounded-2xl bg-white/15 p-3 flex-row items-center gap-3">
-        {/* Coin circle */}
-        <View
-          className="w-9 h-9 rounded-full items-center justify-center"
-          style={{ backgroundColor: coinColor }}
-        >
-          <Text className="font-bold text-sm" style={{ color: status === 'excellent' ? '#92400e' : status === 'sustained' ? '#1e293b' : '#fef3c7' }}>
-            $
-          </Text>
-        </View>
+        <Coin size={36} />
 
         <View className="flex-1">
           <Text className="text-white/60 text-[10px] uppercase tracking-wider font-medium">
@@ -214,10 +255,20 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth }: Pro
           </Text>
         </View>
 
-        <View className="items-end">
+        <View className="items-end mr-0">
           <Text className="text-white/60 text-[10px]">{t('card.score')}</Text>
           <Text className="text-white font-semibold text-sm">{score}</Text>
         </View>
+        <TouchableOpacity
+          onPress={async () => {
+            try {
+              await Share.share({ message: `${statusLabel} — Score: ${score}\n${t('common.income')}: ${formatCurrency(totalIncome)}\n${t('card.remaining')}: ${formatCurrency(Math.abs(remaining))}` });
+            } catch (_) {}
+          }}
+          className="w-8 h-8 rounded-full bg-white/20 items-center justify-center ml-1"
+        >
+          <Share2 size={14} color="white" />
+        </TouchableOpacity>
       </View>
 
       {/* Donut + category legend */}

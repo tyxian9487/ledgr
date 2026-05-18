@@ -1,36 +1,25 @@
 import { useState, useMemo } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Share,
+  View, Text, ScrollView, TouchableOpacity, TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
-  Plus, Search, SlidersHorizontal, Target, ChevronLeft, ChevronRight,
-  ChevronDown, Share2, LayoutGrid, CalendarDays, X, Check,
-  UtensilsCrossed, Car, ShoppingBag, Tv, Heart, Home, Zap,
-  GraduationCap, Plane, Sparkles, RefreshCw, Shield, PiggyBank,
-  TrendingUp, MoreHorizontal, Briefcase, Laptop, Building2, Gift,
+  Plus, Target, Search, SlidersHorizontal, TrendingUp, TrendingDown, X,
 } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, Transaction } from '../../types';
+import GreenCard from '../../components/home/GreenCard';
+import GoalTrackerCard from '../../components/home/GoalTrackerCard';
+import ManualEntryModal from '../../components/home/ManualEntryModal';
+import { CategoryIconRaw } from '../../components/home/CategoryIcon';
 
-// ─── Icon map ────────────────────────────────────────────────────────────────
-
-const ICON_MAP: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
-  UtensilsCrossed, Car, ShoppingBag, Tv, Heart, Home, Zap, GraduationCap,
-  Plane, Sparkles, RefreshCw, Shield, PiggyBank, TrendingUp,
-  MoreHorizontal, Briefcase, Laptop, Building2, Gift, Plus,
-};
-
-function CategoryIcon({ iconName, color, size = 18 }: { iconName: string; color: string; size?: number }) {
-  const Icon = ICON_MAP[iconName] ?? MoreHorizontal;
-  return <Icon size={size} color={color} />;
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const ALL_CATEGORIES = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getGreeting(): 'home.greeting_morning' | 'home.greeting_afternoon' | 'home.greeting_evening' | 'home.greeting_night' {
   const h = new Date().getHours();
@@ -55,82 +44,6 @@ function groupByDate(txs: Transaction[]): { dateLabel: string; items: Transactio
   return Object.entries(map).map(([dateLabel, items]) => ({ dateLabel, items }));
 }
 
-// ─── Manual Entry Modal ───────────────────────────────────────────────────────
-
-function ManualEntryModal({ onClose }: { onClose: () => void }) {
-  const { addTransaction, expenseCategories, incomeCategories, formatCurrency } = useApp();
-  const { t } = useTranslation();
-  const [type, setType] = useState<'expense' | 'income'>('expense');
-  const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('');
-  const [description, setDescription] = useState('');
-  const [error, setError] = useState('');
-
-  const categories = type === 'expense' ? expenseCategories : incomeCategories;
-
-  function handleConfirm() {
-    const amt = parseFloat(amount);
-    if (!amt || amt <= 0) { setError('Enter a valid amount'); return; }
-    if (!category) { setError('Select a category'); return; }
-    addTransaction({ type, amount: amt, category, description: description.trim(), date: new Date().toISOString(), isAutoDebit: false });
-    onClose();
-  }
-
-  return (
-    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View className="flex-1 bg-gray-50 dark:bg-gray-900">
-        <View className="bg-white dark:bg-gray-800 px-5 pt-6 pb-4 flex-row items-center justify-between border-b border-gray-100 dark:border-gray-700">
-          <TouchableOpacity onPress={onClose} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 items-center justify-center">
-            <X size={16} color="#6b7280" />
-          </TouchableOpacity>
-          <Text className="text-base font-bold text-gray-900 dark:text-white">{t('tx.new')}</Text>
-          <View className="w-8" />
-        </View>
-        <ScrollView className="flex-1 px-5 pt-5" keyboardShouldPersistTaps="handled">
-          <View className="flex-row bg-gray-100 dark:bg-gray-700 rounded-2xl p-1 mb-5">
-            {(['expense', 'income'] as const).map((tp) => (
-              <TouchableOpacity key={tp} onPress={() => { setType(tp); setCategory(''); }}
-                className={`flex-1 py-2.5 rounded-xl items-center ${type === tp ? 'bg-white dark:bg-gray-600 shadow-sm' : ''}`}>
-                <Text className={`text-sm font-bold capitalize ${type === tp ? (tp === 'expense' ? 'text-red-500' : 'text-green-600') : 'text-gray-400'}`}>
-                  {tp === 'expense' ? t('common.expense') : t('common.income')}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <View className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 mb-4 border border-gray-100 dark:border-gray-700 flex-row items-center gap-2">
-            <Text className="text-gray-400 text-lg font-semibold">$</Text>
-            <TextInput className="flex-1 text-2xl font-bold text-gray-900 dark:text-white" placeholder="0.00"
-              placeholderTextColor="#d1d5db" keyboardType="decimal-pad" value={amount} onChangeText={setAmount} />
-          </View>
-          <View className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 mb-4 border border-gray-100 dark:border-gray-700">
-            <TextInput className="text-sm text-gray-700 dark:text-gray-200" placeholder={t('tx.add_note')}
-              placeholderTextColor="#9ca3af" value={description} onChangeText={setDescription} />
-          </View>
-          <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('common.categories')}</Text>
-          <View className="flex-row flex-wrap gap-2 mb-6">
-            {categories.map((cat) => (
-              <TouchableOpacity key={cat.id} onPress={() => setCategory(cat.id)}
-                className={`flex-row items-center gap-1.5 px-3 py-2 rounded-xl border ${category === cat.id ? 'border-transparent' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700'}`}
-                style={category === cat.id ? { backgroundColor: cat.color + '20', borderColor: cat.color } : {}}>
-                <CategoryIcon iconName={cat.icon} color={category === cat.id ? cat.color : '#9ca3af'} size={13} />
-                <Text className={`text-xs font-semibold ${category === cat.id ? '' : 'text-gray-500'}`}
-                  style={category === cat.id ? { color: cat.color } : {}}>{cat.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          {error !== '' && <Text className="text-xs text-red-500 font-medium mb-3">{error}</Text>}
-        </ScrollView>
-        <View className="px-5 pb-8 pt-3 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700">
-          <TouchableOpacity onPress={handleConfirm} className="bg-green-600 rounded-2xl py-4 items-center flex-row justify-center gap-2">
-            <Check size={16} color="white" />
-            <Text className="text-white font-bold text-base">{t('tx.confirm')}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
 // ─── Transaction Item ─────────────────────────────────────────────────────────
 
 function TransactionItem({ tx, formatCurrency }: { tx: Transaction; formatCurrency: (n: number) => string }) {
@@ -140,7 +53,7 @@ function TransactionItem({ tx, formatCurrency }: { tx: Transaction; formatCurren
     <View className="flex-row items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 rounded-2xl mb-2 border border-gray-50 dark:border-gray-700">
       <View className="w-10 h-10 rounded-xl items-center justify-center flex-shrink-0"
         style={{ backgroundColor: (cat?.color ?? '#94a3b8') + '20' }}>
-        <CategoryIcon iconName={cat?.icon ?? 'MoreHorizontal'} color={cat?.color ?? '#94a3b8'} size={16} />
+        <CategoryIconRaw icon={cat?.icon ?? 'MoreHorizontal'} color={cat?.color ?? '#94a3b8'} size={16} />
       </View>
       <View className="flex-1 min-w-0">
         <Text className="text-sm font-semibold text-gray-900 dark:text-white" numberOfLines={1}>
@@ -160,33 +73,23 @@ function TransactionItem({ tx, formatCurrency }: { tx: Transaction; formatCurren
 export default function HomeScreen() {
   const router = useRouter();
   const now = new Date();
-  const { transactions, formatCurrency, getMonthTransactions, getMonthIncome, getMonthExpenses, userProfile } = useApp();
+  const {
+    transactions, budget, formatCurrency,
+    getMonthTransactions, getMonthExpenses, userProfile,
+  } = useApp();
   const { t } = useTranslation();
 
   const [showEntry, setShowEntry] = useState(false);
   const [viewMonth, setViewMonth] = useState(now.getMonth());
   const [viewYear, setViewYear] = useState(now.getFullYear());
-  const [filterType, setFilterType] = useState<'all' | 'expense' | 'income'>('all');
-  const [listView, setListView] = useState<'list' | 'calendar'>('list');
 
-  const monthTxs = useMemo(() => getMonthTransactions(viewYear, viewMonth), [transactions, viewYear, viewMonth]);
-  const totalIncome = useMemo(() => getMonthIncome(viewYear, viewMonth), [transactions, viewYear, viewMonth]);
-  const totalExpenses = useMemo(() => getMonthExpenses(viewYear, viewMonth), [transactions, viewYear, viewMonth]);
-  const surplus = totalIncome - totalExpenses;
-
-  // Financial health score (year-to-date savings rate)
-  const score = useMemo(() => {
-    const yearTxs = transactions.filter(tx => new Date(tx.date).getFullYear() === viewYear);
-    const yi = yearTxs.filter(tx => tx.type === 'income').reduce((s, tx) => s + tx.amount, 0);
-    const ye = yearTxs.filter(tx => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
-    return yi > 0 ? Math.min(100, Math.max(0, Math.round(100 - (ye / yi) * 100))) : 50;
-  }, [transactions, viewYear]);
-
-  const scoreLabel = score >= 90 ? t('profile.excellent_health')
-    : score >= 80 ? t('profile.managing_well')
-    : score >= 60 ? t('profile.fair_health')
-    : t('profile.needs_improvement');
-  const scoreDisplay = score >= 90 ? '90+' : String(score);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilter, setShowFilter] = useState(false);
+  const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
+  const [filterMin, setFilterMin] = useState('');
+  const [filterMax, setFilterMax] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
 
   const prevMonth = () => {
     if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
@@ -197,26 +100,61 @@ export default function HomeScreen() {
     else setViewMonth(m => m + 1);
   };
 
-  const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleString(undefined, { month: 'long' });
+  const monthTxs = useMemo(
+    () => getMonthTransactions(viewYear, viewMonth),
+    [transactions, viewYear, viewMonth],
+  );
+
+  // Budget status for current real month
+  const hasBudget = budget.expectedIncome > 0 && budget.allocations.length > 0;
+  const currentMonthExpenses = getMonthExpenses(now.getFullYear(), now.getMonth());
+  const totalBudget = hasBudget
+    ? budget.allocations.reduce((s, a) => s + (budget.expectedIncome * a.percentage / 100), 0)
+    : 0;
+  const budgetUsedPct = totalBudget > 0 ? (currentMonthExpenses / totalBudget) * 100 : 0;
+  const isOverBudget = hasBudget && currentMonthExpenses > totalBudget;
+
+  // Search across ALL transactions
+  const q = searchQuery.trim().toLowerCase();
+  const searchResults: Transaction[] = useMemo(() => {
+    if (!q) return [];
+    return transactions.filter(tx => {
+      const catLabel = ALL_CATEGORIES.find(c => c.id === tx.category)?.label.toLowerCase() ?? '';
+      return (
+        tx.description.toLowerCase().includes(q) ||
+        catLabel.includes(q) ||
+        String(tx.amount).includes(q)
+      );
+    });
+  }, [transactions, q]);
+
+  const activeFilterCount =
+    (filterType !== 'all' ? 1 : 0) +
+    (filterMin ? 1 : 0) +
+    (filterMax ? 1 : 0) +
+    (filterCategory ? 1 : 0);
 
   const filteredTxs = useMemo(() => {
-    if (filterType === 'all') return monthTxs;
-    return monthTxs.filter(tx => tx.type === filterType);
-  }, [monthTxs, filterType]);
+    let list = monthTxs;
+    if (filterType !== 'all') list = list.filter(tx => tx.type === filterType);
+    if (filterMin) list = list.filter(tx => tx.amount >= parseFloat(filterMin));
+    if (filterMax) list = list.filter(tx => tx.amount <= parseFloat(filterMax));
+    if (filterCategory) list = list.filter(tx => tx.category === filterCategory);
+    return list;
+  }, [monthTxs, filterType, filterMin, filterMax, filterCategory]);
 
   const grouped = useMemo(() => groupByDate(filteredTxs), [filteredTxs]);
 
-  const handleShare = async () => {
-    try {
-      await Share.share({
-        message: `My finances this month: Income ${formatCurrency(totalIncome)}, Expenses ${formatCurrency(totalExpenses)}, Surplus ${formatCurrency(surplus)}. Financial health: ${scoreDisplay} (${scoreLabel})`,
-      });
-    } catch (_) {}
-  };
+  function clearFilters() {
+    setFilterType('all');
+    setFilterMin('');
+    setFilterMax('');
+    setFilterCategory('');
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" edges={['top']}>
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
         {/* ── Header ── */}
         <View className="px-5 pt-3 pb-2 flex-row items-center justify-between">
@@ -224,93 +162,38 @@ export default function HomeScreen() {
             <Text className="text-xs text-gray-400 dark:text-gray-500 font-medium">{t(getGreeting())}</Text>
             <Text className="text-xl font-black text-gray-900 dark:text-white">{t('home.my_finances')}</Text>
           </View>
-          <View className="w-9 h-9 rounded-full bg-green-600 items-center justify-center">
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/profile')}
+            activeOpacity={0.8}
+            className="w-9 h-9 rounded-full bg-green-600 items-center justify-center"
+          >
             <Text className="text-white font-bold text-sm">
               {(userProfile.name || 'U').charAt(0).toUpperCase()}
             </Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* ── Green Summary Card ── */}
-        <View className="mx-4 mt-2 bg-green-600 rounded-3xl p-4">
+        <GreenCard
+          year={viewYear}
+          month={viewMonth}
+          onPrevMonth={prevMonth}
+          onNextMonth={nextMonth}
+          onYearChange={setViewYear}
+        />
 
-          {/* Date navigation row */}
-          <View className="flex-row items-center justify-between mb-3">
-            <View className="bg-white/20 rounded-full px-3 py-1.5">
-              <Text className="text-white font-bold text-sm">{now.getDate()}</Text>
-            </View>
-            <View className="flex-row items-center gap-1.5">
-              <TouchableOpacity onPress={prevMonth}
-                className="w-7 h-7 rounded-full bg-white/20 items-center justify-center">
-                <ChevronLeft size={14} color="white" />
-              </TouchableOpacity>
-              <Text className="text-white font-bold text-sm min-w-[64px] text-center">{monthLabel}</Text>
-              <TouchableOpacity onPress={nextMonth}
-                className="w-7 h-7 rounded-full bg-white/20 items-center justify-center">
-                <ChevronRight size={14} color="white" />
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity className="bg-white/20 rounded-full px-3 py-1.5 flex-row items-center gap-1">
-              <Text className="text-white font-bold text-sm">{viewYear}</Text>
-              <ChevronDown size={12} color="white" />
-            </TouchableOpacity>
-          </View>
+        {/* ── Goal Tracker Card ── */}
+        <GoalTrackerCard year={viewYear} month={viewMonth} />
 
-          {/* Health score row */}
-          <View className="bg-white/15 rounded-2xl px-4 py-3 flex-row items-center mb-4">
-            <View className="flex-row items-center flex-1 gap-2">
-              <Text style={{ fontSize: 22 }}>💰</Text>
-              <View>
-                <Text style={{ color: 'rgba(255,255,255,0.65)', fontSize: 10 }}>{t('profile.assessment')}</Text>
-                <Text style={{ color: '#fbbf24', fontWeight: 'bold', fontSize: 15 }}>{scoreLabel}</Text>
-              </View>
-            </View>
-            <View className="flex-row items-center gap-3">
-              <View className="items-end">
-                <Text style={{ color: 'rgba(255,255,255,0.65)', fontSize: 10 }}>{t('profile.score')}</Text>
-                <Text className="text-white font-bold text-base">{scoreDisplay}</Text>
-              </View>
-              <TouchableOpacity onPress={handleShare}
-                className="w-8 h-8 rounded-full bg-white/20 items-center justify-center">
-                <Share2 size={14} color="white" />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Donut ring */}
-          <View className="items-center mb-4">
-            <View style={{
-              width: 164, height: 164, borderRadius: 82,
-              borderWidth: 22, borderColor: 'rgba(255,255,255,0.22)',
-              alignItems: 'center', justifyContent: 'center',
-            }}>
-              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, marginBottom: 2 }}>
-                {t('home.total_expenses')}
-              </Text>
-              <Text className="text-white text-2xl font-black">{formatCurrency(totalExpenses)}</Text>
-            </View>
-          </View>
-
-          {/* Income / Surplus */}
-          <View className="flex-row gap-3">
-            <View className="flex-1 bg-white/15 rounded-2xl px-4 py-3">
-              <Text style={{ color: 'rgba(255,255,255,0.65)', fontSize: 10, marginBottom: 3 }}>{t('common.income')}</Text>
-              <Text className="text-white font-bold text-base">{formatCurrency(totalIncome)}</Text>
-            </View>
-            <View className="flex-1 bg-white/15 rounded-2xl px-4 py-3">
-              <Text style={{ color: 'rgba(255,255,255,0.65)', fontSize: 10, marginBottom: 3 }}>{t('common.surplus')}</Text>
-              <Text style={{ color: surplus >= 0 ? 'white' : '#fca5a5', fontWeight: 'bold', fontSize: 15 }}>
-                {formatCurrency(surplus)}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ── Action buttons 2×2 ── */}
+        {/* ── Action buttons ── */}
         <View className="mx-4 mt-4 gap-y-3">
           <View className="flex-row gap-3">
-            <TouchableOpacity onPress={() => setShowEntry(true)} activeOpacity={0.8}
-              className="flex-1 bg-gray-900 dark:bg-gray-800 rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5">
+            {/* Add Transaction */}
+            <TouchableOpacity
+              onPress={() => setShowEntry(true)}
+              activeOpacity={0.8}
+              className="flex-1 bg-gray-900 dark:bg-gray-800 rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5"
+            >
               <View className="w-7 h-7 rounded-full bg-green-600 items-center justify-center">
                 <Plus size={15} color="white" strokeWidth={2.5} />
               </View>
@@ -318,47 +201,243 @@ export default function HomeScreen() {
                 {t('home.add_transaction')}
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/budget')} activeOpacity={0.8}
-              className="flex-1 bg-gray-900 dark:bg-gray-800 rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5">
-              <View className="w-7 h-7 rounded-full bg-gray-600 items-center justify-center">
-                <Target size={14} color="white" />
+
+            {/* Budget status */}
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/budget')}
+              activeOpacity={0.8}
+              className={`flex-1 rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5 ${
+                !hasBudget
+                  ? 'bg-gray-900 dark:bg-gray-800'
+                  : isOverBudget
+                  ? 'bg-red-950/80 dark:bg-red-900/30'
+                  : 'bg-green-950/80 dark:bg-green-900/30'
+              }`}
+            >
+              <View className={`w-7 h-7 rounded-full items-center justify-center ${
+                !hasBudget ? 'bg-gray-600' : isOverBudget ? 'bg-red-500' : 'bg-green-600'
+              }`}>
+                <Target size={14} color="white" strokeWidth={2.5} />
               </View>
-              <Text className="text-white text-sm font-semibold flex-shrink flex-1" numberOfLines={2}
-                style={{ lineHeight: 16 }}>
-                {t('home.set_budget')}
-              </Text>
+              <View className="flex-1 min-w-0">
+                <Text className={`text-sm font-semibold leading-tight ${
+                  !hasBudget ? 'text-white'
+                    : isOverBudget ? 'text-red-400'
+                    : 'text-green-400'
+                }`} numberOfLines={1}>
+                  {!hasBudget
+                    ? t('home.set_budget')
+                    : isOverBudget
+                    ? t('home.over_budget')
+                    : t('home.on_track')}
+                </Text>
+                {hasBudget && (
+                  <Text className={`text-[11px] font-semibold mt-0.5 ${isOverBudget ? 'text-red-500' : 'text-green-500'}`}>
+                    {budgetUsedPct.toFixed(0)}{t('home.pct_used')}
+                  </Text>
+                )}
+              </View>
+              {hasBudget && (
+                isOverBudget
+                  ? <TrendingDown size={14} color="#f87171" />
+                  : <TrendingUp size={14} color="#22c55e" />
+              )}
             </TouchableOpacity>
           </View>
+
+          {/* Search + Filter row */}
           <View className="flex-row gap-3">
-            <TouchableOpacity activeOpacity={0.8}
-              className="flex-1 bg-gray-900 dark:bg-gray-800 rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5">
-              <Search size={16} color="#9ca3af" />
-              <Text className="text-gray-300 text-sm font-semibold">{t('common.search')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setFilterType(f => f === 'all' ? 'expense' : f === 'expense' ? 'income' : 'all')}
+            <TouchableOpacity
+              onPress={() => { setShowSearch(s => !s); if (showFilter) setShowFilter(false); }}
               activeOpacity={0.8}
-              className="flex-1 bg-gray-900 dark:bg-gray-800 rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5">
-              <SlidersHorizontal size={16} color={filterType !== 'all' ? '#16a34a' : '#9ca3af'} />
-              <Text className={`text-sm font-semibold ${filterType !== 'all' ? 'text-green-500' : 'text-gray-300'}`}>
-                {filterType === 'all' ? t('home.filter') : filterType === 'expense' ? t('common.expense') : t('common.income')}
+              className={`flex-1 rounded-2xl px-4 py-3 flex-row items-center gap-2 ${
+                showSearch
+                  ? 'bg-green-600'
+                  : 'bg-gray-900 dark:bg-gray-800'
+              }`}
+            >
+              <Search size={15} color={showSearch ? 'white' : '#9ca3af'} />
+              <Text className={`text-sm font-semibold ${showSearch ? 'text-white' : 'text-gray-300'}`}>
+                {t('common.search')}
               </Text>
+              {showSearch && q ? (
+                <Text className="ml-auto text-white/80 text-xs">{searchResults.length}</Text>
+              ) : null}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => { setShowFilter(f => !f); if (showSearch) setShowSearch(false); }}
+              activeOpacity={0.8}
+              className={`flex-1 rounded-2xl px-4 py-3 flex-row items-center gap-2 ${
+                showFilter
+                  ? 'bg-green-600'
+                  : 'bg-gray-900 dark:bg-gray-800'
+              }`}
+            >
+              <SlidersHorizontal size={15} color={showFilter ? 'white' : (activeFilterCount > 0 ? '#22c55e' : '#9ca3af')} />
+              <Text className={`text-sm font-semibold ${showFilter ? 'text-white' : (activeFilterCount > 0 ? 'text-green-500' : 'text-gray-300')}`}>
+                {t('home.filter')}
+              </Text>
+              {activeFilterCount > 0 && (
+                <View className={`ml-auto w-5 h-5 rounded-full items-center justify-center ${showFilter ? 'bg-white' : 'bg-green-600'}`}>
+                  <Text className={`text-[10px] font-bold ${showFilter ? 'text-green-600' : 'text-white'}`}>
+                    {activeFilterCount}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* ── Categories header ── */}
-        <View className="mx-4 mt-5 mb-3 flex-row items-center justify-between">
-          <Text className="text-base font-bold text-gray-900 dark:text-white">{t('common.categories')}</Text>
-          <View className="flex-row gap-1">
-            <TouchableOpacity onPress={() => setListView('list')}
-              className={`w-8 h-8 rounded-lg items-center justify-center ${listView === 'list' ? 'bg-gray-200 dark:bg-gray-700' : ''}`}>
-              <LayoutGrid size={16} color={listView === 'list' ? '#16a34a' : '#9ca3af'} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setListView('calendar')}
-              className={`w-8 h-8 rounded-lg items-center justify-center ${listView === 'calendar' ? 'bg-gray-200 dark:bg-gray-700' : ''}`}>
-              <CalendarDays size={16} color={listView === 'calendar' ? '#16a34a' : '#9ca3af'} />
-            </TouchableOpacity>
+        {/* ── Search panel ── */}
+        {showSearch && (
+          <View className="mx-4 mt-2 bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+            <View className="flex-row items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5 mb-3">
+              <Search size={14} color="#9ca3af" />
+              <TextInput
+                className="flex-1 text-sm text-gray-900 dark:text-white"
+                placeholder={t('home.search_placeholder')}
+                placeholderTextColor="#9ca3af"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoFocus
+              />
+              {q ? (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <X size={14} color="#9ca3af" />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            {!q && (
+              <Text className="text-xs text-gray-400 text-center">{t('home.search_desc')}</Text>
+            )}
+
+            {q && searchResults.length === 0 && (
+              <Text className="text-xs text-gray-400 text-center py-1">{t('home.no_transactions')}</Text>
+            )}
+
+            {searchResults.length > 0 && (
+              <View className="gap-1.5" style={{ maxHeight: 220 }}>
+                <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false}>
+                  {searchResults.map(tx => {
+                    const cat = ALL_CATEGORIES.find(c => c.id === tx.category);
+                    return (
+                      <View key={tx.id} className="flex-row items-center gap-3 px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 mb-1.5">
+                        <View className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: cat?.color ?? '#9ca3af' }} />
+                        <View className="flex-1 min-w-0">
+                          <Text className="text-xs font-medium text-gray-900 dark:text-white" numberOfLines={1}>
+                            {tx.description || cat?.label}
+                          </Text>
+                          <Text className="text-[10px] text-gray-400">{cat?.label} · {formatDate(tx.date)}</Text>
+                        </View>
+                        <Text className={`text-xs font-bold flex-shrink-0 ${tx.type === 'income' ? 'text-green-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                          {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            )}
           </View>
+        )}
+
+        {/* ── Filter panel ── */}
+        {showFilter && (
+          <View className="mx-4 mt-2 bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-800 gap-4">
+            {/* Type */}
+            <View>
+              <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">{t('common.type')}</Text>
+              <View className="flex-row gap-2">
+                {(['all', 'income', 'expense'] as const).map(ft => (
+                  <TouchableOpacity key={ft} onPress={() => setFilterType(ft)}
+                    className={`flex-1 py-2 rounded-xl items-center ${filterType === ft ? 'bg-green-600' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                    <Text className={`text-xs font-bold ${filterType === ft ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                      {ft === 'all' ? t('common.all') : ft === 'income' ? t('common.income') : t('common.expense')}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Amount range */}
+            <View>
+              <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">{t('home.amount_range')}</Text>
+              <View className="flex-row gap-2">
+                <TextInput
+                  className="flex-1 bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white border border-gray-100 dark:border-gray-700"
+                  placeholder={t('home.filter_min')}
+                  placeholderTextColor="#9ca3af"
+                  value={filterMin}
+                  onChangeText={setFilterMin}
+                  keyboardType="decimal-pad"
+                />
+                <TextInput
+                  className="flex-1 bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white border border-gray-100 dark:border-gray-700"
+                  placeholder={t('home.filter_max')}
+                  placeholderTextColor="#9ca3af"
+                  value={filterMax}
+                  onChangeText={setFilterMax}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+            </View>
+
+            {/* Category */}
+            <View>
+              <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">{t('common.categories')}</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View className="flex-row gap-2">
+                  <TouchableOpacity
+                    onPress={() => setFilterCategory('')}
+                    className={`px-3 py-1.5 rounded-xl ${filterCategory === '' ? 'bg-green-600' : 'bg-gray-100 dark:bg-gray-800'}`}
+                  >
+                    <Text className={`text-xs font-semibold ${filterCategory === '' ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                      {t('home.all_categories')}
+                    </Text>
+                  </TouchableOpacity>
+                  {ALL_CATEGORIES.map(cat => (
+                    <TouchableOpacity
+                      key={cat.id}
+                      onPress={() => setFilterCategory(cat.id === filterCategory ? '' : cat.id)}
+                      className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-xl ${filterCategory === cat.id ? '' : 'bg-gray-100 dark:bg-gray-800'}`}
+                      style={filterCategory === cat.id ? { backgroundColor: cat.color + '25', borderWidth: 1, borderColor: cat.color } : {}}
+                    >
+                      <CategoryIconRaw icon={cat.icon} color={filterCategory === cat.id ? cat.color : '#9ca3af'} size={11} />
+                      <Text
+                        className={`text-xs font-semibold ${filterCategory === cat.id ? '' : 'text-gray-500 dark:text-gray-400'}`}
+                        style={filterCategory === cat.id ? { color: cat.color } : {}}
+                      >
+                        {cat.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
+            </View>
+
+            {activeFilterCount > 0 && (
+              <TouchableOpacity onPress={clearFilters}
+                className="py-2.5 rounded-xl bg-red-50 dark:bg-red-900/20 items-center">
+                <Text className="text-xs font-semibold text-red-500 dark:text-red-400">
+                  {t('home.clear_n_filters', { n: activeFilterCount, s: activeFilterCount !== 1 ? 's' : '' })}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {/* ── Transactions header ── */}
+        <View className="mx-4 mt-5 mb-3 flex-row items-center justify-between">
+          <Text className="text-base font-bold text-gray-900 dark:text-white">
+            {activeFilterCount > 0 ? t('home.filtered') : t('common.categories')}
+          </Text>
+          {activeFilterCount > 0 && (
+            <TouchableOpacity onPress={clearFilters}>
+              <Text className="text-xs font-semibold text-green-600">{t('home.clear')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* ── Transaction List ── */}
@@ -380,7 +459,7 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      {showEntry && <ManualEntryModal onClose={() => setShowEntry(false)} />}
+      <ManualEntryModal visible={showEntry} onClose={() => setShowEntry(false)} />
     </SafeAreaView>
   );
 }

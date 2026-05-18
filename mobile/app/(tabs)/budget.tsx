@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
+import { useRouter } from 'expo-router';
 import {
   View,
   Text,
@@ -92,6 +93,7 @@ function analyzeAllocations(income: number): BudgetAllocation[] {
 
 export default function BudgetScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
   const {
     budget, updateBudget, getMonthTransactions, getMonthIncome,
     formatCurrency, getCurrencySymbol, removeCustomGoal,
@@ -317,7 +319,7 @@ export default function BudgetScreen() {
             })}
 
             {/* Add Goal placeholder */}
-            <TouchableOpacity className="w-full py-4 rounded-3xl border-2 border-dashed border-gray-200 flex-row items-center justify-center gap-2 mb-4">
+            <TouchableOpacity onPress={() => router.push('/goal/new' as any)} className="w-full py-4 rounded-3xl border-2 border-dashed border-gray-200 flex-row items-center justify-center gap-2 mb-4">
               <Plus size={16} color="#9ca3af" />
               <Text className="text-sm font-semibold text-gray-400">{t('budget.add_goal')}</Text>
             </TouchableOpacity>

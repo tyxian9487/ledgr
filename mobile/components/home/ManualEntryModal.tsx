@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { playCoinSound } from '../../utils/sounds';
 import {
   Modal,
   View,
@@ -37,14 +39,14 @@ interface Props {
 }
 
 const DESCRIPTION_SUGGESTIONS: Record<string, string[]> = {
-  food:          ['Breakfast', 'Lunch', 'Dinner', 'Coffee', 'Brunch', 'Snack', 'Takeaway', 'Groceries'],
-  transport:     ['Fuel', 'Bus', 'Train', 'Taxi', 'Rideshare', 'Parking', 'Toll', 'Airplane'],
+  food:          ['Breakfast', 'Lunch', 'Dinner', 'Coffee', 'Brunch', 'Snack', 'Takeaway', 'Groceries', 'Meal prep'],
+  transport:     ['Fuel', 'Bus', 'Train', 'Taxi', 'Rideshare', 'Parking', 'Toll', 'Airplane', 'Ferry'],
   shopping:      ['Clothing', 'Electronics', 'Home goods', 'Online order', 'Gift purchase'],
-  entertainment: ['Movie', 'Concert', 'Gaming', 'Streaming', 'Books', 'Night out'],
-  health:        ['Gym', 'Doctor visit', 'Pharmacy', 'Dentist', 'Vitamins', 'Therapy'],
+  entertainment: ['Movie', 'Concert', 'Gaming', 'Streaming', 'Books', 'Night out', 'Studio'],
+  health:        ['Gym', 'Doctor visit', 'Pharmacy', 'Dentist', 'Vitamins', 'Therapy', 'Optician', 'Lab test'],
   housing:       ['Rent', 'Mortgage', 'Repairs', 'Furniture', 'Cleaning', 'Renovation'],
   utilities:     ['Electricity', 'Water', 'Gas', 'Internet', 'Phone bill'],
-  education:     ['Tuition', 'Course', 'Books', 'Workshop', 'Online class'],
+  education:     ['Tuition', 'Course', 'Books', 'Workshop', 'Online class', 'Exam fee'],
   travel:        ['Flight', 'Hotel', 'Car rental', 'Visa fee', 'Activities'],
   personal:      ['Haircut', 'Salon', 'Skincare', 'Spa', 'Personal care'],
   subscriptions: ['Netflix', 'Spotify', 'Software', 'Cloud storage', 'App subscription'],
@@ -56,7 +58,7 @@ const DESCRIPTION_SUGGESTIONS: Record<string, string[]> = {
   freelance:     ['Design project', 'Consulting', 'Writing', 'Development'],
   business:      ['Revenue', 'Sales', 'Invoice payment', 'Client payment'],
   gift:          ['Birthday gift', 'Holiday gift', 'Cash gift'],
-  other_income:  ['Bonus', 'Refund', 'Cashback', 'Rental income', 'Dividend'],
+  other_income:  ['Bonus', 'Refund', 'Cashback', 'Side hustle', 'Rental income', 'Dividend'],
 };
 
 function todayString() {
@@ -102,6 +104,12 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
   const [linkedGoalId, setLinkedGoalId] = useState(prefill?.linkedGoalId ?? '');
   const [customDateMode, setCustomDateMode] = useState(false);
   const [customDateInput, setCustomDateInput] = useState(date);
+  const [showAddTxHint, setShowAddTxHint] = useState(false);
+  useEffect(() => {
+    AsyncStorage.getItem('ledgr_addtx_hint_seen').then(val => {
+      if (!val) setShowAddTxHint(true);
+    });
+  }, []);
 
   const categories = type === 'expense' ? expenseCategories : incomeCategories;
   const selectedCategory = categories.find(c => c.id === category);
@@ -155,6 +163,7 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
       updateTransaction(transactionId, data);
     } else {
       addTransaction(data);
+      playCoinSound();
       if (category === 'savings' && linkedGoalId && linkedGoalId !== '__monthly__') {
         const g = (budget.customGoals ?? []).find(g => g.id === linkedGoalId);
         if (g) updateCustomGoal(linkedGoalId, { savedAmount: g.savedAmount + parseFloat(amount) });
@@ -231,6 +240,19 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
                 </View>
                 <ImageIcon size={16} color="#d1d5db" />
               </TouchableOpacity>
+            )}
+
+            {showAddTxHint && (
+              <View className="mt-3 mb-1 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-900/40 rounded-2xl p-3 flex-row gap-3 items-start">
+                <Text className="text-lg flex-shrink-0">💡</Text>
+                <View className="flex-1">
+                  <Text className="text-xs font-bold text-green-800 dark:text-green-300 mb-0.5">{t('tx.quick_tip')}</Text>
+                  <Text className="text-[11px] text-green-700 dark:text-green-400 leading-relaxed">{t('tx.tip_body')}</Text>
+                </View>
+                <TouchableOpacity onPress={() => { setShowAddTxHint(false); AsyncStorage.setItem('ledgr_addtx_hint_seen', '1'); }}>
+                  <X size={14} color="#16a34a" />
+                </TouchableOpacity>
+              </View>
             )}
 
             {/* Type toggle */}
