@@ -1,0 +1,75 @@
+name: EAS Android Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: EAS build profile
+        required: false
+        default: production
+        type: choice
+        options:
+          - production
+          - preview
+
+jobs:
+  build:
+    name: Build Android
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Setup Expo & EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Android with EAS
+        id: build
+        run: |
+          BUILD_JSON=$(eas build \
+            --platform android \
+            --profile ${{ inputs.profile || 'production' }} \
+            --non-interactive \
+            --wait \
+            --json 2>/dev/null)
+
+          ARTIFACT_URL=$(echo "$BUILD_JSON" | jq -r \
+            'if type == "array" then .[0] else . end
+             | (.artifacts.buildUrl // .artifacts.applicationArchiveUrl)')
+
+          echo "artifact_url=$ARTIFACT_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Download artifact
+        run: |
+          mkdir -p dist
+          PROFILE="${{ inputs.profile || 'production' }}"
+          EXT="aab"
+          [ "$PROFILE" = "preview" ] && EXT="apk"
+          curl -sSL "${{ steps.build.outputs.artifact_url }}" \
+            -o "dist/kachingo-android-${PROFILE}.${EXT}"
+          echo "Downloaded: $(ls -lh dist/)"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kachingo-android-${{ inputs.profile || 'production' }}-${{ github.sha }}
+          path: mobile/dist/
+          retention-days: 30
+          if-no-files-found: error
