@@ -14,7 +14,7 @@ on:
 
 jobs:
   build:
-    name: Build Android
+    name: Build Android (local)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -24,6 +24,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -31,57 +37,30 @@ jobs:
           cache: npm
           cache-dependency-path: mobile/package-lock.json
 
+      - name: Install Android NDK
+        run: |
+          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "ndk;27.1.12297006"
+
       - name: Install EAS CLI
         run: npm install -g eas-cli@latest
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify EAS auth
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: eas whoami
-
-      - name: Build Android with EAS
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          eas build \
-            --platform android \
-            --profile ${{ inputs.profile || 'production' }} \
-            --non-interactive \
-            --wait
-
-      - name: Get artifact URL
-        id: artifact
+      - name: Build Android locally
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           PROFILE="${{ inputs.profile || 'production' }}"
-          URL=$(eas build:list \
-            --platform android \
-            --status FINISHED \
-            --limit 1 \
-            --non-interactive \
-            --json \
-            | jq -r '.[0] | (.artifacts.buildUrl // .artifacts.applicationArchiveUrl)')
-
-          if [ -z "$URL" ] || [ "$URL" = "null" ]; then
-            echo "ERROR: Could not retrieve artifact URL from EAS"
-            exit 1
-          fi
-
           EXT="aab"
           [ "$PROFILE" = "preview" ] && EXT="apk"
-          echo "url=$URL" >> "$GITHUB_OUTPUT"
-          echo "filename=kachingo-android-${PROFILE}.${EXT}" >> "$GITHUB_OUTPUT"
-
-      - name: Download artifact
-        run: |
           mkdir -p dist
-          curl -sSL "${{ steps.artifact.outputs.url }}" \
-            -o "dist/${{ steps.artifact.outputs.filename }}"
-          echo "Downloaded: $(ls -lh dist/)"
+          eas build \
+            --platform android \
+            --profile "$PROFILE" \
+            --local \
+            --non-interactive \
+            --output "dist/kachingo-android.${EXT}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
