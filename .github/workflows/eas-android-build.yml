@@ -31,19 +31,20 @@ jobs:
           cache: npm
           cache-dependency-path: mobile/package-lock.json
 
-      - name: Setup Expo & EAS CLI
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Install EAS CLI
+        run: npm install -g eas-cli@latest
 
       - name: Install dependencies
         run: npm ci
 
       - name: Verify EAS auth
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: eas whoami
 
       - name: Build Android with EAS
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           eas build \
             --platform android \
@@ -53,6 +54,8 @@ jobs:
 
       - name: Get artifact URL
         id: artifact
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           PROFILE="${{ inputs.profile || 'production' }}"
           URL=$(eas build:list \
@@ -60,7 +63,7 @@ jobs:
             --status FINISHED \
             --limit 1 \
             --non-interactive \
-            --json 2>/dev/null \
+            --json \
             | jq -r '.[0] | (.artifacts.buildUrl // .artifacts.applicationArchiveUrl)')
 
           if [ -z "$URL" ] || [ "$URL" = "null" ]; then
