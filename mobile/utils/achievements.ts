@@ -217,6 +217,19 @@ export const TIPS: Tip[] = [
   { id: 'e4', tag: 'excellent', title: 'Make "Future Me" a monthly ritual', body: 'Each month, log one transaction labelled "Future Me" — an extra loan payment, an index fund top-up, or a savings boost. Naming it makes it feel real and keeps momentum going.' },
 ];
 
+export function computeBadges(transactions: Transaction[], budget: BudgetSettings): BadgeDef[] {
+  const { best: bestStreak } = computeStreaks(transactions);
+  const currentYear = new Date().getFullYear();
+  const yearTxs = transactions.filter(t => new Date(t.date).getFullYear() === currentYear);
+  const yearIncome = yearTxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const yearExpenses = yearTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const score = yearIncome > 0
+    ? Math.min(100, Math.max(0, Math.round(100 - (yearExpenses / yearIncome) * 100)))
+    : 50;
+  const params: BadgeParams = { transactions, budget, score, bestStreak };
+  return BADGES.filter(b => b.check(params));
+}
+
 export function tipsForScore(score: number): Tip[] {
   if (score < 60) return TIPS.filter(t => t.tag === 'critical');
   if (score < 80) return TIPS.filter(t => t.tag === 'fair');

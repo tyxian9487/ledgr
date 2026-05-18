@@ -13,7 +13,7 @@ interface Badge {
 }
 
 export default function NotificationWatcher() {
-  const { transactions, budget, userProfile } = useApp();
+  const { transactions, budget } = useApp();
   const { t } = useTranslation();
   const [pendingBadge, setPendingBadge] = useState<Badge | null>(null);
   const seenRef = useRef<Set<string>>(new Set());
@@ -21,7 +21,7 @@ export default function NotificationWatcher() {
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const earned = computeBadges(transactions, budget, userProfile);
+    const earned = computeBadges(transactions, budget);
     earned.forEach(badge => {
       if (!seenRef.current.has(badge.id)) {
         seenRef.current.add(badge.id);

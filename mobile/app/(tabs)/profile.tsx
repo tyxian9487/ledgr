@@ -16,7 +16,6 @@ import {
   Sun,
   ChevronRight,
   ChevronDown,
-  Lock,
   HelpCircle,
   FileText,
   LogOut,
@@ -37,6 +36,7 @@ import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { usePurchases, isUserCancelledError } from '../../context/PurchasesContext';
 import { CURRENCIES, LANGUAGES, EXPENSE_CATEGORIES, INCOME_CATEGORIES, CustomCategory, COLOR_OPTIONS, ICON_OPTIONS } from '../../types';
+import { computeBadges, BADGES } from '../../utils/achievements';
 
 // ─── Score Ring (pure RN, no SVG) ────────────────────────────────────────────
 function ScoreRing({ score }: { score: number }) {
@@ -633,6 +633,11 @@ export default function ProfileScreen() {
   const score = yearIncome > 0
     ? Math.min(100, Math.max(0, Math.round(100 - (yearExpenses / yearIncome) * 100)))
     : 50;
+  const earnedBadgeIds = useMemo(
+    () => new Set(computeBadges(transactions, budget).map(b => b.id)),
+    [transactions, budget],
+  );
+
   const scoreLabel =
     score >= 80 ? t('profile.excellent_health') :
     score >= 60 ? t('profile.fair_health') :
@@ -779,6 +784,36 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* Badges */}
+        <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mx-4 mb-2">
+          {t('profile.badges')}
+        </Text>
+        <View className="mx-4 bg-white rounded-2xl p-4 shadow-sm border border-gray-50 mb-4">
+          <View className="flex-row flex-wrap gap-2">
+            {BADGES.map(badge => {
+              const earned = earnedBadgeIds.has(badge.id);
+              return (
+                <View
+                  key={badge.id}
+                  className={`items-center rounded-2xl py-3 px-2 ${earned ? 'bg-green-50' : 'bg-gray-50'}`}
+                  style={{ width: '30.5%' }}
+                >
+                  <Text style={{ fontSize: 22, opacity: earned ? 1 : 0.25 }}>{badge.icon}</Text>
+                  <Text
+                    className={`text-[10px] font-bold text-center mt-1 ${earned ? 'text-green-700' : 'text-gray-400'}`}
+                    numberOfLines={2}
+                  >
+                    {badge.label}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+          <Text className="text-[10px] text-gray-400 text-center mt-3">
+            {earnedBadgeIds.size}/{BADGES.length} unlocked
+          </Text>
+        </View>
+
         {/* Subscription */}
         <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mx-4 mb-2">
           Subscription
@@ -824,23 +859,6 @@ export default function ProfileScreen() {
               icon={<Tag size={16} color="#6b7280" />}
               label={t('profile.categories')}
               onPress={() => setShowCategories(true)}
-            />
-          </View>
-
-          {/* Account */}
-          <View className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-50">
-            <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-wider px-4 pt-3 pb-1">
-              {t('profile.account')}
-            </Text>
-            <SettingsRow
-              icon={<Lock size={16} color="#6b7280" />}
-              label={t('profile.change_pw')}
-              onPress={() =>
-                Alert.alert(
-                  t('profile.change_pw'),
-                  'Password change is not available in this version.',
-                )
-              }
             />
           </View>
 

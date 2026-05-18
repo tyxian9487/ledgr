@@ -7,6 +7,7 @@ import { PurchasesProvider, usePurchases } from '../context/PurchasesContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import ConsentBanner from '../components/ConsentBanner';
+import NotificationWatcher from '../components/NotificationWatcher';
 import { useColorScheme } from 'nativewind';
 
 function NavigationGuard() {
@@ -60,6 +61,7 @@ export default function RootLayout() {
             <LanguageProvider>
               <DarkModeBridge />
               <EntitlementSyncBridge />
+              <NotificationWatcher />
               <NavigationGuard />
               <ConsentBanner />
             </LanguageProvider>
