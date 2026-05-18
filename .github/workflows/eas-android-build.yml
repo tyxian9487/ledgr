@@ -14,7 +14,7 @@ on:
 
 jobs:
   build:
-    name: Build Android (local)
+    name: Build Android
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -41,26 +41,49 @@ jobs:
         run: |
           $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "ndk;27.1.12297006"
 
-      - name: Install EAS CLI
-        run: npm install -g eas-cli@latest
-
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Android locally
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      - name: Create local.properties
+        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+
+      - name: Generate debug keystore
         run: |
+          keytool -genkey -v \
+            -keystore android/app/debug.keystore \
+            -alias androiddebugkey \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass android \
+            -keypass android \
+            -dname "CN=Android Debug,O=Android,C=US" \
+            -noprompt
+
+      - name: Build Android
+        shell: bash
+        env:
+          GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m'
+        run: |
+          set -euo pipefail
           PROFILE="${{ inputs.profile || 'production' }}"
-          EXT="aab"
-          [ "$PROFILE" = "preview" ] && EXT="apk"
-          mkdir -p dist
-          eas build \
-            --platform android \
-            --profile "$PROFILE" \
-            --local \
-            --non-interactive \
-            --output "dist/kachingo-android.${EXT}"
+          mkdir -p dist logs
+
+          if [ "$PROFILE" = "preview" ]; then
+            (cd android && ./gradlew assembleRelease --stacktrace --no-daemon) 2>&1 | tee logs/build.log
+            cp android/app/build/outputs/apk/release/app-release.apk dist/kachingo-android.apk
+          else
+            (cd android && ./gradlew bundleRelease --stacktrace --no-daemon) 2>&1 | tee logs/build.log
+            cp android/app/build/outputs/bundle/release/app-release.aab dist/kachingo-android.aab
+          fi
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ github.sha }}
+          path: mobile/logs/
+          if-no-files-found: ignore
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
