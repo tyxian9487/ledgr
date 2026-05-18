@@ -53,6 +53,11 @@ export function PurchasesProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function init() {
       try {
+        if (!RC_API_KEY) {
+          console.warn('[RevenueCat] No API key — purchases disabled');
+          return;
+        }
+
         if (__DEV__) {
           Purchases.setLogLevel(LOG_LEVEL.DEBUG);
         }
