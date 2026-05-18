@@ -161,7 +161,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const data = JSON.parse(saved);
           setTransactions(processAutoDebits(data.transactions || generateSampleData()));
           const savedProfile = data.userProfile || DEFAULT_PROFILE;
-          if (!savedProfile.language) savedProfile.language = detectDeviceLanguage();
+          const deviceLang = detectDeviceLanguage();
+          // One-time migration: switch language from the old 'en' default to
+          // the actual device language. langMigratedV1 prevents re-running
+          // if the user later manually switches back to English.
+          if (!data.langMigratedV1 && (!savedProfile.language || (savedProfile.language === 'en' && deviceLang !== 'en'))) {
+            savedProfile.language = deviceLang;
+          }
           setUserProfile(savedProfile);
           setDarkMode(data.darkMode !== undefined ? data.darkMode : systemColorScheme === 'dark');
           setBudget(data.budget || DEFAULT_BUDGET);
@@ -257,6 +263,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const blob = {
         transactions, userProfile, darkMode, budget,
         hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent,
+        langMigratedV1: true,
       };
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(blob));
 
