@@ -70,7 +70,7 @@ jobs:
           mkdir -p dist logs
 
           if [ "$PROFILE" = "debug" ]; then
-            (cd android && ./gradlew assembleDebug --stacktrace --no-daemon -PreactNativeArchitectures=arm64-v8a) 2>&1 | tee logs/build.log
+            (cd android && ./gradlew assembleDebug -PbundleInDebug=true --stacktrace --no-daemon -PreactNativeArchitectures=arm64-v8a) 2>&1 | tee logs/build.log
             cp android/app/build/outputs/apk/debug/app-debug.apk dist/kachingo-android.apk
           elif [ "$PROFILE" = "preview" ]; then
             (cd android && ./gradlew assembleRelease --stacktrace --no-daemon -PreactNativeArchitectures=arm64-v8a) 2>&1 | tee logs/build.log
