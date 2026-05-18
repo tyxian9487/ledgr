@@ -1,7 +1,7 @@
 import '../global.css';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import React, { useEffect, Component } from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, useColorScheme as useSystemColorScheme } from 'react-native';
 import { AppProvider, useApp } from '../context/AppContext';
 import { LanguageProvider } from '../context/LanguageContext';
 import { PurchasesProvider, usePurchases } from '../context/PurchasesContext';
@@ -63,12 +63,12 @@ function NavigationGuard() {
 }
 
 function DarkModeBridge() {
-  const { darkMode } = useApp();
+  const systemScheme = useSystemColorScheme();
   const { setColorScheme } = useColorScheme();
 
   useEffect(() => {
-    setColorScheme(darkMode ? 'dark' : 'light');
-  }, [darkMode]);
+    setColorScheme(systemScheme === 'dark' ? 'dark' : 'light');
+  }, [systemScheme]);
 
   return null;
 }

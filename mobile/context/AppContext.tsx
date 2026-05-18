@@ -143,6 +143,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [darkMode, setDarkMode] = useState<boolean>(systemColorScheme === 'dark');
+
+  // Keep darkMode in sync when the user changes the system theme while the app is open
+  useEffect(() => {
+    setDarkMode(systemColorScheme === 'dark');
+  }, [systemColorScheme]);
+
   const [budget, setBudget] = useState<BudgetSettings>(DEFAULT_BUDGET);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
@@ -169,7 +175,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             savedProfile.language = deviceLang;
           }
           setUserProfile(savedProfile);
-          setDarkMode(data.darkMode !== undefined ? data.darkMode : systemColorScheme === 'dark');
+          // Always follow system colour scheme — ignore stored value
+          setDarkMode(systemColorScheme === 'dark');
           setBudget(data.budget || DEFAULT_BUDGET);
           setHasCompletedOnboarding(data.hasCompletedOnboarding ?? true);
           setCustomCategories(data.customCategories || []);
