@@ -48,7 +48,8 @@ function NavigationGuard() {
   const router = useRouter();
 
   useEffect(() => {
-    const inAuthGroup = segments[0] === '(auth)';
+    // 'auth' (no parens) is the OAuth callback folder — treat it like the auth group
+    const inAuthGroup = segments[0] === '(auth)' || segments[0] === 'auth';
     if (!isAuthenticated && !inAuthGroup) {
       router.replace('/(auth)/login');
     } else if (isAuthenticated && !hasCompletedOnboarding && segments[0] !== '(auth)') {

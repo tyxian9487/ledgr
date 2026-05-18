@@ -3,12 +3,12 @@ import { View, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../utils/supabase';
 
-// Handles the kachingo://auth/callback?code=... deep link from Supabase OAuth.
-// On Android, WebBrowser.openAuthSessionAsync doesn't always intercept the
-// custom-scheme redirect — Android routes it here via the intent system instead.
+// Handles kachingo://auth/callback?code=...&state=... deep link on Android.
+// WebBrowser.openAuthSessionAsync doesn't reliably catch custom-scheme
+// redirects on Android — the OS routes them here via the intent system.
 export default function AuthCallback() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ code?: string; error?: string; error_description?: string }>();
+  const params = useLocalSearchParams<Record<string, string>>();
 
   useEffect(() => {
     async function exchange() {
@@ -20,18 +20,23 @@ export default function AuthCallback() {
         }
 
         if (params.code) {
-          // Build the full URL so Supabase can extract PKCE verifier + code
-          const url = `kachingo://auth/callback?code=${params.code}`;
-          const { error } = await supabase.auth.exchangeCodeForSession(url);
+          // Reconstruct the full URL so Supabase can extract all PKCE params
+          const qs = Object.entries(params)
+            .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+            .join('&');
+          const fullUrl = `kachingo://auth/callback?${qs}`;
+          const { error } = await supabase.auth.exchangeCodeForSession(fullUrl);
           if (error) {
             console.warn('[Auth] exchangeCodeForSession error:', error.message);
             router.replace('/(auth)/login');
             return;
           }
+          // Don't navigate manually — NavigationGuard in _layout.tsx reacts to
+          // the onAuthStateChange event and redirects to (tabs) automatically.
+        } else {
+          // No code and no error — nothing to do, go back to login
+          router.replace('/(auth)/login');
         }
-
-        // NavigationGuard in _layout.tsx will redirect to (tabs) once auth state updates
-        router.replace('/(tabs)');
       } catch (e) {
         console.warn('[Auth] callback error:', e);
         router.replace('/(auth)/login');
