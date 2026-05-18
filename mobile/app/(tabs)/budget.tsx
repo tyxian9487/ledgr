@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -202,6 +203,15 @@ export default function BudgetScreen() {
         {/* ── GOALS TAB ── */}
         {activeTab === 'goals' && (
           <>
+            {/* Goals hero image */}
+            <View className="items-center mb-2">
+              <Image
+                source={require('../../assets/m_savingsjar.png')}
+                style={{ width: 120, height: 120 }}
+                resizeMode="contain"
+              />
+            </View>
+
             {/* Monthly Savings Goal toggle */}
             <View className="bg-white rounded-3xl border border-gray-100 overflow-hidden mb-4">
               <View className="px-5 py-4">

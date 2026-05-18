@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TrendingUp, TrendingDown, Minus, ChevronRight, X } from 'lucide-react-native';
@@ -29,6 +30,8 @@ const CATEGORY_COLORS: Record<string, string> = {
   subscriptions: '#64748b',
   insurance: '#0ea5e9',
   savings: '#22c55e',
+  investment: '#15803d',
+  investments: '#15803d',
   others: '#94a3b8',
 };
 
@@ -248,9 +251,16 @@ export default function TrendsScreen() {
     <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header */}
-        <View className="px-5 pt-3 pb-2">
-          <Text className="text-xl font-bold text-gray-900">{t('trends.title')}</Text>
-          <Text className="text-xs text-gray-400 mt-0.5">{t('trends.subtitle')}</Text>
+        <View className="px-5 pt-3 pb-2 flex-row items-center justify-between">
+          <View>
+            <Text className="text-xl font-bold text-gray-900">{t('trends.title')}</Text>
+            <Text className="text-xs text-gray-400 mt-0.5">{t('trends.subtitle')}</Text>
+          </View>
+          <Image
+            source={require('../../assets/m_magnifier.png')}
+            style={{ width: 72, height: 72 }}
+            resizeMode="contain"
+          />
         </View>
 
         {/* ── Summary Cards ── */}
