@@ -34,3 +34,20 @@ $$;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Cloud data storage (one row per user, synced from device)
+CREATE TABLE user_data (
+  user_id                  UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+  transactions             JSONB NOT NULL DEFAULT '[]',
+  budget                   JSONB NOT NULL DEFAULT '{}',
+  custom_categories        JSONB NOT NULL DEFAULT '[]',
+  disabled_categories      TEXT[] NOT NULL DEFAULT '{}',
+  dark_mode                BOOLEAN NOT NULL DEFAULT false,
+  has_completed_onboarding BOOLEAN NOT NULL DEFAULT false,
+  analytics_consent        BOOLEAN,
+  updated_at               TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE user_data ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage their own data"
+  ON user_data FOR ALL USING (auth.uid() = user_id);

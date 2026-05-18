@@ -132,6 +132,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [disabledCategories, setDisabledCategories] = useState<string[]>([]);
   const [analyticsConsent, setAnalyticsConsent] = useState<boolean | null>(null);
 
+  const userIdRef = useRef<string | null>(null);
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -165,6 +168,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setIsAuthenticated(true);
+        userIdRef.current = session.user.id;
         const meta = session.user.user_metadata ?? {};
         setUserProfile(prev => ({
           ...prev,
@@ -179,6 +183,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setIsAuthenticated(true);
+        userIdRef.current = session.user.id;
         const meta = session.user.user_metadata ?? {};
         const name = meta.full_name || meta.name || 'User';
         const email = session.user.email || '';
@@ -194,8 +199,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             avatar,
           }, { onConflict: 'id', ignoreDuplicates: true });
         }
+
+        // Load cloud data if it is newer than the last local sync
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+          const uid = session.user.id;
+          (async () => {
+            const lastSynced = await AsyncStorage.getItem('kachingo_last_synced');
+            const { data } = await supabase.from('user_data')
+              .select('*').eq('user_id', uid).maybeSingle();
+            if (!data) return;
+            if (lastSynced && new Date(data.updated_at) <= new Date(lastSynced)) return;
+            if (data.transactions?.length) setTransactions(processAutoDebits(data.transactions));
+            if (data.budget && Object.keys(data.budget).length > 0) setBudget(data.budget);
+            if (data.custom_categories?.length) setCustomCategories(data.custom_categories);
+            setDisabledCategories(data.disabled_categories ?? []);
+            setDarkMode(data.dark_mode ?? false);
+            setHasCompletedOnboarding(data.has_completed_onboarding ?? false);
+            if (data.analytics_consent !== null && data.analytics_consent !== undefined) {
+              setAnalyticsConsent(data.analytics_consent);
+            }
+            await AsyncStorage.setItem('kachingo_last_synced', data.updated_at);
+          })();
+        }
       } else {
         setIsAuthenticated(false);
+        userIdRef.current = null;
+        if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
       }
     });
 
@@ -204,12 +233,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const save = async () => {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
+      const blob = {
         transactions, userProfile, darkMode, budget,
-        hasCompletedOnboarding,
-        customCategories, disabledCategories,
-        analyticsConsent,
-      }));
+        hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent,
+      };
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(blob));
+
+      const uid = userIdRef.current;
+      if (!uid) return;
+      if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+      // Debounce cloud sync so rapid state changes don't fire many requests
+      syncTimerRef.current = setTimeout(async () => {
+        if (userIdRef.current !== uid) return;
+        await supabase.from('user_data').upsert({
+          user_id: uid,
+          transactions: blob.transactions,
+          budget: blob.budget,
+          custom_categories: blob.customCategories,
+          disabled_categories: blob.disabledCategories,
+          dark_mode: blob.darkMode,
+          has_completed_onboarding: blob.hasCompletedOnboarding,
+          analytics_consent: blob.analyticsConsent ?? null,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' });
+        await AsyncStorage.setItem('kachingo_last_synced', new Date().toISOString());
+      }, 2000);
     };
     save();
   }, [transactions, userProfile, darkMode, budget, hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent]);
