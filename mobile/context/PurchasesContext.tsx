@@ -11,7 +11,7 @@ import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const RC_API_KEY = 'test_jdNazyDihlTksmhfYXGXAjslWhl';
+const RC_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_KEY ?? '';
 
 export const PRO_ENTITLEMENT_ID = 'Kachingo Pro';
 
