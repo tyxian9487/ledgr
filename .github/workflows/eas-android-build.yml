@@ -41,29 +41,40 @@ jobs:
         run: npm ci
 
       - name: Build Android with EAS
-        id: build
         run: |
-          BUILD_JSON=$(eas build \
+          eas build \
             --platform android \
             --profile ${{ inputs.profile || 'production' }} \
             --non-interactive \
-            --wait \
-            --json 2>/dev/null)
+            --wait
 
-          ARTIFACT_URL=$(echo "$BUILD_JSON" | jq -r \
-            'if type == "array" then .[0] else . end
-             | (.artifacts.buildUrl // .artifacts.applicationArchiveUrl)')
+      - name: Get artifact URL
+        id: artifact
+        run: |
+          PROFILE="${{ inputs.profile || 'production' }}"
+          URL=$(eas build:list \
+            --platform android \
+            --status FINISHED \
+            --limit 1 \
+            --non-interactive \
+            --json 2>/dev/null \
+            | jq -r '.[0] | (.artifacts.buildUrl // .artifacts.applicationArchiveUrl)')
 
-          echo "artifact_url=$ARTIFACT_URL" >> "$GITHUB_OUTPUT"
+          if [ -z "$URL" ] || [ "$URL" = "null" ]; then
+            echo "ERROR: Could not retrieve artifact URL from EAS"
+            exit 1
+          fi
+
+          EXT="aab"
+          [ "$PROFILE" = "preview" ] && EXT="apk"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "filename=kachingo-android-${PROFILE}.${EXT}" >> "$GITHUB_OUTPUT"
 
       - name: Download artifact
         run: |
           mkdir -p dist
-          PROFILE="${{ inputs.profile || 'production' }}"
-          EXT="aab"
-          [ "$PROFILE" = "preview" ] && EXT="apk"
-          curl -sSL "${{ steps.build.outputs.artifact_url }}" \
-            -o "dist/kachingo-android-${PROFILE}.${EXT}"
+          curl -sSL "${{ steps.artifact.outputs.url }}" \
+            -o "dist/${{ steps.artifact.outputs.filename }}"
           echo "Downloaded: $(ls -lh dist/)"
 
       - name: Upload artifact
