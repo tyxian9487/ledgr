@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, NativeModules, Platform } from 'react-native';
 import { Transaction, UserProfile, BudgetSettings, AutoDebitPeriod, CustomCategory, CustomGoal, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../types';
 import { initMixpanel, trackEvent, identifyUser, resetAnalytics } from '../utils/analytics';
 import { supabase } from '../utils/supabase';
@@ -94,6 +94,24 @@ const DEFAULT_PROFILE: UserProfile = {
   language: 'en',
 };
 
+const SUPPORTED_LANGUAGES = ['en', 'zh', 'ja', 'ko', 'ms'] as const;
+
+function detectDeviceLanguage(): string {
+  try {
+    const raw: string =
+      (Platform.OS === 'ios'
+        ? NativeModules.SettingsManager?.settings?.AppleLanguages?.[0] ??
+          NativeModules.SettingsManager?.settings?.AppleLocale
+        : NativeModules.I18nManager?.localeIdentifier) ?? '';
+    const tag = raw.replace('_', '-').toLowerCase();
+    // Match zh variants (zh-hans, zh-hant, zh-cn, zh-tw, etc.) → 'zh'
+    const primary = tag.startsWith('zh') ? 'zh' : tag.split('-')[0];
+    return (SUPPORTED_LANGUAGES as readonly string[]).includes(primary) ? primary : 'en';
+  } catch {
+    return 'en';
+  }
+}
+
 const DEFAULT_BUDGET: BudgetSettings = {
   expectedIncome: 0,
   allocations: [],
@@ -143,7 +161,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const data = JSON.parse(saved);
           setTransactions(processAutoDebits(data.transactions || generateSampleData()));
           const savedProfile = data.userProfile || DEFAULT_PROFILE;
-          if (!savedProfile.language) savedProfile.language = 'en';
+          if (!savedProfile.language) savedProfile.language = detectDeviceLanguage();
           setUserProfile(savedProfile);
           setDarkMode(data.darkMode !== undefined ? data.darkMode : systemColorScheme === 'dark');
           setBudget(data.budget || DEFAULT_BUDGET);
@@ -156,7 +174,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             initMixpanel().then(() => identifyUser(data.userProfile || DEFAULT_PROFILE));
           }
         } else {
+          // Fresh install — seed language and dark mode from device settings
           setTransactions(processAutoDebits(generateSampleData()));
+          setUserProfile(prev => ({ ...prev, language: detectDeviceLanguage() }));
+          setDarkMode(systemColorScheme === 'dark');
         }
       } catch {
         setTransactions(processAutoDebits(generateSampleData()));

@@ -13,7 +13,7 @@ interface Badge {
 }
 
 export default function NotificationWatcher() {
-  const { transactions, budget } = useApp();
+  const { transactions, budget, isAuthenticated } = useApp();
   const { t } = useTranslation();
   const [pendingBadge, setPendingBadge] = useState<Badge | null>(null);
   const seenRef = useRef<Set<string>>(new Set());
@@ -21,6 +21,7 @@ export default function NotificationWatcher() {
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     const earned = computeBadges(transactions, budget);
     earned.forEach(badge => {
       if (!seenRef.current.has(badge.id)) {
@@ -32,7 +33,7 @@ export default function NotificationWatcher() {
         }
       }
     });
-  }, [transactions, budget]);
+  }, [transactions, budget, isAuthenticated]);
 
   useEffect(() => {
     if (pendingBadge) {
