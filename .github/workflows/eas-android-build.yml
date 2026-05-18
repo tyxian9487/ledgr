@@ -40,6 +40,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify EAS auth
+        run: eas whoami
+
       - name: Build Android with EAS
         run: |
           eas build \
