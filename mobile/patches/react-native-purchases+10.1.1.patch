@@ -1,5 +1,5 @@
 diff --git a/node_modules/react-native-purchases/android/build.gradle b/node_modules/react-native-purchases/android/build.gradle
-index 5cee90c..0589948 100644
+index 5cee90c..e3b71da 100644
 --- a/node_modules/react-native-purchases/android/build.gradle
 +++ b/node_modules/react-native-purchases/android/build.gradle
 @@ -25,6 +25,8 @@ def getExtOrIntegerDefault(name) {
@@ -16,7 +16,7 @@ index 5cee90c..0589948 100644
          targetCompatibility JavaVersion.VERSION_1_8
      }
 +    kotlinOptions {
-+        jvmTarget = '1.8'
++        jvmTarget = '17'
 +    }
  }
  
