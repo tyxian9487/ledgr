@@ -33,6 +33,13 @@ export const en = {
   'common.type': 'Type',
   'common.total': 'Total',
 
+  // Home
+  'home.my_finances': 'My Finances',
+  'home.this_month': 'This Month',
+  'home.balance': 'Balance',
+  'home.add_transaction': 'Add Transaction',
+  'home.no_transactions': 'No transactions yet',
+
   // Login
   'login.tagline': 'Your money, simplified.',
   'login.get_started': 'Get started',
@@ -169,6 +176,7 @@ const zh: Record<TKey, string> = {
   'common.description': '备注', 'common.optional': '可选', 'common.month': '月', 'common.months': '个月',
   'common.per_month': '/月', 'common.all': '全部', 'common.type': '类型', 'common.total': '总计',
   'common.today': '今天', 'common.yesterday': '昨天', 'common.custom': '自定义', 'common.ok': '好',
+  'home.my_finances': '我的财务', 'home.this_month': '本月', 'home.balance': '结余', 'home.add_transaction': '添加记录', 'home.no_transactions': '暂无交易记录',
   'login.tagline': '让您的财务更简单。', 'login.get_started': '开始使用',
   'login.sign_in_desc': '登录或注册免费账户',
   'login.google': '使用 Google 登录', 'login.apple': '使用 Apple 登录',
@@ -229,6 +237,7 @@ const ja: Record<TKey, string> = {
   'common.description': 'メモ', 'common.optional': '任意', 'common.month': '月', 'common.months': 'ヶ月',
   'common.per_month': '/月', 'common.all': 'すべて', 'common.type': 'タイプ', 'common.total': '合計',
   'common.today': '今日', 'common.yesterday': '昨日', 'common.custom': 'カスタム', 'common.ok': 'OK',
+  'home.my_finances': 'マイファイナンス', 'home.this_month': '今月', 'home.balance': '残高', 'home.add_transaction': '記録を追加', 'home.no_transactions': 'まだ取引がありません',
   'login.tagline': 'お金の管理をシンプルに。', 'login.get_started': '始める',
   'login.sign_in_desc': 'サインインまたは無料アカウントを作成',
   'login.google': 'Google で続ける', 'login.apple': 'Apple で続ける',
@@ -289,6 +298,8 @@ const ko: Record<TKey, string> = {
   'common.description': '메모', 'common.optional': '선택', 'common.month': '월', 'common.months': '개월',
   'common.per_month': '/월', 'common.all': '전체', 'common.type': '유형', 'common.total': '합계',
   'common.today': '오늘', 'common.yesterday': '어제', 'common.custom': '직접 입력', 'common.ok': '확인',
+  'home.my_finances': '내 재정', 'home.this_month': '이번 달', 'home.balance': '잔액',
+  'home.add_transaction': '거래 추가', 'home.no_transactions': '거래 내역이 없습니다',
   'login.tagline': '돈 관리를 더 쉽게.', 'login.get_started': '시작하기',
   'login.sign_in_desc': '로그인 또는 무료 계정 만들기',
   'login.google': 'Google로 계속', 'login.apple': 'Apple로 계속',
@@ -349,6 +360,8 @@ const ms: Record<TKey, string> = {
   'common.description': 'Penerangan', 'common.optional': 'pilihan', 'common.month': 'Bulan', 'common.months': 'bulan',
   'common.per_month': '/bln', 'common.all': 'Semua', 'common.type': 'Jenis', 'common.total': 'Jumlah',
   'common.today': 'Hari ini', 'common.yesterday': 'Semalam', 'common.custom': 'Tersuai', 'common.ok': 'OK',
+  'home.my_finances': 'Kewangan Saya', 'home.this_month': 'Bulan Ini', 'home.balance': 'Baki',
+  'home.add_transaction': 'Tambah Transaksi', 'home.no_transactions': 'Tiada transaksi lagi',
   'login.tagline': 'Wang anda, dipermudahkan.', 'login.get_started': 'Mulakan',
   'login.sign_in_desc': 'Log masuk atau cipta akaun percuma',
   'login.google': 'Teruskan dengan Google', 'login.apple': 'Teruskan dengan Apple',

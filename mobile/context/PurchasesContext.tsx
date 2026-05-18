@@ -58,6 +58,13 @@ export function PurchasesProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
+        // RevenueCat force-closes the app when a test key is used in a
+        // release build. Skip init so the app stays open during testing.
+        if (!__DEV__ && RC_API_KEY.startsWith('test_')) {
+          console.warn('[RevenueCat] Test key in release build — skipping init');
+          return;
+        }
+
         if (__DEV__) {
           Purchases.setLogLevel(LOG_LEVEL.DEBUG);
         }
