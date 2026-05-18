@@ -7,6 +7,7 @@ import { PurchasesProvider, usePurchases } from '../context/PurchasesContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import ConsentBanner from '../components/ConsentBanner';
+import { useColorScheme } from 'nativewind';
 
 function NavigationGuard() {
   const { isAuthenticated, hasCompletedOnboarding } = useApp();
@@ -25,6 +26,17 @@ function NavigationGuard() {
   }, [isAuthenticated, hasCompletedOnboarding, segments]);
 
   return <Slot />;
+}
+
+function DarkModeBridge() {
+  const { darkMode } = useApp();
+  const { setColorScheme } = useColorScheme();
+
+  useEffect(() => {
+    setColorScheme(darkMode ? 'dark' : 'light');
+  }, [darkMode]);
+
+  return null;
 }
 
 // Keeps userProfile.plan in sync with the RevenueCat entitlement
@@ -46,6 +58,7 @@ export default function RootLayout() {
         <PurchasesProvider>
           <AppProvider>
             <LanguageProvider>
+              <DarkModeBridge />
               <EntitlementSyncBridge />
               <NavigationGuard />
               <ConsentBanner />
