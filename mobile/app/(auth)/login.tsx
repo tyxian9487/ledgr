@@ -74,13 +74,20 @@ export default function LoginScreen() {
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
 
       if (result.type === 'success') {
-        // iOS: browser captured the redirect URL directly
-        const { error: exchangeErr } = await supabase.auth.exchangeCodeForSession(result.url);
-        if (exchangeErr) throw exchangeErr;
+        // OAuthCallbackHandler in _layout.tsx may have already exchanged the code
+        // via the Linking event that fires simultaneously on Android — check first.
+        const { data: { session: existing } } = await supabase.auth.getSession();
+        if (!existing) {
+          const { error: exchangeErr } = await supabase.auth.exchangeCodeForSession(result.url);
+          if (exchangeErr) {
+            // OAuthCallbackHandler won the race and consumed the code_verifier.
+            // A session should exist by now — if not, surface the original error.
+            const { data: { session: raceSession } } = await supabase.auth.getSession();
+            if (!raceSession) throw exchangeErr;
+          }
+        }
       }
-      // On Android result.type is typically 'cancel' — the OS routes the deep link
-      // to auth/callback.tsx which handles the code exchange independently.
-      // NavigationGuard will redirect to (tabs) once the session is established.
+      // If 'cancel': OAuthCallbackHandler (Linking event) or auth/callback.tsx handles it.
     } catch (err) {
       Alert.alert('Sign in failed', err instanceof Error ? err.message : 'Please try again.');
     } finally {
