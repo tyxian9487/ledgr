@@ -36,9 +36,6 @@ export default function TourOverlay() {
   const pathname = usePathname();
   const currentTab = pathnameToTab(pathname);
 
-  // Never show tour until the user is fully signed in and past onboarding
-  if (!isAuthenticated || !hasCompletedOnboarding) return null;
-
   const navigateToTab = useCallback(
     (tab: string) => {
       const route = TAB_ROUTES[tab];
@@ -50,6 +47,9 @@ export default function TourOverlay() {
   const handleNext = useCallback(() => {
     nextStep(navigateToTab);
   }, [nextStep, navigateToTab]);
+
+  // Never show tour until the user is fully signed in and past onboarding
+  if (!isAuthenticated || !hasCompletedOnboarding) return null;
 
   const isLastStep = tourStepIndex === TOUR_STEPS.length - 1;
   const onCorrectTab = currentStep?.tab === currentTab;
