@@ -358,6 +358,16 @@ export const en = {
   // Misc extras
   'misc.no_tx_month': 'No transactions this month',
   'misc.recurring': 'Recurring',
+
+  // Tour
+  'tour.title': 'Quick tour?',
+  'tour.desc': "We'll walk you through Kachingo's key features in about 2 minutes. Skip anytime.",
+  'tour.offer_start': 'Show me around →',
+  'tour.offer_skip': 'Skip for now',
+  'tour.skip': 'Skip tour',
+  'tour.next': 'Next →',
+  'tour.finish': 'Finish 🎉',
+  'tour.tap_hint': 'Tap the highlighted item →',
 } as const;
 
 export type TKey = keyof typeof en;
@@ -523,6 +533,9 @@ const zh: Record<TKey, string> = {
   'month.may.short': '5月', 'month.jun.short': '6月', 'month.jul.short': '7月', 'month.aug.short': '8月',
   'month.sep.short': '9月', 'month.oct.short': '10月', 'month.nov.short': '11月', 'month.dec.short': '12月',
   'misc.no_tx_month': '本月暂无记录', 'misc.recurring': '自动扣款',
+  'tour.title': 'Quick tour?', 'tour.desc': "We'll walk you through Kachingo's key features in about 2 minutes. Skip anytime.",
+  'tour.offer_start': 'Show me around →', 'tour.offer_skip': 'Skip for now',
+  'tour.skip': 'Skip tour', 'tour.next': 'Next →', 'tour.finish': 'Finish 🎉', 'tour.tap_hint': 'Tap the highlighted item →',
 };
 
 const ja: Record<TKey, string> = {
@@ -686,6 +699,9 @@ const ja: Record<TKey, string> = {
   'month.may.short': '5月', 'month.jun.short': '6月', 'month.jul.short': '7月', 'month.aug.short': '8月',
   'month.sep.short': '9月', 'month.oct.short': '10月', 'month.nov.short': '11月', 'month.dec.short': '12月',
   'misc.no_tx_month': '今月の取引はありません', 'misc.recurring': '繰り返し',
+  'tour.title': 'Quick tour?', 'tour.desc': "We'll walk you through Kachingo's key features in about 2 minutes. Skip anytime.",
+  'tour.offer_start': 'Show me around →', 'tour.offer_skip': 'Skip for now',
+  'tour.skip': 'Skip tour', 'tour.next': 'Next →', 'tour.finish': 'Finish 🎉', 'tour.tap_hint': 'Tap the highlighted item →',
 };
 
 const ko: Record<TKey, string> = {
@@ -850,6 +866,9 @@ const ko: Record<TKey, string> = {
   'month.may.short': '5월', 'month.jun.short': '6월', 'month.jul.short': '7월', 'month.aug.short': '8월',
   'month.sep.short': '9월', 'month.oct.short': '10월', 'month.nov.short': '11월', 'month.dec.short': '12월',
   'misc.no_tx_month': '이번 달 거래 없음', 'misc.recurring': '자동 반복',
+  'tour.title': 'Quick tour?', 'tour.desc': "We'll walk you through Kachingo's key features in about 2 minutes. Skip anytime.",
+  'tour.offer_start': 'Show me around →', 'tour.offer_skip': 'Skip for now',
+  'tour.skip': 'Skip tour', 'tour.next': 'Next →', 'tour.finish': 'Finish 🎉', 'tour.tap_hint': 'Tap the highlighted item →',
 };
 
 const ms: Record<TKey, string> = {
@@ -1014,6 +1033,9 @@ const ms: Record<TKey, string> = {
   'month.may.short': 'MEI', 'month.jun.short': 'JUN', 'month.jul.short': 'JUL', 'month.aug.short': 'OGS',
   'month.sep.short': 'SEP', 'month.oct.short': 'OKT', 'month.nov.short': 'NOV', 'month.dec.short': 'DIS',
   'misc.no_tx_month': 'Tiada transaksi bulan ini', 'misc.recurring': 'Berulang',
+  'tour.title': 'Quick tour?', 'tour.desc': "We'll walk you through Kachingo's key features in about 2 minutes. Skip anytime.",
+  'tour.offer_start': 'Show me around →', 'tour.offer_skip': 'Skip for now',
+  'tour.skip': 'Skip tour', 'tour.next': 'Next →', 'tour.finish': 'Finish 🎉', 'tour.tap_hint': 'Tap the highlighted item →',
 };
 
 export const translations: Record<string, Record<TKey, string>> = { en, zh, ja, ko, ms };

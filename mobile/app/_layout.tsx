@@ -5,9 +5,11 @@ import { View, Text, ScrollView, useColorScheme as useSystemColorScheme } from '
 import { AppProvider, useApp } from '../context/AppContext';
 import { LanguageProvider } from '../context/LanguageContext';
 import { PurchasesProvider, usePurchases } from '../context/PurchasesContext';
+import { TourProvider } from '../context/TourContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import ConsentBanner from '../components/ConsentBanner';
+import TourOverlay from '../components/TourOverlay';
 import NotificationWatcher from '../components/NotificationWatcher';
 import { useColorScheme } from 'nativewind';
 
@@ -92,13 +94,16 @@ export default function RootLayout() {
         <SafeAreaProvider>
           <PurchasesProvider>
             <AppProvider>
-              <LanguageProvider>
-                <DarkModeBridge />
-                <EntitlementSyncBridge />
-                <NotificationWatcher />
-                <NavigationGuard />
-                <ConsentBanner />
-              </LanguageProvider>
+              <TourProvider>
+                <LanguageProvider>
+                  <DarkModeBridge />
+                  <EntitlementSyncBridge />
+                  <NotificationWatcher />
+                  <NavigationGuard />
+                  <TourOverlay />
+                  <ConsentBanner />
+                </LanguageProvider>
+              </TourProvider>
             </AppProvider>
           </PurchasesProvider>
         </SafeAreaProvider>

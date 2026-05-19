@@ -5,7 +5,10 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
+  Image,
 } from 'react-native';
+
+const magnifierImg = require('../../assets/m_magnifier.png');
 import Svg, { Circle, Path, Line, Text as SvgText } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TrendingUp, TrendingDown, Minus, ChevronRight, X } from 'lucide-react-native';
@@ -411,9 +414,12 @@ export default function TrendsScreen() {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
 
         {/* ── Header ── */}
-        <View className="px-5 pt-4 pb-2">
-          <Text className="text-2xl font-black text-gray-900 dark:text-white">{t('trends.title')}</Text>
-          <Text className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('trends.subtitle')}</Text>
+        <View className="px-5 pt-4 pb-2 flex-row items-center justify-between">
+          <View>
+            <Text className="text-2xl font-black text-gray-900 dark:text-white">{t('trends.title')}</Text>
+            <Text className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('trends.subtitle')}</Text>
+          </View>
+          <Image source={magnifierImg} style={{ width: 72, height: 72 }} resizeMode="contain" />
         </View>
 
         {/* ── Summary Cards ── */}
