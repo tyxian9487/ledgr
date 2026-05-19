@@ -28,6 +28,7 @@ import {
   Minus,
   ChevronDown,
   ChevronUp,
+  BarChart2,
 } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
@@ -434,9 +435,9 @@ export default function BudgetScreen() {
                 disabled={income <= 0}
                 className={`py-3.5 rounded-2xl items-center flex-row justify-center gap-2 ${income > 0 ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'}`}
               >
-                <Sparkles size={16} color={income > 0 ? 'white' : '#9ca3af'} />
+                <BarChart2 size={16} color={income > 0 ? 'white' : '#9ca3af'} />
                 <Text className={`font-bold ${income > 0 ? 'text-white' : 'text-gray-400'}`}>
-                  {t('budget.analyze_ai')}
+                  {t('budget.analyze')}
                 </Text>
               </TouchableOpacity>
               {income <= 0 && (
