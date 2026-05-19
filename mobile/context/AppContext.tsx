@@ -98,13 +98,17 @@ const SUPPORTED_LANGUAGES = ['en', 'zh', 'ja', 'ko', 'ms'] as const;
 
 function detectDeviceLanguage(): string {
   try {
-    const raw: string =
-      (Platform.OS === 'ios'
-        ? NativeModules.SettingsManager?.settings?.AppleLanguages?.[0] ??
-          NativeModules.SettingsManager?.settings?.AppleLocale
-        : NativeModules.I18nManager?.localeIdentifier) ?? '';
+    let raw = '';
+    if (Platform.OS === 'ios') {
+      raw = NativeModules.SettingsManager?.settings?.AppleLanguages?.[0]
+        ?? NativeModules.SettingsManager?.settings?.AppleLocale
+        ?? '';
+    } else {
+      raw = NativeModules.I18nManager?.localeIdentifier ?? '';
+    }
+    // Fallback to Intl API (available in Hermes without extra packages)
+    if (!raw) raw = Intl.DateTimeFormat().resolvedOptions().locale ?? '';
     const tag = raw.replace('_', '-').toLowerCase();
-    // Match zh variants (zh-hans, zh-hant, zh-cn, zh-tw, etc.) → 'zh'
     const primary = tag.startsWith('zh') ? 'zh' : tag.split('-')[0];
     return (SUPPORTED_LANGUAGES as readonly string[]).includes(primary) ? primary : 'en';
   } catch {
@@ -160,7 +164,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const saved = await AsyncStorage.getItem(STORAGE_KEY);
         if (saved) {
           const data = JSON.parse(saved);
-          setTransactions(processAutoDebits(data.transactions || generateSampleData()));
+          setTransactions(processAutoDebits(data.transactions || []));
           const savedProfile = data.userProfile || DEFAULT_PROFILE;
           const deviceLang = detectDeviceLanguage();
           // One-time migration: switch language from the old 'en' default to
@@ -182,12 +186,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           }
         } else {
           // Fresh install — seed language and dark mode from device settings
-          setTransactions(processAutoDebits(generateSampleData()));
+          setTransactions([]);
           setUserProfile(prev => ({ ...prev, language: detectDeviceLanguage() }));
           setDarkMode(systemColorScheme === 'dark');
         }
       } catch {
-        setTransactions(processAutoDebits(generateSampleData()));
+        setTransactions([]);
       }
     };
     load();
@@ -252,7 +256,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } else {
         setIsAuthenticated(false);
         setHasCompletedOnboarding(false);
-        setTransactions(processAutoDebits(generateSampleData()));
+        setTransactions([]);
         setBudget(DEFAULT_BUDGET);
         setUserProfile(DEFAULT_PROFILE);
         setCustomCategories([]);

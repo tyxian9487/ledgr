@@ -29,7 +29,7 @@ const EMOJI_OPTIONS = [
 export default function NewGoalScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { addCustomGoal, formatCurrency } = useApp();
+  const { addCustomGoal, formatCurrency, darkMode } = useApp();
 
   const [name, setName] = useState('');
   const [icon, setIcon] = useState(EMOJI_OPTIONS[0]);
@@ -49,6 +49,8 @@ export default function NewGoalScreen() {
   const monthlyRate = resolvedDays > 0 && targetNum > 0
     ? targetNum / (resolvedDays / 30)
     : 0;
+
+  const phColor = darkMode ? '#6b7280' : '#9ca3af';
 
   function validate(): string | null {
     if (!name.trim()) return t('gform.enter_name');
@@ -74,59 +76,59 @@ export default function NewGoalScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950">
       {/* Header */}
       <View className="flex-row items-center justify-between px-5 py-4">
         <TouchableOpacity
           onPress={() => router.back()}
-          className="w-9 h-9 rounded-full bg-white items-center justify-center shadow-sm border border-gray-100"
+          className="w-9 h-9 rounded-full bg-white dark:bg-gray-800 items-center justify-center shadow-sm border border-gray-100 dark:border-gray-700"
         >
-          <ChevronLeft size={20} color="#374151" />
+          <ChevronLeft size={20} color={darkMode ? '#d1d5db' : '#374151'} />
         </TouchableOpacity>
         <View className="items-center">
-          <Text className="text-base font-bold text-gray-900">{t('gform.title')}</Text>
-          <Text className="text-xs text-gray-400">{t('gform.subtitle')}</Text>
+          <Text className="text-base font-bold text-gray-900 dark:text-white">{t('gform.title')}</Text>
+          <Text className="text-xs text-gray-400 dark:text-gray-500">{t('gform.subtitle')}</Text>
         </View>
         <TouchableOpacity
           onPress={() => router.back()}
-          className="w-9 h-9 rounded-full bg-white items-center justify-center shadow-sm border border-gray-100"
+          className="w-9 h-9 rounded-full bg-white dark:bg-gray-800 items-center justify-center shadow-sm border border-gray-100 dark:border-gray-700"
         >
-          <X size={16} color="#9ca3af" />
+          <X size={16} color={darkMode ? '#6b7280' : '#9ca3af'} />
         </TouchableOpacity>
       </View>
 
       <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
 
         {/* Goal Name */}
-        <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5 mt-2">{t('gform.name')}</Text>
+        <Text className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5 mt-2">{t('gform.name')}</Text>
         <TextInput
           value={name}
           onChangeText={setName}
           placeholder={t('gform.name_ph')}
-          placeholderTextColor="#9ca3af"
-          className="bg-white border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm text-gray-900 mb-5 focus:border-green-500"
+          placeholderTextColor={phColor}
+          className="bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3.5 text-sm text-gray-900 dark:text-white mb-5 focus:border-green-500"
           returnKeyType="next"
         />
 
         {/* Icon picker */}
-        <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('gform.icon')}</Text>
+        <Text className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">{t('gform.icon')}</Text>
         <TouchableOpacity
           onPress={() => setShowIconPicker(v => !v)}
-          className="bg-white border-2 border-gray-100 rounded-2xl px-4 py-3.5 flex-row items-center mb-3"
+          className="bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3.5 flex-row items-center mb-3"
         >
           <Text style={{ fontSize: 24 }}>{icon}</Text>
-          <Text className="flex-1 text-sm text-gray-400 ml-3">
+          <Text className="flex-1 text-sm text-gray-400 dark:text-gray-500 ml-3">
             {showIconPicker ? t('gform.tap_select') : t('gform.tap_change')}
           </Text>
         </TouchableOpacity>
         {showIconPicker ? (
-          <View className="bg-white border border-gray-100 rounded-2xl p-3 mb-5 flex-row flex-wrap gap-2">
+          <View className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 mb-5 flex-row flex-wrap gap-2">
             {EMOJI_OPTIONS.map(em => (
               <TouchableOpacity
                 key={em}
                 onPress={() => { setIcon(em); setShowIconPicker(false); }}
                 className={`w-12 h-12 rounded-xl items-center justify-center border-2 ${
-                  icon === em ? 'border-green-500 bg-green-50' : 'border-transparent'
+                  icon === em ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-transparent'
                 }`}
               >
                 <Text style={{ fontSize: 22 }}>{em}</Text>
@@ -136,7 +138,7 @@ export default function NewGoalScreen() {
         ) : <View className="mb-4" />}
 
         {/* Color picker */}
-        <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('gform.color')}</Text>
+        <Text className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">{t('gform.color')}</Text>
         <View className="flex-row flex-wrap gap-2 mb-5">
           {COLOR_OPTIONS.map(c => (
             <TouchableOpacity
@@ -148,26 +150,26 @@ export default function NewGoalScreen() {
                 borderRadius: 17,
                 backgroundColor: c,
                 borderWidth: color === c ? 3 : 0,
-                borderColor: '#111',
+                borderColor: darkMode ? '#f9fafb' : '#111',
               }}
             />
           ))}
         </View>
 
         {/* Target Amount */}
-        <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">{t('gform.target')}</Text>
+        <Text className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">{t('gform.target')}</Text>
         <TextInput
           value={targetAmount}
           onChangeText={setTargetAmount}
           placeholder={t('gform.amount_ph')}
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={phColor}
           keyboardType="decimal-pad"
-          className="bg-white border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm text-gray-900 mb-5 focus:border-green-500"
+          className="bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3.5 text-sm text-gray-900 dark:text-white mb-5 focus:border-green-500"
           returnKeyType="next"
         />
 
         {/* Duration */}
-        <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('gform.duration')}</Text>
+        <Text className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">{t('gform.duration')}</Text>
         <View className="flex-row flex-wrap gap-2 mb-3">
           {DURATION_PRESETS.map(p => (
             <TouchableOpacity
@@ -179,13 +181,13 @@ export default function NewGoalScreen() {
               }}
               className={`px-4 py-2.5 rounded-xl items-center border-2 ${
                 !showCustomDuration && durationDays === p.days
-                  ? 'border-green-500 bg-green-50'
-                  : 'border-gray-200 bg-white'
+                  ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                  : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
               }`}
             >
               <Text
                 className={`text-sm font-bold ${
-                  !showCustomDuration && durationDays === p.days ? 'text-green-700' : 'text-gray-600'
+                  !showCustomDuration && durationDays === p.days ? 'text-green-700 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'
                 }`}
               >
                 {t(p.key as any)}
@@ -196,12 +198,12 @@ export default function NewGoalScreen() {
             onPress={() => { setShowCustomDuration(true); setDurationDays(null); }}
             className={`flex-1 py-2.5 rounded-xl items-center border-2 ${
               showCustomDuration
-                ? 'border-green-500 bg-green-50'
-                : 'border-gray-200 bg-white'
+                ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
             }`}
           >
             <Text
-              className={`text-sm font-bold ${showCustomDuration ? 'text-green-700' : 'text-gray-600'}`}
+              className={`text-sm font-bold ${showCustomDuration ? 'text-green-700 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}`}
             >
               {t('gform.custom')}
             </Text>
@@ -213,16 +215,16 @@ export default function NewGoalScreen() {
             value={customDays}
             onChangeText={setCustomDays}
             placeholder="Number of days (e.g. 120)"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={phColor}
             keyboardType="number-pad"
-            className="bg-white border-2 border-green-200 rounded-2xl px-4 py-3.5 text-sm text-gray-900 mb-5 focus:border-green-500"
+            className="bg-white dark:bg-gray-900 border-2 border-green-200 dark:border-green-900 rounded-2xl px-4 py-3.5 text-sm text-gray-900 dark:text-white mb-5 focus:border-green-500"
           />
         ) : <View className="mb-3" />}
 
         {/* Monthly rate hint */}
         {monthlyRate > 0 ? (
-          <View className="bg-green-50 border border-green-100 rounded-2xl px-4 py-3.5 mb-6">
-            <Text className="text-sm text-green-700 font-medium text-center">
+          <View className="bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-900 rounded-2xl px-4 py-3.5 mb-6">
+            <Text className="text-sm text-green-700 dark:text-green-400 font-medium text-center">
               Save{' '}
               <Text className="font-black">{formatCurrency(monthlyRate)}</Text>
               /month to reach your goal
@@ -241,10 +243,10 @@ export default function NewGoalScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.back()}
-            className="w-full py-3.5 rounded-2xl bg-gray-100 items-center"
+            className="w-full py-3.5 rounded-2xl bg-gray-100 dark:bg-gray-800 items-center"
             activeOpacity={0.8}
           >
-            <Text className="text-gray-600 font-semibold">{t('common.cancel')}</Text>
+            <Text className="text-gray-600 dark:text-gray-300 font-semibold">{t('common.cancel')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

@@ -101,6 +101,23 @@ function OAuthCallbackHandler() {
   return null;
 }
 
+function NotificationPermissionRequester() {
+  const { isAuthenticated, hasCompletedOnboarding } = useApp();
+
+  useEffect(() => {
+    if (!isAuthenticated || !hasCompletedOnboarding) return;
+    import('expo-notifications').then(Notifications => {
+      Notifications.getPermissionsAsync().then(({ status }) => {
+        if (status === 'undetermined') {
+          Notifications.requestPermissionsAsync();
+        }
+      });
+    });
+  }, [isAuthenticated, hasCompletedOnboarding]);
+
+  return null;
+}
+
 // Keeps userProfile.plan in sync with the RevenueCat entitlement
 function EntitlementSyncBridge() {
   const { isPro } = usePurchases();
@@ -125,6 +142,7 @@ export default function RootLayout() {
                   <OAuthCallbackHandler />
                   <DarkModeBridge />
                   <EntitlementSyncBridge />
+                  <NotificationPermissionRequester />
                   <NotificationWatcher />
                   <NavigationGuard />
                   <TourOverlay />

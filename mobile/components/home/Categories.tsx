@@ -293,7 +293,7 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
     return (
       <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
         {rows.map(row => {
-          const isExp = expanded[row.id] !== false;
+          const isExp = expanded[row.id] === true;
           const displayTotal = row.expTotal > 0 ? row.expTotal : row.incTotal;
           const isIncome = row.expTotal === 0;
           return (
@@ -358,7 +358,7 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
   return (
     <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
       {dateRows.map(({ dateStr, dayTxs, expenses, income }) => {
-        const isExp = expanded[dateStr] !== false;
+        const isExp = expanded[dateStr] === true;
         const label = formatDayLabel(dateStr);
         const d = new Date(dateStr + 'T12:00:00');
         const dayName = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();

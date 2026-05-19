@@ -7,7 +7,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Plus, Target, Search, SlidersHorizontal, TrendingUp, TrendingDown, X,
-  LayoutGrid, List, CalendarDays,
+  LayoutGrid, List, CalendarDays, Camera,
 } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
@@ -463,6 +463,18 @@ export default function HomeScreen() {
         prefill={editTx ? undefined : entryPrefill}
         transactionId={editTx?.id}
       />
+
+      {/* ── Camera FAB ── */}
+      <View className="absolute bottom-6 right-5">
+        <TouchableOpacity
+          onPress={() => router.push('/capture')}
+          className="w-14 h-14 bg-green-600 rounded-full items-center justify-center shadow-lg"
+          activeOpacity={0.85}
+          style={{ elevation: 6 }}
+        >
+          <Camera size={22} color="white" />
+        </TouchableOpacity>
+      </View>
 
       {viewMode === 'calendar' && (
         <CalendarModal

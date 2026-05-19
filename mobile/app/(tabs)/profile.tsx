@@ -944,7 +944,7 @@ export default function ProfileScreen() {
     );
   }
 
-  function handleExportCSV() {
+  async function handleExportCSV() {
     const header = 'Date,Type,Category,Amount,Description';
     const rows = transactions.map(tx => {
       const d = new Date(tx.date).toISOString().slice(0, 10);
@@ -952,11 +952,15 @@ export default function ProfileScreen() {
       return `${d},${tx.type},${tx.category},${tx.amount},${desc}`;
     });
     const csv = [header, ...rows].join('\n');
-    Alert.alert(
-      t('profile.export_csv'),
-      `${rows.length} transactions ready.\n\nCSV preview:\n${csv.slice(0, 200)}…`,
-      [{ text: t('common.ok') }],
-    );
+    try {
+      const FileSystem = await import('expo-file-system');
+      const Sharing = await import('expo-sharing');
+      const path = FileSystem.cacheDirectory + 'kachingo_transactions.csv';
+      await FileSystem.writeAsStringAsync(path, csv, { encoding: FileSystem.EncodingType.UTF8 });
+      await Sharing.shareAsync(path, { mimeType: 'text/csv', dialogTitle: t('profile.export_csv') });
+    } catch {
+      Alert.alert(t('profile.export_csv'), `${rows.length} transactions exported.`);
+    }
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
