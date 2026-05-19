@@ -22,6 +22,11 @@ import Categories, { CalendarModal } from '../../components/home/Categories';
 
 const ALL_CATEGORIES = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
 
+const formatDate = (dateStr: string) => {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+};
+
 function getGreeting(): 'home.greeting_morning' | 'home.greeting_afternoon' | 'home.greeting_evening' | 'home.greeting_night' {
   const h = new Date().getHours();
   if (h < 12) return 'home.greeting_morning';

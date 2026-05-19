@@ -64,8 +64,19 @@ const TOTAL_STEPS = 5;
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function OnboardingScreen() {
-  const { updateUserProfile, completeOnboarding } = useApp();
+  const { updateUserProfile, completeOnboarding, darkMode } = useApp();
   const { t } = useTranslation();
+
+  const bg = darkMode ? '#111827' : '#f9fafb';
+  const card = darkMode ? '#1f2937' : '#ffffff';
+  const border = darkMode ? '#374151' : '#f3f4f6';
+  const textPrimary = darkMode ? '#f9fafb' : '#111827';
+  const textSecondary = darkMode ? '#9ca3af' : '#6b7280';
+  const inputBg = darkMode ? '#1f2937' : '#ffffff';
+  const infoBoxBg = darkMode ? 'rgba(22,163,74,0.1)' : '#f0fdf4';
+  const infoBoxBorder = darkMode ? '#166534' : '#bbf7d0';
+
+  const s = makeStyles(bg, card, border, textPrimary, textSecondary, inputBg, infoBoxBg, infoBoxBorder);
 
   const [step, setStep] = useState(1);
   const [showWelcome, setShowWelcome] = useState(false);
@@ -450,281 +461,112 @@ export default function OnboardingScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f9fafb' },
+function makeStyles(bg: string, card: string, border: string, textPrimary: string, textSecondary: string, inputBg: string, infoBoxBg: string, infoBoxBorder: string) {
+  return StyleSheet.create({
+    root: { flex: 1, backgroundColor: bg },
 
-  // Avatar picker
-  avatarWrap: {
-    alignSelf: 'center',
-    marginTop: 12,
-    marginBottom: 4,
-    position: 'relative',
-  },
-  avatarImg: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: '#e5e7eb',
-  },
-  cameraBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#16a34a',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#f9fafb',
-  },
-  avatarHint: {
-    textAlign: 'center',
-    fontSize: 12,
-    color: '#9ca3af',
-    marginBottom: 8,
-  },
+    // Avatar picker
+    avatarWrap: { alignSelf: 'center', marginTop: 12, marginBottom: 4, position: 'relative' },
+    avatarImg: { width: 96, height: 96, borderRadius: 48, backgroundColor: border },
+    cameraBadge: {
+      position: 'absolute', bottom: 0, right: 0,
+      width: 28, height: 28, borderRadius: 14,
+      backgroundColor: '#16a34a', alignItems: 'center', justifyContent: 'center',
+      borderWidth: 2, borderColor: bg,
+    },
+    avatarHint: { textAlign: 'center', fontSize: 12, color: textSecondary, marginBottom: 8 },
 
-  // Welcome
-  welcomeRoot: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  welcomeAvatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: '#16a34a',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-    shadowColor: '#16a34a',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  welcomeInitial: { color: '#fff', fontSize: 36, fontWeight: '900' },
-  welcomeTitle: { fontSize: 24, fontWeight: '800', color: '#111827', textAlign: 'center', marginBottom: 10 },
-  welcomeBody: { fontSize: 14, color: '#6b7280', textAlign: 'center', lineHeight: 21, marginBottom: 32 },
+    // Welcome
+    welcomeRoot: { flex: 1, backgroundColor: bg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+    welcomeAvatar: {
+      width: 96, height: 96, borderRadius: 48, backgroundColor: '#16a34a',
+      alignItems: 'center', justifyContent: 'center', marginBottom: 24,
+      shadowColor: '#16a34a', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 8,
+    },
+    welcomeInitial: { color: '#fff', fontSize: 36, fontWeight: '900' },
+    welcomeTitle: { fontSize: 24, fontWeight: '800', color: textPrimary, textAlign: 'center', marginBottom: 10 },
+    welcomeBody: { fontSize: 14, color: textSecondary, textAlign: 'center', lineHeight: 21, marginBottom: 32 },
 
-  // Progress
-  progressRow: { flexDirection: 'row', gap: 6, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 },
-  progressSegment: { flex: 1, height: 4, borderRadius: 2 },
+    // Progress
+    progressRow: { flexDirection: 'row', gap: 6, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 },
+    progressSegment: { flex: 1, height: 4, borderRadius: 2 },
 
-  // Header
-  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 14 },
-  backBtn: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: '#f3f4f6',
-    alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0,
-  },
-  stepTitle: { flex: 1, fontSize: 22, fontWeight: '800', color: '#111827' },
+    // Header
+    header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 14 },
+    backBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: border, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+    stepTitle: { flex: 1, fontSize: 22, fontWeight: '800', color: textPrimary },
 
-  // Scroll
-  scrollContent: { paddingBottom: 16 },
-  section: { paddingHorizontal: 20, paddingTop: 4 },
-  stepSub: { fontSize: 13, color: '#9ca3af', marginBottom: 16, lineHeight: 18 },
+    // Scroll
+    scrollContent: { paddingBottom: 16 },
+    section: { paddingHorizontal: 20, paddingTop: 4 },
+    stepSub: { fontSize: 13, color: textSecondary, marginBottom: 16, lineHeight: 18 },
 
-  // Form fields
-  fieldLabel: { fontSize: 11, fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
-  input: {
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#f3f4f6',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: '#111827',
-  },
-  inputError: { borderColor: '#ef4444' },
-  errorText: { fontSize: 12, color: '#ef4444', marginTop: 6, marginLeft: 4 },
+    // Form fields
+    fieldLabel: { fontSize: 11, fontWeight: '700', color: textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
+    input: { backgroundColor: inputBg, borderWidth: 2, borderColor: border, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: textPrimary },
+    inputError: { borderColor: '#ef4444' },
+    errorText: { fontSize: 12, color: '#ef4444', marginTop: 6, marginLeft: 4 },
 
-  // Currency button
-  currencyBtn: {
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#f3f4f6',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  currencyCode: { fontSize: 14, fontWeight: '700', color: '#111827' },
-  currencyName: { fontSize: 12, color: '#9ca3af', marginTop: 2 },
+    // Currency button
+    currencyBtn: { backgroundColor: inputBg, borderWidth: 2, borderColor: border, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    currencyCode: { fontSize: 14, fontWeight: '700', color: textPrimary },
+    currencyName: { fontSize: 12, color: textSecondary, marginTop: 2 },
 
-  // Info box
-  infoBox: {
-    marginTop: 20,
-    backgroundColor: '#f0fdf4',
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
-    borderRadius: 16,
-    padding: 16,
-  },
-  infoBoxTitle: { fontSize: 11, fontWeight: '800', color: '#16a34a', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 },
-  infoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 6 },
-  infoRowText: { fontSize: 12, color: '#166534', flex: 1, lineHeight: 17 },
-  hint: { fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 16 },
+    // Info box
+    infoBox: { marginTop: 20, backgroundColor: infoBoxBg, borderWidth: 1, borderColor: infoBoxBorder, borderRadius: 16, padding: 16 },
+    infoBoxTitle: { fontSize: 11, fontWeight: '800', color: '#16a34a', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 },
+    infoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 6 },
+    infoRowText: { fontSize: 12, color: '#166534', flex: 1, lineHeight: 17 },
+    hint: { fontSize: 11, color: textSecondary, textAlign: 'center', marginTop: 16 },
 
-  // Radio cards
-  radioCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#f3f4f6',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 10,
-  },
-  radioCardSel: { borderColor: '#16a34a', backgroundColor: '#f0fdf4' },
-  radioEmoji: { fontSize: 28, lineHeight: 34 },
-  radioBody: { flex: 1 },
-  radioLabel: { fontSize: 14, fontWeight: '700', color: '#111827' },
-  radioLabelSel: { color: '#15803d' },
-  radioSub: { fontSize: 12, color: '#9ca3af', marginTop: 2 },
-  radioCircle: {
-    width: 22, height: 22, borderRadius: 11,
-    borderWidth: 2, borderColor: '#d1d5db',
-    alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0,
-  },
-  radioCircleSel: { borderColor: '#16a34a', backgroundColor: '#16a34a' },
-  radioInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
+    // Radio cards
+    radioCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: card, borderWidth: 2, borderColor: border, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 10 },
+    radioCardSel: { borderColor: '#16a34a', backgroundColor: infoBoxBg },
+    radioEmoji: { fontSize: 28, lineHeight: 34 },
+    radioBody: { flex: 1 },
+    radioLabel: { fontSize: 14, fontWeight: '700', color: textPrimary },
+    radioLabelSel: { color: '#15803d' },
+    radioSub: { fontSize: 12, color: textSecondary, marginTop: 2 },
+    radioCircle: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: border, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+    radioCircleSel: { borderColor: '#16a34a', backgroundColor: '#16a34a' },
+    radioInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
 
-  // Grid (who/what do you spend on)
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  gridCard: {
-    width: '47%',
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#f3f4f6',
-    borderRadius: 16,
-    paddingVertical: 20,
-    alignItems: 'center',
-    gap: 8,
-    position: 'relative',
-  },
-  gridCardSel: { borderColor: '#16a34a', backgroundColor: '#f0fdf4' },
-  gridCheckBadge: {
-    position: 'absolute',
-    top: 10, right: 10,
-    width: 22, height: 22,
-    borderRadius: 11,
-    backgroundColor: '#16a34a',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gridEmoji: { fontSize: 32 },
-  gridLabel: { fontSize: 13, fontWeight: '600', color: '#111827', textAlign: 'center' },
-  gridLabelSel: { color: '#15803d' },
+    // Grid
+    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+    gridCard: { width: '47%', backgroundColor: card, borderWidth: 2, borderColor: border, borderRadius: 16, paddingVertical: 20, alignItems: 'center', gap: 8, position: 'relative' },
+    gridCardSel: { borderColor: '#16a34a', backgroundColor: infoBoxBg },
+    gridCheckBadge: { position: 'absolute', top: 10, right: 10, width: 22, height: 22, borderRadius: 11, backgroundColor: '#16a34a', alignItems: 'center', justifyContent: 'center' },
+    gridEmoji: { fontSize: 32 },
+    gridLabel: { fontSize: 13, fontWeight: '600', color: textPrimary, textAlign: 'center' },
+    gridLabelSel: { color: '#15803d' },
 
-  // Grid 2-col horizontal cards (what do you spend on)
-  grid2col: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  grid2Card: {
-    width: '47%',
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#f3f4f6',
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    position: 'relative',
-  },
-  grid2Label: { fontSize: 12, fontWeight: '600', color: '#111827', flex: 1 },
+    // Grid 2-col
+    grid2col: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    grid2Card: { width: '47%', backgroundColor: card, borderWidth: 2, borderColor: border, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 10, position: 'relative' },
+    grid2Label: { fontSize: 12, fontWeight: '600', color: textPrimary, flex: 1 },
 
-  // CTA
-  ctaArea: { paddingHorizontal: 20, paddingVertical: 16 },
-  primaryBtn: {
-    backgroundColor: '#16a34a',
-    borderRadius: 16,
-    paddingVertical: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    alignSelf: 'stretch',
-    shadowColor: '#16a34a',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  primaryBtnTxt: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  ctaBtn: {
-    backgroundColor: '#16a34a',
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-    shadowColor: '#16a34a',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  ctaBtnDisabled: { backgroundColor: '#e5e7eb', shadowOpacity: 0, elevation: 0 },
-  ctaBtnTxt: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  ctaBtnTxtDisabled: { color: '#9ca3af' },
+    // CTA
+    ctaArea: { paddingHorizontal: 20, paddingVertical: 16 },
+    primaryBtn: { backgroundColor: '#16a34a', borderRadius: 16, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, alignSelf: 'stretch', shadowColor: '#16a34a', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+    primaryBtnTxt: { color: '#fff', fontSize: 16, fontWeight: '700' },
+    ctaBtn: { backgroundColor: '#16a34a', borderRadius: 16, paddingVertical: 16, alignItems: 'center', shadowColor: '#16a34a', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+    ctaBtnDisabled: { backgroundColor: border, shadowOpacity: 0, elevation: 0 },
+    ctaBtnTxt: { color: '#fff', fontSize: 16, fontWeight: '700' },
+    ctaBtnTxtDisabled: { color: textSecondary },
 
-  // Currency picker
-  pickerBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
-  pickerSheet: {
-    position: 'absolute',
-    bottom: 0, left: 0, right: 0,
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '80%',
-    paddingBottom: 32,
-  },
-  pickerHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#e5e7eb', alignSelf: 'center', marginTop: 12 },
-  pickerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  pickerTitle: { fontSize: 17, fontWeight: '700', color: '#111827' },
-  pickerClose: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' },
-  pickerSearch: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#f9fafb',
-    marginHorizontal: 16,
-    marginVertical: 10,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  pickerSearchInput: { flex: 1, fontSize: 14, color: '#111827' },
-  currencyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f9fafb',
-  },
-  currencyRowSel: { backgroundColor: '#f0fdf4' },
-  currencyRowCode: { fontSize: 12, fontWeight: '700', color: '#9ca3af', width: 48 },
-  currencyRowName: { flex: 1, fontSize: 14, color: '#111827' },
-  currencyRowNameSel: { fontWeight: '600', color: '#15803d' },
-});
+    // Currency picker
+    pickerBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+    pickerSheet: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: card, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '80%', paddingBottom: 32 },
+    pickerHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: border, alignSelf: 'center', marginTop: 12 },
+    pickerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: border },
+    pickerTitle: { fontSize: 17, fontWeight: '700', color: textPrimary },
+    pickerClose: { width: 32, height: 32, borderRadius: 16, backgroundColor: border, alignItems: 'center', justifyContent: 'center' },
+    pickerSearch: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: bg, marginHorizontal: 16, marginVertical: 10, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
+    pickerSearchInput: { flex: 1, fontSize: 14, color: textPrimary },
+    currencyRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: bg },
+    currencyRowSel: { backgroundColor: infoBoxBg },
+    currencyRowCode: { fontSize: 12, fontWeight: '700', color: textSecondary, width: 48 },
+    currencyRowName: { flex: 1, fontSize: 14, color: textPrimary },
+    currencyRowNameSel: { fontWeight: '600', color: '#15803d' },
+  });
+}

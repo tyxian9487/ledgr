@@ -15,9 +15,11 @@ import {
 const happyMascotImg = require('../../assets/m_expression_happy.png');
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import {
   Moon,
   Sun,
+  Camera,
   ChevronRight,
   ChevronDown,
   HelpCircle,
@@ -132,7 +134,7 @@ function SettingsRow({ icon, label, value, onPress, danger, right }: SettingsRow
       >
         {icon}
       </View>
-      <Text className={`flex-1 text-sm font-medium ${danger ? 'text-red-500' : 'text-gray-900'}`}>
+      <Text className={`flex-1 text-sm font-medium ${danger ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}>
         {label}
       </Text>
       {value ? <Text className="text-xs text-gray-400 mr-1">{value}</Text> : null}
@@ -145,13 +147,13 @@ function SettingsRow({ icon, label, value, onPress, danger, right }: SettingsRow
 function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <View className="bg-gray-50 rounded-2xl overflow-hidden mb-2">
+    <View className="bg-gray-50 dark:bg-gray-900 rounded-2xl overflow-hidden mb-2">
       <TouchableOpacity
         onPress={() => setOpen(v => !v)}
         className="flex-row items-center px-4 py-3.5"
         activeOpacity={0.7}
       >
-        <Text className="flex-1 text-sm font-medium text-gray-900 pr-3">{q}</Text>
+        <Text className="flex-1 text-sm font-medium text-gray-900 dark:text-white pr-3">{q}</Text>
         <ChevronDown
           size={16}
           color="#9ca3af"
@@ -160,7 +162,7 @@ function FAQItem({ q, a }: { q: string; a: string }) {
       </TouchableOpacity>
       {open ? (
         <View className="px-4 pb-4">
-          <Text className="text-sm text-gray-500 leading-relaxed">{a}</Text>
+          <Text className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{a}</Text>
         </View>
       ) : null}
     </View>
@@ -183,14 +185,14 @@ function LegalSheet({ type, onClose }: { type: 'terms' | 'privacy'; onClose: () 
 
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <SafeAreaView className="flex-1 bg-white">
-        <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100">
-          <Text className="text-lg font-bold text-gray-900">
+      <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
+        <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+          <Text className="text-lg font-bold text-gray-900 dark:text-white">
             {type === 'terms' ? t('profile.terms') : t('profile.privacy')}
           </Text>
           <TouchableOpacity
             onPress={onClose}
-            className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center"
+            className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
           >
             <X size={16} color="#6b7280" />
           </TouchableOpacity>
@@ -199,12 +201,12 @@ function LegalSheet({ type, onClose }: { type: 'terms' | 'privacy'; onClose: () 
           <Text className="text-xs text-gray-400 mb-4">{t('legal.last_updated')}</Text>
           {sections.map((s, i) => (
             <View key={i} className="mb-5">
-              <Text className="text-sm font-bold text-gray-900 mb-1.5">{s.title}</Text>
+              <Text className="text-sm font-bold text-gray-900 dark:text-white mb-1.5">{s.title}</Text>
               <Text className="text-sm text-gray-600 leading-relaxed">{s.body}</Text>
             </View>
           ))}
         </ScrollView>
-        <View className="px-5 pb-6 pt-3 border-t border-gray-100">
+        <View className="px-5 pb-6 pt-3 border-t border-gray-100 dark:border-gray-800">
           <TouchableOpacity
             onPress={onClose}
             className="w-full py-3.5 rounded-2xl bg-green-600 items-center"
@@ -281,12 +283,12 @@ function CategoryManagerSheet({ onClose }: { onClose: () => void }) {
 
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <SafeAreaView className="flex-1 bg-white">
-        <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100">
-          <Text className="text-lg font-bold text-gray-900">{t('catmgr.title')}</Text>
+      <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
+        <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+          <Text className="text-lg font-bold text-gray-900 dark:text-white">{t('catmgr.title')}</Text>
           <TouchableOpacity
             onPress={onClose}
-            className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center"
+            className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
           >
             <X size={16} color="#6b7280" />
           </TouchableOpacity>
@@ -294,7 +296,7 @@ function CategoryManagerSheet({ onClose }: { onClose: () => void }) {
 
         {showForm ? (
           <ScrollView className="flex-1 px-5 py-4">
-            <Text className="text-base font-bold text-gray-900 mb-4">
+            <Text className="text-base font-bold text-gray-900 dark:text-white mb-4">
               {editingId ? t('catmgr.edit') : t('catmgr.new')}
             </Text>
             <Text className="text-xs font-semibold text-gray-500 mb-2">{t('catmgr.type')}</Text>
@@ -381,7 +383,7 @@ function CategoryManagerSheet({ onClose }: { onClose: () => void }) {
             {ALL_BUILTIN.map(cat => {
               const disabled = disabledCategories.includes(cat.id);
               return (
-                <View key={cat.id} className="flex-row items-center px-5 py-3 border-b border-gray-50">
+                <View key={cat.id} className="flex-row items-center px-5 py-3 border-b border-gray-50 dark:border-gray-900">
                   <View
                     className="w-8 h-8 rounded-xl items-center justify-center mr-3"
                     style={{ backgroundColor: cat.color + '20' }}
@@ -390,7 +392,7 @@ function CategoryManagerSheet({ onClose }: { onClose: () => void }) {
                   </View>
                   <Text
                     className={`flex-1 text-sm font-medium ${
-                      disabled ? 'text-gray-400 line-through' : 'text-gray-900'
+                      disabled ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'
                     }`}
                   >
                     {cat.label}
@@ -410,14 +412,14 @@ function CategoryManagerSheet({ onClose }: { onClose: () => void }) {
                   {t('catmgr.my_cats')}
                 </Text>
                 {customCategories.map(cat => (
-                  <View key={cat.id} className="flex-row items-center px-5 py-3 border-b border-gray-50">
+                  <View key={cat.id} className="flex-row items-center px-5 py-3 border-b border-gray-50 dark:border-gray-900">
                     <View
                       className="w-8 h-8 rounded-xl items-center justify-center mr-3"
                       style={{ backgroundColor: cat.color + '20' }}
                     >
                       <View className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
                     </View>
-                    <Text className="flex-1 text-sm font-medium text-gray-900">{cat.label}</Text>
+                    <Text className="flex-1 text-sm font-medium text-gray-900 dark:text-white">{cat.label}</Text>
                     <TouchableOpacity onPress={() => openEdit(cat)} className="p-2 mr-1">
                       <Edit3 size={15} color="#6b7280" />
                     </TouchableOpacity>
@@ -495,12 +497,12 @@ function NotificationsSheet({ onClose }: { onClose: () => void }) {
 
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <SafeAreaView className="flex-1 bg-white">
-        <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100">
-          <Text className="text-lg font-bold text-gray-900">{t('notif.title')}</Text>
+      <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
+        <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+          <Text className="text-lg font-bold text-gray-900 dark:text-white">{t('notif.title')}</Text>
           <TouchableOpacity
             onPress={onClose}
-            className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center"
+            className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
           >
             <X size={16} color="#6b7280" />
           </TouchableOpacity>
@@ -511,18 +513,18 @@ function NotificationsSheet({ onClose }: { onClose: () => void }) {
           </View>
         ) : (
           <ScrollView className="flex-1">
-            <Text className="text-sm text-gray-500 px-5 pt-4 pb-2">{t('notif.desc')}</Text>
-            <View className="mx-4 bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+            <Text className="text-sm text-gray-500 dark:text-gray-400 px-5 pt-4 pb-2">{t('notif.desc')}</Text>
+            <View className="mx-4 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden border border-gray-800 shadow-sm">
               {TOGGLES.map(({ key, icon, title, desc }, i) => (
                 <View
                   key={key}
                   className={`flex-row items-center gap-3 px-4 py-4 ${
-                    i < TOGGLES.length - 1 ? 'border-b border-gray-50' : ''
+                    i < TOGGLES.length - 1 ? 'border-b border-gray-50 dark:border-gray-900' : ''
                   }`}
                 >
                   <Text style={{ fontSize: 22, width: 28 }}>{icon}</Text>
                   <View className="flex-1">
-                    <Text className="text-sm font-semibold text-gray-900">{title}</Text>
+                    <Text className="text-sm font-semibold text-gray-900 dark:text-white">{title}</Text>
                     <Text className="text-xs text-gray-400 mt-0.5">{desc}</Text>
                   </View>
                   <Switch
@@ -603,12 +605,12 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
 
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <SafeAreaView className="flex-1 bg-white">
-        <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100">
-          <Text className="text-lg font-bold text-gray-900">Subscription</Text>
+      <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
+        <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+          <Text className="text-lg font-bold text-gray-900 dark:text-white">Subscription</Text>
           <TouchableOpacity
             onPress={onClose}
-            className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center"
+            className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
           >
             <X size={16} color="#6b7280" />
           </TouchableOpacity>
@@ -632,16 +634,16 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
                   You have access to all premium features
                 </Text>
               </View>
-              <View className="bg-white border-t border-gray-50">
+              <View className="bg-white border-t border-gray-50 dark:border-gray-900">
                 <TouchableOpacity
                   onPress={handleManage}
-                  className="flex-row items-center gap-3 px-5 py-3.5 border-b border-gray-50"
+                  className="flex-row items-center gap-3 px-5 py-3.5 border-b border-gray-50 dark:border-gray-900"
                   activeOpacity={0.7}
                 >
                   <View className="w-8 h-8 rounded-xl bg-green-50 items-center justify-center">
                     <Settings size={15} color="#16a34a" />
                   </View>
-                  <Text className="flex-1 text-sm font-medium text-gray-900">
+                  <Text className="flex-1 text-sm font-medium text-gray-900 dark:text-white">
                     Manage Subscription
                   </Text>
                   <ChevronRight size={14} color="#d1d5db" />
@@ -652,10 +654,10 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
                   className="flex-row items-center gap-3 px-5 py-3.5"
                   activeOpacity={0.7}
                 >
-                  <View className="w-8 h-8 rounded-xl bg-gray-100 items-center justify-center">
+                  <View className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 items-center justify-center">
                     <RotateCcw size={15} color="#6b7280" />
                   </View>
-                  <Text className="flex-1 text-sm font-medium text-gray-900">
+                  <Text className="flex-1 text-sm font-medium text-gray-900 dark:text-white">
                     Restore Purchases
                   </Text>
                   {working ? (
@@ -691,7 +693,7 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
                   )}
                 </TouchableOpacity>
               </View>
-              <View className="bg-white px-5 py-3 border-t border-gray-50">
+              <View className="bg-white px-5 py-3 border-t border-gray-50 dark:border-gray-900">
                 {[
                   'Unlimited savings goals',
                   'AI-powered receipt scanning',
@@ -707,7 +709,7 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
               <TouchableOpacity
                 onPress={handleRestore}
                 disabled={working}
-                className="bg-white border-t border-gray-50 px-5 py-3 flex-row items-center justify-center gap-1.5"
+                className="bg-white border-t border-gray-50 dark:border-gray-900 px-5 py-3 flex-row items-center justify-center gap-1.5"
                 activeOpacity={0.7}
               >
                 <RotateCcw size={12} color="#9ca3af" />
@@ -810,6 +812,20 @@ export default function ProfileScreen() {
     signOut,
   } = useApp();
   const { isPro } = usePurchases();
+
+  async function pickAvatar() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      updateUserProfile({ avatar: result.assets[0].uri });
+    }
+  }
 
   const FAQ_ITEMS = [
     { q: t('faq.q1'), a: t('faq.a1') },
@@ -945,15 +961,15 @@ export default function ProfileScreen() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
 
         {/* ── Header ── */}
         <View className="flex-row items-center justify-between px-5 pt-4 pb-3">
-          <Text className="text-xl font-bold text-gray-900">{t('profile.title')}</Text>
+          <Text className="text-xl font-bold text-gray-900 dark:text-white">{t('profile.title')}</Text>
           <TouchableOpacity
             onPress={toggleDarkMode}
-            className="w-10 h-10 rounded-full bg-white items-center justify-center shadow-sm"
+            className="w-10 h-10 rounded-full bg-white dark:bg-gray-800 items-center justify-center shadow-sm"
           >
             {darkMode ? (
               <Sun size={18} color="#fbbf24" />
@@ -965,11 +981,23 @@ export default function ProfileScreen() {
 
         {/* ── Avatar + Name ── */}
         <View className="items-center gap-2 pb-5">
-          <View className="w-24 h-24 rounded-full bg-green-600 items-center justify-center">
-            <Text className="text-white font-black text-3xl">
-              {(userProfile.name || 'U').charAt(0).toUpperCase()}
-            </Text>
-          </View>
+          <TouchableOpacity onPress={pickAvatar} activeOpacity={0.85} style={{ position: 'relative' }}>
+            {userProfile.avatar ? (
+              <Image
+                source={{ uri: userProfile.avatar }}
+                style={{ width: 96, height: 96, borderRadius: 48 }}
+              />
+            ) : (
+              <View className="w-24 h-24 rounded-full bg-green-600 items-center justify-center">
+                <Text className="text-white font-black text-3xl">
+                  {(userProfile.name || 'U').charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
+            <View style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: 14, backgroundColor: '#16a34a', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: darkMode ? '#111827' : '#f9fafb' }}>
+              <Camera size={14} color="#fff" />
+            </View>
+          </TouchableOpacity>
 
           {editingName ? (
             <TextInput
@@ -991,7 +1019,7 @@ export default function ProfileScreen() {
               onPress={() => setEditingName(true)}
               className="flex-row items-center gap-1.5"
             >
-              <Text className="text-lg font-bold text-gray-900">{userProfile.name}</Text>
+              <Text className="text-lg font-bold text-gray-900 dark:text-white">{userProfile.name}</Text>
               <Edit3 size={14} color="#9ca3af" />
             </TouchableOpacity>
           )}
@@ -1024,7 +1052,7 @@ export default function ProfileScreen() {
         <BudgetStreakCard transactions={transactions} />
 
         {/* Badges */}
-        <View className="mx-4 bg-white rounded-2xl p-4 shadow-sm border border-gray-50 mb-2">
+        <View className="mx-4 bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm border border-gray-800 mb-2">
           <View className="flex-row flex-wrap gap-2">
             {BADGES.slice(0, 9).map(badge => {
               const earned = earnedBadgeIds.has(badge.id);
@@ -1107,13 +1135,13 @@ export default function ProfileScreen() {
           </View>
 
           {/* Score ring */}
-          <View className="bg-white rounded-2xl p-5 items-center gap-3 shadow-sm border border-gray-50 mb-3">
+          <View className="bg-white dark:bg-gray-900 rounded-2xl p-5 items-center gap-3 shadow-sm border border-gray-800 mb-3">
             {score >= 80 && (
               <Image source={happyMascotImg} style={{ width: 72, height: 72 }} resizeMode="contain" />
             )}
             <ScoreRing score={score} onPress={() => setShowStatusCelebration(true)} />
             <View className="items-center">
-              <Text className="font-bold text-base text-gray-900">{scoreLabel}</Text>
+              <Text className="font-bold text-base text-gray-900 dark:text-white">{scoreLabel}</Text>
               <Text className="text-xs text-gray-400 mt-1 text-center">
                 {score >= 80
                   ? t('profile.saving_healthy')
@@ -1153,7 +1181,7 @@ export default function ProfileScreen() {
 
         {/* ── ACCOUNT ── */}
         <SectionHeader label={t('profile.account')} />
-        <View className="mx-4 bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-50 mb-5">
+        <View className="mx-4 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-800 mb-5">
           <SettingsRow
             icon={<Link size={16} color="#6b7280" />}
             label={t('profile.linked_account')}
@@ -1169,7 +1197,7 @@ export default function ProfileScreen() {
 
         {/* ── PREFERENCES ── */}
         <SectionHeader label={t('profile.preferences')} />
-        <View className="mx-4 bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-50 mb-5">
+        <View className="mx-4 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-800 mb-5">
           <SettingsRow
             icon={<Tag size={16} color="#6b7280" />}
             label={t('profile.categories')}
@@ -1181,15 +1209,15 @@ export default function ProfileScreen() {
             onPress={() => setShowNotifications(true)}
           />
           {/* Dark Mode */}
-          <View className="flex-row items-center gap-3 px-4 py-3.5 border-t border-gray-50">
-            <View className="w-9 h-9 rounded-2xl bg-gray-100 items-center justify-center">
+          <View className="flex-row items-center gap-3 px-4 py-3.5 border-t border-gray-50 dark:border-gray-900">
+            <View className="w-9 h-9 rounded-2xl bg-gray-100 dark:bg-gray-800 items-center justify-center">
               {darkMode ? (
                 <Moon size={16} color="#60a5fa" />
               ) : (
                 <Sun size={16} color="#f59e0b" />
               )}
             </View>
-            <Text className="flex-1 text-sm font-medium text-gray-900">{t('profile.dark_mode')}</Text>
+            <Text className="flex-1 text-sm font-medium text-gray-900 dark:text-white">{t('profile.dark_mode')}</Text>
             <Switch
               value={darkMode}
               onValueChange={toggleDarkMode}
@@ -1216,7 +1244,7 @@ export default function ProfileScreen() {
 
         {/* ── DATA ── */}
         <SectionHeader label={t('profile.data')} />
-        <View className="mx-4 bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-50 mb-5">
+        <View className="mx-4 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-800 mb-5">
           <SettingsRow
             icon={<Download size={16} color="#6b7280" />}
             label={t('profile.export_csv')}
@@ -1226,7 +1254,7 @@ export default function ProfileScreen() {
 
         {/* ── LEGAL & SUPPORT ── */}
         <SectionHeader label={t('profile.legal')} />
-        <View className="mx-4 bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-50 mb-5">
+        <View className="mx-4 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-800 mb-5">
           <SettingsRow
             icon={<FileText size={16} color="#6b7280" />}
             label={t('profile.terms')}
@@ -1246,7 +1274,7 @@ export default function ProfileScreen() {
 
         {/* FAQ inline */}
         {showFAQ ? (
-          <View className="mx-4 bg-white rounded-2xl p-4 shadow-sm border border-gray-50 mb-5">
+          <View className="mx-4 bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm border border-gray-50 mb-5">
             <View className="flex-row items-center justify-between mb-3">
               <Text className="text-sm font-bold text-gray-900">{t('faq.title')}</Text>
               <TouchableOpacity onPress={() => setShowFAQ(false)}>
@@ -1260,7 +1288,7 @@ export default function ProfileScreen() {
         ) : null}
 
         {/* ── Danger zone ── */}
-        <View className="mx-4 bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-50 mb-4">
+        <View className="mx-4 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 mb-4">
           <SettingsRow
             icon={<Trash2 size={16} color="#ef4444" />}
             label={t('profile.clear_data')}
@@ -1284,15 +1312,15 @@ export default function ProfileScreen() {
           presentationStyle="pageSheet"
           onRequestClose={() => setShowCurrency(false)}
         >
-          <SafeAreaView className="flex-1 bg-white">
-            <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100">
-              <Text className="text-lg font-bold text-gray-900">{t('profile.select_currency')}</Text>
+          <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
+            <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+              <Text className="text-lg font-bold text-gray-900 dark:text-white">{t('profile.select_currency')}</Text>
               <TouchableOpacity
                 onPress={() => {
                   setShowCurrency(false);
                   setCurrencySearch('');
                 }}
-                className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center"
+                className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
               >
                 <X size={16} color="#6b7280" />
               </TouchableOpacity>
@@ -1303,7 +1331,7 @@ export default function ProfileScreen() {
                 placeholder={t('profile.search_currency')}
                 value={currencySearch}
                 onChangeText={setCurrencySearch}
-                className="flex-1 text-sm text-gray-900"
+                className="flex-1 text-sm text-gray-900 dark:text-white"
                 autoFocus
               />
               {currencySearch ? (
@@ -1328,7 +1356,7 @@ export default function ProfileScreen() {
                       setShowCurrency(false);
                       setCurrencySearch('');
                     }}
-                    className={`flex-row items-center gap-3 px-5 py-3.5 border-b border-gray-50 ${
+                    className={`flex-row items-center gap-3 px-5 py-3.5 border-b border-gray-50 dark:border-gray-900 ${
                       selected ? 'bg-green-50' : ''
                     }`}
                     activeOpacity={0.7}
@@ -1358,12 +1386,12 @@ export default function ProfileScreen() {
           presentationStyle="pageSheet"
           onRequestClose={() => setShowLanguage(false)}
         >
-          <SafeAreaView className="flex-1 bg-white">
-            <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100">
-              <Text className="text-lg font-bold text-gray-900">{t('profile.language')}</Text>
+          <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
+            <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+              <Text className="text-lg font-bold text-gray-900 dark:text-white">{t('profile.language')}</Text>
               <TouchableOpacity
                 onPress={() => setShowLanguage(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center"
+                className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
               >
                 <X size={16} color="#6b7280" />
               </TouchableOpacity>
@@ -1378,7 +1406,7 @@ export default function ProfileScreen() {
                       updateUserProfile({ language: lang.code });
                       setShowLanguage(false);
                     }}
-                    className={`flex-row items-center gap-4 px-5 py-4 border-b border-gray-50 ${
+                    className={`flex-row items-center gap-4 px-5 py-4 border-b border-gray-50 dark:border-gray-900 ${
                       selected ? 'bg-green-50' : ''
                     }`}
                     activeOpacity={0.7}

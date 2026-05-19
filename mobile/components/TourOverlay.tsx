@@ -31,7 +31,7 @@ function pathnameToTab(pathname: string): string {
 export default function TourOverlay() {
   const { tourActive, tourStepIndex, currentStep, showOffer, acceptTour, declineTour, nextStep, skipTour } =
     useTour();
-  const { isAuthenticated, hasCompletedOnboarding } = useApp();
+  const { isAuthenticated, hasCompletedOnboarding, darkMode } = useApp();
   const router = useRouter();
   const pathname = usePathname();
   const currentTab = pathnameToTab(pathname);
@@ -55,21 +55,27 @@ export default function TourOverlay() {
   const onCorrectTab = currentStep?.tab === currentTab;
   const showTooltip = tourActive && onCorrectTab && !!currentStep;
 
+  const bg = darkMode ? '#111827' : '#ffffff';
+  const textPrimary = darkMode ? '#f9fafb' : '#111827';
+  const textSecondary = darkMode ? '#9ca3af' : '#6b7280';
+  const border = darkMode ? '#1f2937' : '#e5e7eb';
+  const skipColor = darkMode ? '#6b7280' : '#9ca3af';
+
   return (
     <>
       {/* ── Quick Tour Offer ── */}
       <Modal visible={showOffer} transparent={false} animationType="fade" statusBarTranslucent>
-        <View style={s.offerRoot}>
+        <View style={[s.offerRoot, { backgroundColor: bg }]}>
           <Image source={mapMascotImg} style={s.mascot} resizeMode="contain" />
-          <Text style={s.offerTitle}>Quick tour?</Text>
-          <Text style={s.offerDesc}>
+          <Text style={[s.offerTitle, { color: textPrimary }]}>Quick tour?</Text>
+          <Text style={[s.offerDesc, { color: textSecondary }]}>
             We'll walk you through Kachingo's key features in about 2 minutes. Skip anytime.
           </Text>
           <TouchableOpacity onPress={acceptTour} activeOpacity={0.85} style={s.primaryBtn}>
             <Text style={s.primaryBtnTxt}>Show me around →</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={declineTour} activeOpacity={0.75} style={s.secondaryBtn}>
-            <Text style={s.secondaryBtnTxt}>Skip for now</Text>
+          <TouchableOpacity onPress={declineTour} activeOpacity={0.75} style={[s.secondaryBtn, { borderColor: border }]}>
+            <Text style={[s.secondaryBtnTxt, { color: textSecondary }]}>Skip for now</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -86,7 +92,7 @@ export default function TourOverlay() {
         <TouchableOpacity style={s.backdrop} onPress={skipTour} activeOpacity={1} />
 
         {/* Card */}
-        <View style={s.card}>
+        <View style={[s.card, { backgroundColor: bg }]}>
           {/* Green gradient bar */}
           <View style={s.progressBar} />
 
@@ -100,22 +106,22 @@ export default function TourOverlay() {
                   {
                     width: i === tourStepIndex ? 14 : 5,
                     backgroundColor:
-                      i === tourStepIndex ? '#16a34a' : i < tourStepIndex ? '#86efac' : '#e5e7eb',
+                      i === tourStepIndex ? '#16a34a' : i < tourStepIndex ? '#86efac' : border,
                   },
                 ]}
               />
             ))}
-            <Text style={s.counter}>
+            <Text style={[s.counter, { color: textSecondary }]}>
               {tourStepIndex + 1} / {TOUR_STEPS.length}
             </Text>
           </View>
 
-          <Text style={s.title}>{currentStep?.title}</Text>
-          <Text style={s.body}>{currentStep?.body}</Text>
+          <Text style={[s.title, { color: textPrimary }]}>{currentStep?.title}</Text>
+          <Text style={[s.body, { color: textSecondary }]}>{currentStep?.body}</Text>
 
           <View style={s.actions}>
             <TouchableOpacity onPress={skipTour}>
-              <Text style={s.skipTxt}>Skip tour</Text>
+              <Text style={[s.skipTxt, { color: skipColor }]}>Skip tour</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleNext} style={s.nextBtn}>
               <Text style={s.nextTxt}>{isLastStep ? 'Finish 🎉' : 'Next →'}</Text>
@@ -133,7 +139,6 @@ const s = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
     paddingHorizontal: 32,
   },
   mascot: {
@@ -144,13 +149,11 @@ const s = StyleSheet.create({
   offerTitle: {
     fontSize: 26,
     fontWeight: '800',
-    color: '#111827',
     marginBottom: 10,
     textAlign: 'center',
   },
   offerDesc: {
     fontSize: 15,
-    color: '#6b7280',
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 32,
@@ -176,7 +179,6 @@ const s = StyleSheet.create({
   },
   secondaryBtn: {
     borderWidth: 1,
-    borderColor: '#e5e7eb',
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 32,
@@ -184,7 +186,6 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   secondaryBtnTxt: {
-    color: '#6b7280',
     fontSize: 15,
     fontWeight: '500',
   },
@@ -199,7 +200,6 @@ const s = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#fff',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: 'hidden',
@@ -229,21 +229,18 @@ const s = StyleSheet.create({
   },
   counter: {
     fontSize: 10,
-    color: '#9ca3af',
     fontWeight: '600',
     marginLeft: 'auto',
   },
   title: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#111827',
     paddingHorizontal: 16,
     marginBottom: 6,
     lineHeight: 20,
   },
   body: {
     fontSize: 13,
-    color: '#6b7280',
     paddingHorizontal: 16,
     marginBottom: 18,
     lineHeight: 19,
@@ -256,7 +253,6 @@ const s = StyleSheet.create({
   },
   skipTxt: {
     fontSize: 13,
-    color: '#9ca3af',
     fontWeight: '500',
   },
   nextBtn: {
