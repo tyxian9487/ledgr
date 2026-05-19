@@ -7,6 +7,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Plus, Target, Search, SlidersHorizontal, TrendingUp, TrendingDown, X,
+  LayoutGrid, List, CalendarDays,
 } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
@@ -15,12 +16,11 @@ import GreenCard from '../../components/home/GreenCard';
 import GoalTrackerCard from '../../components/home/GoalTrackerCard';
 import ManualEntryModal from '../../components/home/ManualEntryModal';
 import { CategoryIconRaw } from '../../components/home/CategoryIcon';
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const ALL_CATEGORIES = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
+import Categories, { CalendarModal } from '../../components/home/Categories';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const ALL_CATEGORIES = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
 
 function getGreeting(): 'home.greeting_morning' | 'home.greeting_afternoon' | 'home.greeting_evening' | 'home.greeting_night' {
   const h = new Date().getHours();
@@ -30,45 +30,6 @@ function getGreeting(): 'home.greeting_morning' | 'home.greeting_afternoon' | 'h
   return 'home.greeting_night';
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function groupByDate(txs: Transaction[]): { dateLabel: string; items: Transaction[] }[] {
-  const map: Record<string, Transaction[]> = {};
-  const sorted = [...txs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  for (const tx of sorted) {
-    const label = formatDate(tx.date);
-    if (!map[label]) map[label] = [];
-    map[label].push(tx);
-  }
-  return Object.entries(map).map(([dateLabel, items]) => ({ dateLabel, items }));
-}
-
-// ─── Transaction Item ─────────────────────────────────────────────────────────
-
-function TransactionItem({ tx, formatCurrency }: { tx: Transaction; formatCurrency: (n: number) => string }) {
-  const cat = ALL_CATEGORIES.find((c) => c.id === tx.category);
-  const isIncome = tx.type === 'income';
-  return (
-    <View className="flex-row items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 rounded-2xl mb-2 border border-gray-50 dark:border-gray-700">
-      <View className="w-10 h-10 rounded-xl items-center justify-center flex-shrink-0"
-        style={{ backgroundColor: (cat?.color ?? '#94a3b8') + '20' }}>
-        <CategoryIconRaw icon={cat?.icon ?? 'MoreHorizontal'} color={cat?.color ?? '#94a3b8'} size={16} />
-      </View>
-      <View className="flex-1 min-w-0">
-        <Text className="text-sm font-semibold text-gray-900 dark:text-white" numberOfLines={1}>
-          {tx.description || cat?.label || tx.category}
-        </Text>
-        <Text className="text-xs text-gray-400 mt-0.5">{cat?.label} · {formatDate(tx.date)}</Text>
-      </View>
-      <Text className={`text-sm font-bold flex-shrink-0 ${isIncome ? 'text-green-500' : 'text-red-400'}`}>
-        {isIncome ? '+' : '-'}{formatCurrency(tx.amount)}
-      </Text>
-    </View>
-  );
-}
-
 // ─── Home Screen ──────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
@@ -76,14 +37,16 @@ export default function HomeScreen() {
   const now = new Date();
   const {
     transactions, budget, formatCurrency,
-    getMonthTransactions, getMonthExpenses, userProfile,
+    getMonthExpenses, userProfile,
   } = useApp();
   const { t } = useTranslation();
 
   const [showEntry, setShowEntry] = useState(false);
   const [entryPrefill, setEntryPrefill] = useState<{ type?: 'expense' | 'income'; amount?: number; category?: string; description?: string } | undefined>(undefined);
+  const [editTx, setEditTx] = useState<Transaction | null>(null);
   const [viewMonth, setViewMonth] = useState(now.getMonth());
   const [viewYear, setViewYear] = useState(now.getFullYear());
+  const [viewMode, setViewMode] = useState<'category' | 'date' | 'calendar'>('category');
 
   // Consume pending receipt left by the camera capture screen
   useFocusEffect(useCallback(() => {
@@ -116,11 +79,6 @@ export default function HomeScreen() {
     else setViewMonth(m => m + 1);
   };
 
-  const monthTxs = useMemo(
-    () => getMonthTransactions(viewYear, viewMonth),
-    [transactions, viewYear, viewMonth],
-  );
-
   // Budget status for current real month
   const hasBudget = budget.expectedIncome > 0 && budget.allocations.length > 0;
   const currentMonthExpenses = getMonthExpenses(now.getFullYear(), now.getMonth());
@@ -150,16 +108,16 @@ export default function HomeScreen() {
     (filterMax ? 1 : 0) +
     (filterCategory ? 1 : 0);
 
-  const filteredTxs = useMemo(() => {
-    let list = monthTxs;
-    if (filterType !== 'all') list = list.filter(tx => tx.type === filterType);
-    if (filterMin) list = list.filter(tx => tx.amount >= parseFloat(filterMin));
-    if (filterMax) list = list.filter(tx => tx.amount <= parseFloat(filterMax));
-    if (filterCategory) list = list.filter(tx => tx.category === filterCategory);
-    return list;
-  }, [monthTxs, filterType, filterMin, filterMax, filterCategory]);
-
-  const grouped = useMemo(() => groupByDate(filteredTxs), [filteredTxs]);
+  const filterFn = useMemo(() => {
+    if (activeFilterCount === 0) return undefined;
+    return (tx: Transaction) => {
+      if (filterType !== 'all' && tx.type !== filterType) return false;
+      if (filterMin && tx.amount < parseFloat(filterMin)) return false;
+      if (filterMax && tx.amount > parseFloat(filterMax)) return false;
+      if (filterCategory && tx.category !== filterCategory) return false;
+      return true;
+    };
+  }, [activeFilterCount, filterType, filterMin, filterMax, filterCategory]);
 
   function clearFilters() {
     setFilterType('all');
@@ -447,39 +405,69 @@ export default function HomeScreen() {
         {/* ── Transactions header ── */}
         <View className="mx-4 mt-5 mb-3 flex-row items-center justify-between">
           <Text className="text-base font-bold text-gray-900 dark:text-white">
-            {activeFilterCount > 0 ? t('home.filtered') : t('common.categories')}
+            {activeFilterCount > 0
+              ? t('home.filtered')
+              : viewMode === 'date'
+              ? t('home.by_date')
+              : viewMode === 'calendar'
+              ? 'Calendar'
+              : t('common.categories')}
           </Text>
-          {activeFilterCount > 0 && (
-            <TouchableOpacity onPress={clearFilters}>
-              <Text className="text-xs font-semibold text-green-600">{t('home.clear')}</Text>
+          <View className="flex-row items-center gap-1">
+            {activeFilterCount > 0 && (
+              <TouchableOpacity onPress={clearFilters} className="mr-2">
+                <Text className="text-xs font-semibold text-green-600">{t('home.clear')}</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              onPress={() => setViewMode('category')}
+              className={`p-1.5 rounded-lg ${viewMode === 'category' ? 'bg-green-100 dark:bg-green-900/30' : ''}`}
+            >
+              <LayoutGrid size={16} color={viewMode === 'category' ? '#16a34a' : '#9ca3af'} />
             </TouchableOpacity>
-          )}
+            <TouchableOpacity
+              onPress={() => setViewMode('date')}
+              className={`p-1.5 rounded-lg ${viewMode === 'date' ? 'bg-green-100 dark:bg-green-900/30' : ''}`}
+            >
+              <List size={16} color={viewMode === 'date' ? '#16a34a' : '#9ca3af'} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setViewMode('calendar')}
+              className={`p-1.5 rounded-lg ${viewMode === 'calendar' ? 'bg-green-100 dark:bg-green-900/30' : ''}`}
+            >
+              <CalendarDays size={16} color={viewMode === 'calendar' ? '#16a34a' : '#9ca3af'} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* ── Transaction List ── */}
-        <View className="mx-4 mb-32">
-          {grouped.length === 0 ? (
-            <View className="bg-white dark:bg-gray-800 rounded-2xl p-8 items-center">
-              <Text className="text-gray-400 text-sm">{t('home.no_transactions')}</Text>
-            </View>
-          ) : (
-            grouped.map(({ dateLabel, items }) => (
-              <View key={dateLabel} className="mb-4">
-                <Text className="text-xs font-semibold text-gray-400 mb-2 ml-1">{dateLabel}</Text>
-                {items.map((tx) => (
-                  <TransactionItem key={tx.id} tx={tx} formatCurrency={formatCurrency} />
-                ))}
-              </View>
-            ))
-          )}
+        <View className="mb-32">
+          <Categories
+            year={viewYear}
+            month={viewMonth}
+            view={viewMode === 'calendar' ? 'date' : viewMode}
+            filterFn={filterFn}
+            onEdit={(tx) => { setEditTx(tx); setShowEntry(true); }}
+          />
         </View>
       </ScrollView>
 
       <ManualEntryModal
         visible={showEntry}
-        onClose={() => { setShowEntry(false); setEntryPrefill(undefined); }}
-        prefill={entryPrefill}
+        onClose={() => { setShowEntry(false); setEntryPrefill(undefined); setEditTx(null); }}
+        prefill={editTx ? undefined : entryPrefill}
+        transactionId={editTx?.id}
       />
+
+      {viewMode === 'calendar' && (
+        <CalendarModal
+          year={viewYear}
+          month={viewMonth}
+          transactions={transactions}
+          formatCurrency={formatCurrency}
+          onClose={() => setViewMode('category')}
+        />
+      )}
     </SafeAreaView>
   );
 }

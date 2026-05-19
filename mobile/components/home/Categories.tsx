@@ -1,15 +1,23 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { Trash2, Edit2, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react-native';
+import { useState, useMemo, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Alert, Modal, ScrollView } from 'react-native';
+import { Trash2, Edit2, RefreshCw, ChevronDown, ChevronRight, ChevronLeft, X } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { Transaction } from '../../types';
 import CategoryIcon from './CategoryIcon';
 
-interface Props {
+const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+export interface CategoriesProps {
   year: number;
   month: number;
+  view: 'category' | 'date';
   filterFn?: (t: Transaction) => boolean;
+  onEdit?: (tx: Transaction) => void;
 }
 
 function formatDayLabel(dateStr: string): string {
@@ -25,119 +33,375 @@ function formatDayLabel(dateStr: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export default function Categories({ year, month, filterFn }: Props) {
+// ── Calendar Overlay (exported for use in parent) ─────────────────────────────
+export function CalendarModal({
+  year, month, transactions, formatCurrency, onClose,
+}: {
+  year: number; month: number; transactions: Transaction[];
+  formatCurrency: (n: number) => string; onClose: () => void;
+}) {
+  const [calYear, setCalYear] = useState(year);
+  const [calMonth, setCalMonth] = useState(month);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+
+  // Sync when parent month changes
+  useEffect(() => { setCalYear(year); setCalMonth(month); }, [year, month]);
+
+  const spendByDay: Record<number, number> = {};
+  const incomeByDay: Record<number, number> = {};
+  transactions.forEach(tx => {
+    const d = new Date(tx.date);
+    if (d.getFullYear() === calYear && d.getMonth() === calMonth) {
+      const day = d.getDate();
+      if (tx.type === 'expense') spendByDay[day] = (spendByDay[day] || 0) + tx.amount;
+      else incomeByDay[day] = (incomeByDay[day] || 0) + tx.amount;
+    }
+  });
+  const maxSpend = Math.max(...Object.values(spendByDay), 1);
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const cells: (number | null)[] = [...Array(firstDay).fill(null)];
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  function prevMonth() {
+    if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); }
+    else setCalMonth(m => m - 1);
+    setSelectedDay(null);
+  }
+  function nextMonth() {
+    if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1); }
+    else setCalMonth(m => m + 1);
+    setSelectedDay(null);
+  }
+
+  const today = new Date();
+  const selectedDayTxs = selectedDay
+    ? transactions.filter(tx => {
+        const d = new Date(tx.date);
+        return d.getFullYear() === calYear && d.getMonth() === calMonth && d.getDate() === selectedDay;
+      })
+    : [];
+
+  const cellWidth = `${100 / 7}%` as any;
+
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28 }}>
+          {/* Drag handle */}
+          <View style={{ width: 36, height: 4, backgroundColor: '#e5e7eb', borderRadius: 2, alignSelf: 'center', marginTop: 12, marginBottom: 16 }} />
+
+          {/* Month navigation */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 16 }}>
+            <TouchableOpacity onPress={prevMonth} style={{ padding: 8 }}>
+              <ChevronLeft size={20} color="#374151" />
+            </TouchableOpacity>
+            <Text style={{ fontSize: 17, fontWeight: '700', color: '#111827' }}>
+              {MONTH_NAMES[calMonth]} {calYear}
+            </Text>
+            <TouchableOpacity onPress={nextMonth} style={{ padding: 8 }}>
+              <ChevronRight size={20} color="#374151" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Day headers */}
+          <View style={{ flexDirection: 'row', paddingHorizontal: 10, marginBottom: 4 }}>
+            {DAYS_SHORT.map(d => (
+              <Text key={d} style={{ width: cellWidth, textAlign: 'center', fontSize: 11, fontWeight: '600', color: '#9ca3af', letterSpacing: 0.5 }}>
+                {d}
+              </Text>
+            ))}
+          </View>
+
+          {/* Calendar grid */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 10, paddingBottom: 4 }}>
+            {cells.map((day, i) => {
+              if (day === null) return <View key={`empty-${i}`} style={{ width: cellWidth, aspectRatio: 1 }} />;
+              const spend = spendByDay[day] || 0;
+              const income = incomeByDay[day] || 0;
+              const isSelected = selectedDay === day;
+              const hasSpend = spend > 0;
+              const hasIncome = income > 0;
+              const isToday = today.getFullYear() === calYear && today.getMonth() === calMonth && today.getDate() === day;
+              const intensity = hasSpend ? Math.max(0.2, spend / maxSpend) : 0;
+
+              return (
+                <TouchableOpacity
+                  key={day}
+                  onPress={() => setSelectedDay(isSelected ? null : day)}
+                  style={{ width: cellWidth, aspectRatio: 1, padding: 2 }}
+                  activeOpacity={0.7}
+                >
+                  <View style={{
+                    flex: 1, borderRadius: 8, alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: isSelected ? '#16a34a'
+                      : hasSpend ? `rgba(239,68,68,${intensity * 0.3})`
+                      : hasIncome ? 'rgba(34,197,94,0.12)' : 'transparent',
+                    borderWidth: isToday && !isSelected ? 1.5 : 0, borderColor: '#16a34a',
+                  }}>
+                    <Text style={{ fontSize: 13, fontWeight: isToday ? '700' : '400', color: isSelected ? '#fff' : '#111827' }}>
+                      {day}
+                    </Text>
+                    {(hasSpend || hasIncome) && !isSelected && (
+                      <View style={{ flexDirection: 'row', gap: 2, marginTop: 1 }}>
+                        {hasSpend && <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#ef4444' }} />}
+                        {hasIncome && <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#22c55e' }} />}
+                      </View>
+                    )}
+                    {isSelected && spend > 0 && (
+                      <Text style={{ fontSize: 8, color: 'rgba(255,255,255,0.8)', marginTop: 1 }}>
+                        {formatCurrency(spend).replace(/\.\d+$/, '')}
+                      </Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Legend */}
+          <View style={{ flexDirection: 'row', gap: 16, paddingHorizontal: 20, paddingVertical: 10, justifyContent: 'center', borderTopWidth: 1, borderTopColor: '#f3f4f6' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{ flexDirection: 'row', gap: 2 }}>
+                {[0.2, 0.4, 0.65, 0.9].map((o, i) => (
+                  <View key={i} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: `rgba(239,68,68,${o})` }} />
+                ))}
+              </View>
+              <Text style={{ fontSize: 11, color: '#6b7280' }}>Low → High spend</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#22c55e' }} />
+              <Text style={{ fontSize: 11, color: '#6b7280' }}>Income</Text>
+            </View>
+          </View>
+
+          {/* Selected day transactions */}
+          {selectedDay !== null && (
+            <ScrollView style={{ maxHeight: 180, borderTopWidth: 1, borderTopColor: '#f3f4f6' }} nestedScrollEnabled>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#6b7280', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                {MONTH_NAMES[calMonth]} {selectedDay}
+                {selectedDayTxs.length === 0 ? ' — No transactions' : ''}
+              </Text>
+              {selectedDayTxs.map(tx => (
+                <View key={tx.id} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: '#f9fafb' }}>
+                  <Text style={{ flex: 1, fontSize: 13, color: '#374151' }} numberOfLines={1}>
+                    {tx.description || tx.category}
+                  </Text>
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: tx.type === 'income' ? '#16a34a' : '#ef4444' }}>
+                    {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+
+          {/* Close */}
+          <TouchableOpacity onPress={onClose} style={{ alignItems: 'center', paddingVertical: 14 }}>
+            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' }}>
+              <X size={18} color="#6b7280" />
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+// ── Main Categories Component ─────────────────────────────────────────────────
+export default function Categories({ year, month, view, filterFn, onEdit }: CategoriesProps) {
   const { transactions, expenseCategories, incomeCategories, removeTransaction, formatCurrency } = useApp();
   const { t } = useTranslation();
-  const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-  const allCategories = [...expenseCategories, ...incomeCategories];
+  const allCategories = useMemo(() => [...expenseCategories, ...incomeCategories], [expenseCategories, incomeCategories]);
 
-  const monthTxs = transactions
-    .filter(tx => {
-      const d = new Date(tx.date);
-      return d.getFullYear() === year && d.getMonth() === month;
-    })
-    .filter(filterFn ?? (() => true))
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const monthTxs = useMemo(
+    () => transactions
+      .filter(tx => {
+        const d = new Date(tx.date);
+        return d.getFullYear() === year && d.getMonth() === month;
+      })
+      .filter(filterFn ?? (() => true))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+    [transactions, year, month, filterFn],
+  );
 
-  // Group by date
-  const grouped: Record<string, Transaction[]> = {};
-  monthTxs.forEach(tx => {
-    const key = tx.date.slice(0, 10);
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(tx);
-  });
-  const dates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+  function handleDelete(tx: Transaction) {
+    Alert.alert('Delete Transaction', `Delete "${tx.description || tx.category}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => removeTransaction(tx.id) },
+    ]);
+  }
 
-  if (dates.length === 0) {
+  function TxRow({ tx }: { tx: Transaction }) {
+    const cat = allCategories.find(c => c.id === tx.category);
     return (
-      <View className="items-center py-16 px-8">
-        <Text className="text-gray-400 dark:text-gray-500 text-sm text-center">
-          {t('misc.no_tx_month')}
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 11 }}>
+        <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: (cat?.color ?? '#94a3b8') + '20', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <CategoryIcon icon={cat?.icon ?? 'MoreHorizontal'} color={cat?.color ?? '#94a3b8'} size={16} />
+        </View>
+        <View style={{ flex: 1, marginLeft: 10, minWidth: 0 }}>
+          <Text style={{ fontSize: 13, fontWeight: '500', color: '#111827' }} numberOfLines={1}>
+            {tx.description || cat?.label}
+          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 1 }}>
+            <Text style={{ fontSize: 11, color: '#9ca3af' }}>{cat?.label}</Text>
+            {tx.isAutoDebit && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                <RefreshCw size={9} color="#9ca3af" />
+                <Text style={{ fontSize: 10, color: '#9ca3af' }}>{t('misc.recurring' as any)}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+        <Text style={{ fontSize: 13, fontWeight: '700', color: tx.type === 'income' ? '#16a34a' : '#ef4444', marginRight: 2 }}>
+          {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
         </Text>
+        {onEdit && (
+          <TouchableOpacity onPress={() => onEdit(tx)} style={{ padding: 7 }} hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}>
+            <Edit2 size={13} color="#9ca3af" />
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity onPress={() => handleDelete(tx)} style={{ padding: 7 }} hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}>
+          <Trash2 size={13} color="#ef4444" />
+        </TouchableOpacity>
       </View>
     );
   }
 
-  function handleDelete(tx: Transaction) {
-    Alert.alert(
-      'Delete Transaction',
-      `Delete "${tx.description}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => removeTransaction(tx.id) },
-      ]
+  if (monthTxs.length === 0) {
+    return (
+      <View style={{ alignItems: 'center', paddingVertical: 64, paddingHorizontal: 32 }}>
+        <Text style={{ color: '#9ca3af', fontSize: 14, textAlign: 'center' }}>{t('misc.no_tx_month' as any)}</Text>
+      </View>
     );
   }
 
+  // ── Category view ──────────────────────────────────────────────────────────
+  if (view === 'category') {
+    const rows = allCategories
+      .map(cat => {
+        const catTxs = monthTxs.filter(tx => tx.category === cat.id);
+        const expTotal = catTxs.filter(tx => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
+        const incTotal = catTxs.filter(tx => tx.type === 'income').reduce((s, tx) => s + tx.amount, 0);
+        return { ...cat, txs: catTxs, expTotal, incTotal };
+      })
+      .filter(r => r.txs.length > 0)
+      .sort((a, b) => (b.expTotal + b.incTotal) - (a.expTotal + a.incTotal));
+
+    return (
+      <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+        {rows.map(row => {
+          const isExp = expanded[row.id] !== false;
+          const displayTotal = row.expTotal > 0 ? row.expTotal : row.incTotal;
+          const isIncome = row.expTotal === 0;
+          return (
+            <View key={row.id} style={{ marginBottom: 6 }}>
+              <TouchableOpacity
+                onPress={() => setExpanded(prev => ({ ...prev, [row.id]: !isExp }))}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  backgroundColor: '#fff', borderRadius: 16,
+                  paddingHorizontal: 14, paddingVertical: 11,
+                  borderWidth: 1, borderColor: '#f3f4f6',
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={{ width: 38, height: 38, borderRadius: 11, backgroundColor: row.color + '20', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                  <CategoryIcon icon={row.icon} color={row.color} size={19} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#111827' }}>{row.label}</Text>
+                  <Text style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>
+                    {row.txs.length} transaction{row.txs.length !== 1 ? 's' : ''}
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: isIncome ? '#16a34a' : '#ef4444', marginRight: 8 }}>
+                  {isIncome ? '+' : '-'}{formatCurrency(displayTotal)}
+                </Text>
+                {isExp ? <ChevronDown size={14} color="#d1d5db" /> : <ChevronRight size={14} color="#d1d5db" />}
+              </TouchableOpacity>
+
+              {isExp && (
+                <View style={{ backgroundColor: '#fff', borderRadius: 12, marginTop: 2, overflow: 'hidden', borderWidth: 1, borderColor: '#f3f4f6' }}>
+                  {row.txs.map((tx, i) => (
+                    <View key={tx.id} style={i < row.txs.length - 1 ? { borderBottomWidth: 1, borderBottomColor: '#f9fafb' } : {}}>
+                      <TxRow tx={tx} />
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          );
+        })}
+      </View>
+    );
+  }
+
+  // ── Date view ──────────────────────────────────────────────────────────────
+  const byDate: Record<string, Transaction[]> = {};
+  monthTxs.forEach(tx => {
+    const key = tx.date.slice(0, 10);
+    if (!byDate[key]) byDate[key] = [];
+    byDate[key].push(tx);
+  });
+  const dateRows = Object.entries(byDate)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([dateStr, dayTxs]) => ({
+      dateStr,
+      dayTxs,
+      expenses: dayTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0),
+      income: dayTxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0),
+    }));
+
   return (
-    <View className="px-4">
-      {dates.map(date => {
-        const txs = grouped[date];
-        const dayTotal = txs.reduce((sum, tx) => sum + (tx.type === 'expense' ? -tx.amount : tx.amount), 0);
-        const expanded = expandedDays[date] !== false; // expanded by default
+    <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+      {dateRows.map(({ dateStr, dayTxs, expenses, income }) => {
+        const isExp = expanded[dateStr] !== false;
+        const label = formatDayLabel(dateStr);
+        const d = new Date(dateStr + 'T12:00:00');
+        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+        const dayNum = String(d.getDate());
 
         return (
-          <View key={date} className="mb-3">
-            {/* Day header */}
+          <View key={dateStr} style={{ marginBottom: 6 }}>
             <TouchableOpacity
-              onPress={() => setExpandedDays(prev => ({ ...prev, [date]: !expanded }))}
-              className="flex-row items-center justify-between py-2"
+              onPress={() => setExpanded(prev => ({ ...prev, [dateStr]: !isExp }))}
+              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}
+              activeOpacity={0.7}
             >
-              <Text className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                {formatDayLabel(date)}
-              </Text>
-              <View className="flex-row items-center gap-2">
-                <Text className={`text-xs font-semibold ${dayTotal >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                  {dayTotal >= 0 ? '+' : ''}{formatCurrency(dayTotal)}
-                </Text>
-                {expanded ? <ChevronDown size={14} color="#9ca3af" /> : <ChevronRight size={14} color="#9ca3af" />}
+              {/* Date badge */}
+              <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center', marginRight: 12, flexShrink: 0 }}>
+                <Text style={{ fontSize: 9, fontWeight: '700', color: '#9ca3af', letterSpacing: 0.4 }}>{dayName}</Text>
+                <Text style={{ fontSize: 17, fontWeight: '700', color: '#111827', lineHeight: 20 }}>{dayNum}</Text>
               </View>
+
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: '#111827' }}>{label}</Text>
+                <Text style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>
+                  {dayTxs.length} transaction{dayTxs.length !== 1 ? 's' : ''}
+                </Text>
+              </View>
+
+              <View style={{ alignItems: 'flex-end', marginRight: 8 }}>
+                {expenses > 0 && (
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: '#ef4444' }}>-{formatCurrency(expenses)}</Text>
+                )}
+                {income > 0 && (
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: '#16a34a' }}>+{formatCurrency(income)}</Text>
+                )}
+              </View>
+              {isExp ? <ChevronDown size={14} color="#d1d5db" /> : <ChevronRight size={14} color="#d1d5db" />}
             </TouchableOpacity>
 
-            {expanded && (
-              <View className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden">
-                {txs.map((tx, i) => {
-                  const cat = allCategories.find(c => c.id === tx.category);
-                  return (
-                    <View
-                      key={tx.id}
-                      className={`flex-row items-center px-4 py-3 ${i < txs.length - 1 ? 'border-b border-gray-50 dark:border-gray-800' : ''}`}
-                    >
-                      <CategoryIcon
-                        icon={cat?.icon ?? 'MoreHorizontal'}
-                        color={cat?.color ?? '#94a3b8'}
-                        size={18}
-                      />
-                      <View className="flex-1 ml-3 min-w-0">
-                        <Text className="text-sm font-medium dark:text-white" numberOfLines={1}>
-                          {tx.description || cat?.label}
-                        </Text>
-                        <View className="flex-row items-center gap-1.5 mt-0.5">
-                          <Text className="text-xs text-gray-400">{cat?.label}</Text>
-                          {tx.isAutoDebit && (
-                            <View className="flex-row items-center gap-0.5">
-                              <RefreshCw size={9} color="#94a3b8" />
-                              <Text className="text-[10px] text-gray-400">{t('misc.recurring')}</Text>
-                            </View>
-                          )}
-                        </View>
-                      </View>
-                      <View className="items-end ml-2">
-                        <Text className={`text-sm font-bold ${tx.type === 'income' ? 'text-green-600' : 'text-red-500'}`}>
-                          {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
-                        </Text>
-                      </View>
-                      <TouchableOpacity
-                        onPress={() => handleDelete(tx)}
-                        className="ml-3 p-1.5"
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <Trash2 size={15} color="#ef4444" />
-                      </TouchableOpacity>
-                    </View>
-                  );
-                })}
+            {isExp && (
+              <View style={{ backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#f3f4f6' }}>
+                {dayTxs.map((tx, i) => (
+                  <View key={tx.id} style={i < dayTxs.length - 1 ? { borderBottomWidth: 1, borderBottomColor: '#f9fafb' } : {}}>
+                    <TxRow tx={tx} />
+                  </View>
+                ))}
               </View>
             )}
           </View>

@@ -124,6 +124,16 @@ export const en = {
 
   // Goal form
   'gform.preview': 'Preview',
+  'gform.title': 'New Goal', 'gform.subtitle': 'Set a savings target',
+  'gform.name': 'Goal name', 'gform.name_ph': 'e.g. Emergency Fund',
+  'gform.icon': 'Icon', 'gform.tap_select': 'Tap to select icon', 'gform.tap_change': 'Tap to change icon',
+  'gform.color': 'Color', 'gform.target': 'Target amount', 'gform.amount_ph': '0.00',
+  'gform.duration': 'Duration', 'gform.custom': 'Custom',
+  'gform.dur_1m': '1 Month', 'gform.dur_3m': '3 Months', 'gform.dur_6m': '6 Months', 'gform.dur_1y': '1 Year',
+  'gform.enter_name': 'Please enter a goal name',
+  'gform.enter_target': 'Please enter a target amount',
+  'gform.choose_duration': 'Please choose a duration',
+  'gform.save': 'Save Goal',
 
   // Category names
   'cat.food': 'Food & Dining',
@@ -323,6 +333,31 @@ export const en = {
   'budget.month_of': 'Month {x} of {y}',
   'budget.x_active': '{n} active',
   'budget.auto_filled': 'Auto-filled from {month} income',
+
+  // Green card
+  'card.total_expenses': 'Total Expenses',
+  'card.financial_status': 'Financial Status',
+  'card.score': 'Score',
+  'card.remaining': 'Remaining',
+  'card.no_expenses': 'No expenses this month',
+  'card.status_excellent': 'Excellent',
+  'card.status_sustained': 'Sustained',
+  'card.status_critical': 'Critical',
+  'card.deficit': 'deficit',
+
+  // Months (full)
+  'month.jan': 'January', 'month.feb': 'February', 'month.mar': 'March', 'month.apr': 'April',
+  'month.may': 'May', 'month.jun': 'June', 'month.jul': 'July', 'month.aug': 'August',
+  'month.sep': 'September', 'month.oct': 'October', 'month.nov': 'November', 'month.dec': 'December',
+
+  // Months (short — used in GreenCard navigation)
+  'month.jan.short': 'JAN', 'month.feb.short': 'FEB', 'month.mar.short': 'MAR', 'month.apr.short': 'APR',
+  'month.may.short': 'MAY', 'month.jun.short': 'JUN', 'month.jul.short': 'JUL', 'month.aug.short': 'AUG',
+  'month.sep.short': 'SEP', 'month.oct.short': 'OCT', 'month.nov.short': 'NOV', 'month.dec.short': 'DEC',
+
+  // Misc extras
+  'misc.no_tx_month': 'No transactions this month',
+  'misc.recurring': 'Recurring',
 } as const;
 
 export type TKey = keyof typeof en;
@@ -364,6 +399,14 @@ const zh: Record<TKey, string> = {
   'period.daily': '每天', 'period.weekly': '每周', 'period.biweekly': '每两周',
   'period.monthly': '每月', 'period.yearly': '每年',
   'gform.preview': '预览',
+  'gform.title': '新目标', 'gform.subtitle': '设定储蓄目标',
+  'gform.name': '目标名称', 'gform.name_ph': '如：应急基金',
+  'gform.icon': '图标', 'gform.tap_select': '点击选择图标', 'gform.tap_change': '点击更改图标',
+  'gform.color': '颜色', 'gform.target': '目标金额', 'gform.amount_ph': '0.00',
+  'gform.duration': '期限', 'gform.custom': '自定义',
+  'gform.dur_1m': '1个月', 'gform.dur_3m': '3个月', 'gform.dur_6m': '6个月', 'gform.dur_1y': '1年',
+  'gform.enter_name': '请输入目标名称', 'gform.enter_target': '请输入目标金额', 'gform.choose_duration': '请选择期限',
+  'gform.save': '保存目标',
   'cat.food': '餐饮', 'cat.transport': '交通', 'cat.shopping': '购物', 'cat.entertainment': '娱乐',
   'cat.health': '健康', 'cat.housing': '住房', 'cat.utilities': '水电', 'cat.education': '教育',
   'cat.travel': '旅行', 'cat.personal': '个人护理', 'cat.subscriptions': '订阅', 'cat.insurance': '保险',
@@ -470,6 +513,16 @@ const zh: Record<TKey, string> = {
   'budget.month_of': 'Month {x} of {y}',
   'budget.x_active': '{n} active',
   'budget.auto_filled': 'Auto-filled from {month} income',
+  'card.total_expenses': '总支出', 'card.financial_status': '财务状况', 'card.score': '评分',
+  'card.remaining': '剩余', 'card.no_expenses': '本月无支出', 'card.status_excellent': '优秀',
+  'card.status_sustained': '稳定', 'card.status_critical': '警戒', 'card.deficit': '赤字',
+  'month.jan': '一月', 'month.feb': '二月', 'month.mar': '三月', 'month.apr': '四月',
+  'month.may': '五月', 'month.jun': '六月', 'month.jul': '七月', 'month.aug': '八月',
+  'month.sep': '九月', 'month.oct': '十月', 'month.nov': '十一月', 'month.dec': '十二月',
+  'month.jan.short': '1月', 'month.feb.short': '2月', 'month.mar.short': '3月', 'month.apr.short': '4月',
+  'month.may.short': '5月', 'month.jun.short': '6月', 'month.jul.short': '7月', 'month.aug.short': '8月',
+  'month.sep.short': '9月', 'month.oct.short': '10月', 'month.nov.short': '11月', 'month.dec.short': '12月',
+  'misc.no_tx_month': '本月暂无记录', 'misc.recurring': '自动扣款',
 };
 
 const ja: Record<TKey, string> = {
@@ -509,6 +562,14 @@ const ja: Record<TKey, string> = {
   'period.daily': '毎日', 'period.weekly': '毎週', 'period.biweekly': '隔週',
   'period.monthly': '毎月', 'period.yearly': '毎年',
   'gform.preview': 'プレビュー',
+  'gform.title': '新規目標', 'gform.subtitle': '貯蓄目標を設定',
+  'gform.name': '目標名', 'gform.name_ph': '例：緊急予備費',
+  'gform.icon': 'アイコン', 'gform.tap_select': 'タップしてアイコンを選択', 'gform.tap_change': 'タップしてアイコンを変更',
+  'gform.color': '色', 'gform.target': '目標金額', 'gform.amount_ph': '0.00',
+  'gform.duration': '期間', 'gform.custom': 'カスタム',
+  'gform.dur_1m': '1ヶ月', 'gform.dur_3m': '3ヶ月', 'gform.dur_6m': '6ヶ月', 'gform.dur_1y': '1年',
+  'gform.enter_name': '目標名を入力してください', 'gform.enter_target': '目標金額を入力してください', 'gform.choose_duration': '期間を選択してください',
+  'gform.save': '目標を保存',
   'cat.food': '食費', 'cat.transport': '交通費', 'cat.shopping': '買い物', 'cat.entertainment': '娯楽',
   'cat.health': '健康', 'cat.housing': '住居', 'cat.utilities': '光熱費', 'cat.education': '教育',
   'cat.travel': '旅行', 'cat.personal': 'ケア', 'cat.subscriptions': 'サブスク', 'cat.insurance': '保険',
@@ -615,6 +676,16 @@ const ja: Record<TKey, string> = {
   'budget.month_of': 'Month {x} of {y}',
   'budget.x_active': '{n} active',
   'budget.auto_filled': 'Auto-filled from {month} income',
+  'card.total_expenses': '総支出', 'card.financial_status': '財務状況', 'card.score': 'スコア',
+  'card.remaining': '残高', 'card.no_expenses': '今月の支出なし', 'card.status_excellent': '優秀',
+  'card.status_sustained': '安定', 'card.status_critical': '要注意', 'card.deficit': '赤字',
+  'month.jan': '1月', 'month.feb': '2月', 'month.mar': '3月', 'month.apr': '4月',
+  'month.may': '5月', 'month.jun': '6月', 'month.jul': '7月', 'month.aug': '8月',
+  'month.sep': '9月', 'month.oct': '10月', 'month.nov': '11月', 'month.dec': '12月',
+  'month.jan.short': '1月', 'month.feb.short': '2月', 'month.mar.short': '3月', 'month.apr.short': '4月',
+  'month.may.short': '5月', 'month.jun.short': '6月', 'month.jul.short': '7月', 'month.aug.short': '8月',
+  'month.sep.short': '9月', 'month.oct.short': '10月', 'month.nov.short': '11月', 'month.dec.short': '12月',
+  'misc.no_tx_month': '今月の取引はありません', 'misc.recurring': '繰り返し',
 };
 
 const ko: Record<TKey, string> = {
@@ -655,6 +726,14 @@ const ko: Record<TKey, string> = {
   'period.daily': '매일', 'period.weekly': '매주', 'period.biweekly': '격주',
   'period.monthly': '매월', 'period.yearly': '매년',
   'gform.preview': '미리보기',
+  'gform.title': '새 목표', 'gform.subtitle': '저축 목표 설정',
+  'gform.name': '목표 이름', 'gform.name_ph': '예: 비상금',
+  'gform.icon': '아이콘', 'gform.tap_select': '탭하여 아이콘 선택', 'gform.tap_change': '탭하여 아이콘 변경',
+  'gform.color': '색상', 'gform.target': '목표 금액', 'gform.amount_ph': '0.00',
+  'gform.duration': '기간', 'gform.custom': '직접 입력',
+  'gform.dur_1m': '1개월', 'gform.dur_3m': '3개월', 'gform.dur_6m': '6개월', 'gform.dur_1y': '1년',
+  'gform.enter_name': '목표 이름을 입력하세요', 'gform.enter_target': '목표 금액을 입력하세요', 'gform.choose_duration': '기간을 선택하세요',
+  'gform.save': '목표 저장',
   'cat.food': '식비', 'cat.transport': '교통', 'cat.shopping': '쇼핑', 'cat.entertainment': '여가',
   'cat.health': '건강', 'cat.housing': '주거', 'cat.utilities': '공과금', 'cat.education': '교육',
   'cat.travel': '여행', 'cat.personal': '개인관리', 'cat.subscriptions': '구독', 'cat.insurance': '보험',
@@ -761,6 +840,16 @@ const ko: Record<TKey, string> = {
   'budget.month_of': 'Month {x} of {y}',
   'budget.x_active': '{n} active',
   'budget.auto_filled': 'Auto-filled from {month} income',
+  'card.total_expenses': '총 지출', 'card.financial_status': '재정 상태', 'card.score': '점수',
+  'card.remaining': '잔액', 'card.no_expenses': '이번 달 지출 없음', 'card.status_excellent': '우수',
+  'card.status_sustained': '안정', 'card.status_critical': '위험', 'card.deficit': '적자',
+  'month.jan': '1월', 'month.feb': '2월', 'month.mar': '3월', 'month.apr': '4월',
+  'month.may': '5월', 'month.jun': '6월', 'month.jul': '7월', 'month.aug': '8월',
+  'month.sep': '9월', 'month.oct': '10월', 'month.nov': '11월', 'month.dec': '12월',
+  'month.jan.short': '1월', 'month.feb.short': '2월', 'month.mar.short': '3월', 'month.apr.short': '4월',
+  'month.may.short': '5월', 'month.jun.short': '6월', 'month.jul.short': '7월', 'month.aug.short': '8월',
+  'month.sep.short': '9월', 'month.oct.short': '10월', 'month.nov.short': '11월', 'month.dec.short': '12월',
+  'misc.no_tx_month': '이번 달 거래 없음', 'misc.recurring': '자동 반복',
 };
 
 const ms: Record<TKey, string> = {
@@ -801,6 +890,14 @@ const ms: Record<TKey, string> = {
   'period.daily': 'Harian', 'period.weekly': 'Mingguan', 'period.biweekly': 'Dua minggu sekali',
   'period.monthly': 'Bulanan', 'period.yearly': 'Tahunan',
   'gform.preview': 'Pratonton',
+  'gform.title': 'Matlamat Baru', 'gform.subtitle': 'Tetapkan sasaran simpanan',
+  'gform.name': 'Nama matlamat', 'gform.name_ph': 'cth. Dana Kecemasan',
+  'gform.icon': 'Ikon', 'gform.tap_select': 'Ketuk untuk pilih ikon', 'gform.tap_change': 'Ketuk untuk tukar ikon',
+  'gform.color': 'Warna', 'gform.target': 'Jumlah sasaran', 'gform.amount_ph': '0.00',
+  'gform.duration': 'Tempoh', 'gform.custom': 'Tersuai',
+  'gform.dur_1m': '1 Bulan', 'gform.dur_3m': '3 Bulan', 'gform.dur_6m': '6 Bulan', 'gform.dur_1y': '1 Tahun',
+  'gform.enter_name': 'Sila masukkan nama matlamat', 'gform.enter_target': 'Sila masukkan jumlah sasaran', 'gform.choose_duration': 'Sila pilih tempoh',
+  'gform.save': 'Simpan Matlamat',
   'cat.food': 'Makanan', 'cat.transport': 'Pengangkutan', 'cat.shopping': 'Membeli-belah', 'cat.entertainment': 'Hiburan',
   'cat.health': 'Kesihatan', 'cat.housing': 'Perumahan', 'cat.utilities': 'Utiliti', 'cat.education': 'Pendidikan',
   'cat.travel': 'Pelancongan', 'cat.personal': 'Penjagaan Diri', 'cat.subscriptions': 'Langganan', 'cat.insurance': 'Insurans',
@@ -907,6 +1004,16 @@ const ms: Record<TKey, string> = {
   'budget.month_of': 'Month {x} of {y}',
   'budget.x_active': '{n} active',
   'budget.auto_filled': 'Auto-filled from {month} income',
+  'card.total_expenses': 'Jumlah Perbelanjaan', 'card.financial_status': 'Status Kewangan', 'card.score': 'Skor',
+  'card.remaining': 'Baki', 'card.no_expenses': 'Tiada perbelanjaan bulan ini', 'card.status_excellent': 'Cemerlang',
+  'card.status_sustained': 'Stabil', 'card.status_critical': 'Kritikal', 'card.deficit': 'defisit',
+  'month.jan': 'Januari', 'month.feb': 'Februari', 'month.mar': 'Mac', 'month.apr': 'April',
+  'month.may': 'Mei', 'month.jun': 'Jun', 'month.jul': 'Julai', 'month.aug': 'Ogos',
+  'month.sep': 'September', 'month.oct': 'Oktober', 'month.nov': 'November', 'month.dec': 'Disember',
+  'month.jan.short': 'JAN', 'month.feb.short': 'FEB', 'month.mar.short': 'MAC', 'month.apr.short': 'APR',
+  'month.may.short': 'MEI', 'month.jun.short': 'JUN', 'month.jul.short': 'JUL', 'month.aug.short': 'OGS',
+  'month.sep.short': 'SEP', 'month.oct.short': 'OKT', 'month.nov.short': 'NOV', 'month.dec.short': 'DIS',
+  'misc.no_tx_month': 'Tiada transaksi bulan ini', 'misc.recurring': 'Berulang',
 };
 
 export const translations: Record<string, Record<TKey, string>> = { en, zh, ja, ko, ms };
