@@ -285,7 +285,7 @@ export default function BudgetScreen() {
                       className="w-10 h-10 rounded-2xl items-center justify-center flex-shrink-0"
                       style={{ backgroundColor: goal.color + '20' }}
                     >
-                      <PiggyBank size={18} color={goal.color} />
+                      <Text style={{ fontSize: 20 }}>{goal.icon || '🎯'}</Text>
                     </View>
                     <View className="flex-1 min-w-0">
                       <Text className="text-sm font-semibold text-gray-900" numberOfLines={1}>{goal.name}</Text>
@@ -310,10 +310,21 @@ export default function BudgetScreen() {
                       style={{ width: `${monthPct}%`, backgroundColor: goal.color }}
                     />
                   </View>
-                  <View className="flex-row justify-between mt-2">
+                  <View className="flex-row justify-between mt-2 items-center">
                     <Text className="text-xs text-gray-400">Total: {formatCurrency(goal.savedAmount)} / {formatCurrency(goal.targetAmount)}</Text>
                     <Text className="text-xs font-medium text-gray-500">{Math.round(totalPctGoal)}%</Text>
                   </View>
+
+                  {/* See progress link */}
+                  <TouchableOpacity
+                    onPress={() => router.push(`/goal/${goal.id}` as any)}
+                    className="mt-3 pt-3 border-t border-gray-50 flex-row items-center justify-center"
+                    activeOpacity={0.7}
+                  >
+                    <Text className="text-xs font-semibold" style={{ color: goal.color }}>
+                      See progress →
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               );
             })}

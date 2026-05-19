@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import {
   Moon,
   Sun,
@@ -30,16 +31,19 @@ import {
   RotateCcw,
   Settings,
   Zap,
+  Trophy,
 } from 'lucide-react-native';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { usePurchases, isUserCancelledError } from '../../context/PurchasesContext';
 import { CURRENCIES, LANGUAGES, EXPENSE_CATEGORIES, INCOME_CATEGORIES, CustomCategory, COLOR_OPTIONS, ICON_OPTIONS } from '../../types';
-import { computeBadges, BADGES } from '../../utils/achievements';
+import { computeBadges, BADGES, BadgeDef } from '../../utils/achievements';
+import BadgeCelebration from '../../components/BadgeCelebration';
+import StatusCelebration from '../../components/StatusCelebration';
 
 // ─── Score Ring (pure RN, no SVG) ────────────────────────────────────────────
-function ScoreRing({ score }: { score: number }) {
+function ScoreRing({ score, onPress }: { score: number; onPress?: () => void }) {
   const { t } = useTranslation();
   const color = score >= 80 ? '#22c55e' : score >= 60 ? '#eab308' : '#ef4444';
   const SIZE = 120;
@@ -47,7 +51,12 @@ function ScoreRing({ score }: { score: number }) {
   // We approximate the arc fill via a conic-like trick using two overlaid rounded containers
   // Simple approach: show score text inside a bordered circle whose border color reflects score
   return (
-    <View className="items-center justify-center" style={{ width: SIZE, height: SIZE }}>
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={onPress ? 0.75 : 1}
+      className="items-center justify-center"
+      style={{ width: SIZE, height: SIZE }}
+    >
       <View
         style={{
           width: SIZE,
@@ -58,8 +67,6 @@ function ScoreRing({ score }: { score: number }) {
           position: 'absolute',
         }}
       />
-      {/* Filled arc approximation: inner colored ring segment via clipping would need SVG.
-          Use a simple solid colored ring instead, full circle at reduced opacity + text. */}
       <View
         style={{
           width: SIZE,
@@ -77,7 +84,7 @@ function ScoreRing({ score }: { score: number }) {
           {t('profile.score')}
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -580,8 +587,10 @@ function SubscriptionCard() {
 // ─── Main Profile Screen ──────────────────────────────────────────────────────
 export default function ProfileScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
   const {
     transactions,
+    budget,
     userProfile,
     darkMode,
     toggleDarkMode,
@@ -612,6 +621,9 @@ export default function ProfileScreen() {
   const [showCurrency, setShowCurrency] = useState(false);
   const [showLanguage, setShowLanguage] = useState(false);
   const [currencySearch, setCurrencySearch] = useState('');
+  const [celebrationBadge, setCelebrationBadge] = useState<BadgeDef | null>(null);
+  const [showStatusCelebration, setShowStatusCelebration] = useState(false);
+  const prevEarnedCountRef = useRef<number | null>(null);
 
   // ── Financial score ────────────────────────────────────────────────────────
   const currentYear = new Date().getFullYear();
@@ -637,6 +649,17 @@ export default function ProfileScreen() {
     () => new Set(computeBadges(transactions, budget).map(b => b.id)),
     [transactions, budget],
   );
+
+  // Detect newly earned badges and trigger celebration
+  useEffect(() => {
+    const currentCount = earnedBadgeIds.size;
+    if (prevEarnedCountRef.current !== null && currentCount > prevEarnedCountRef.current) {
+      // Find the newest badge (last in BADGES array that was just earned)
+      const newBadge = [...BADGES].reverse().find(b => earnedBadgeIds.has(b.id));
+      if (newBadge) setCelebrationBadge(newBadge);
+    }
+    prevEarnedCountRef.current = currentCount;
+  }, [earnedBadgeIds]);
 
   const scoreLabel =
     score >= 80 ? t('profile.excellent_health') :
@@ -756,7 +779,7 @@ export default function ProfileScreen() {
 
           {/* Score ring card */}
           <View className="bg-white rounded-2xl p-5 items-center gap-3 shadow-sm border border-gray-50">
-            <ScoreRing score={score} />
+            <ScoreRing score={score} onPress={() => setShowStatusCelebration(true)} />
             <View className="items-center">
               <Text className="font-bold text-base text-gray-900">{scoreLabel}</Text>
               <Text className="text-xs text-gray-400 mt-1 text-center">
@@ -788,9 +811,9 @@ export default function ProfileScreen() {
         <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mx-4 mb-2">
           {t('profile.badges')}
         </Text>
-        <View className="mx-4 bg-white rounded-2xl p-4 shadow-sm border border-gray-50 mb-4">
+        <View className="mx-4 bg-white rounded-2xl p-4 shadow-sm border border-gray-50 mb-2">
           <View className="flex-row flex-wrap gap-2">
-            {BADGES.map(badge => {
+            {BADGES.slice(0, 9).map(badge => {
               const earned = earnedBadgeIds.has(badge.id);
               return (
                 <View
@@ -813,6 +836,21 @@ export default function ProfileScreen() {
             {earnedBadgeIds.size}/{BADGES.length} unlocked
           </Text>
         </View>
+
+        {/* Achievements link */}
+        <TouchableOpacity
+          onPress={() => router.push('/achievements' as any)}
+          className="mx-4 mb-4 flex-row items-center justify-between bg-white rounded-2xl px-4 py-3.5 shadow-sm border border-gray-50"
+          activeOpacity={0.7}
+        >
+          <View className="flex-row items-center gap-2.5">
+            <View className="w-8 h-8 rounded-xl bg-amber-50 items-center justify-center">
+              <Trophy size={15} color="#d97706" />
+            </View>
+            <Text className="text-sm font-semibold text-gray-900">Achievements &amp; Tips</Text>
+          </View>
+          <ChevronRight size={14} color="#d1d5db" />
+        </TouchableOpacity>
 
         {/* Subscription */}
         <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mx-4 mb-2">
@@ -1036,6 +1074,24 @@ export default function ProfileScreen() {
       {showTerms ? <LegalSheet type="terms" onClose={() => setShowTerms(false)} /> : null}
       {showPrivacy ? <LegalSheet type="privacy" onClose={() => setShowPrivacy(false)} /> : null}
       {showCategories ? <CategoryManagerSheet onClose={() => setShowCategories(false)} /> : null}
+
+      {/* Badge celebration */}
+      {celebrationBadge ? (
+        <BadgeCelebration
+          badge={celebrationBadge}
+          earnedCount={earnedBadgeIds.size}
+          onClose={() => setCelebrationBadge(null)}
+        />
+      ) : null}
+
+      {/* Status celebration (tap score ring) */}
+      {showStatusCelebration ? (
+        <StatusCelebration
+          status={score >= 80 ? 'excellent' : score >= 60 ? 'sustained' : 'critical'}
+          score={score}
+          onClose={() => setShowStatusCelebration(false)}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

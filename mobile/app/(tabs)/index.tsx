@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Plus, Target, Search, SlidersHorizontal, TrendingUp, TrendingDown, X,
 } from 'lucide-react-native';
@@ -80,8 +81,23 @@ export default function HomeScreen() {
   const { t } = useTranslation();
 
   const [showEntry, setShowEntry] = useState(false);
+  const [entryPrefill, setEntryPrefill] = useState<{ type?: 'expense' | 'income'; amount?: number; category?: string; description?: string } | undefined>(undefined);
   const [viewMonth, setViewMonth] = useState(now.getMonth());
   const [viewYear, setViewYear] = useState(now.getFullYear());
+
+  // Consume pending receipt left by the camera capture screen
+  useFocusEffect(useCallback(() => {
+    const PENDING_KEY = 'kachingo_pending_receipt';
+    AsyncStorage.getItem(PENDING_KEY).then(raw => {
+      if (!raw) return;
+      AsyncStorage.removeItem(PENDING_KEY);
+      try {
+        const data = JSON.parse(raw);
+        setEntryPrefill(data);
+        setShowEntry(true);
+      } catch {}
+    });
+  }, []));
 
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -459,7 +475,11 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      <ManualEntryModal visible={showEntry} onClose={() => setShowEntry(false)} />
+      <ManualEntryModal
+        visible={showEntry}
+        onClose={() => { setShowEntry(false); setEntryPrefill(undefined); }}
+        prefill={entryPrefill}
+      />
     </SafeAreaView>
   );
 }
