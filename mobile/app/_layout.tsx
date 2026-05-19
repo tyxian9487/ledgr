@@ -12,7 +12,7 @@ import ConsentBanner from '../components/ConsentBanner';
 import TourOverlay from '../components/TourOverlay';
 import NotificationWatcher from '../components/NotificationWatcher';
 import { useColorScheme } from 'nativewind';
-import { supabase } from '../utils/supabase';
+import { supabase, exchangeOAuthCode } from '../utils/supabase';
 
 // Shows JS errors on-screen in release builds so we can diagnose crashes
 class AppErrorBoundary extends Component<{ children: React.ReactNode }, { error: Error | null }> {
@@ -86,16 +86,18 @@ function OAuthCallbackHandler() {
       if (!url.includes('auth/callback')) return;
       const { data: { session } } = await supabase.auth.getSession();
       if (session) return;
-      try {
-        await supabase.auth.exchangeCodeForSession(url);
-      } catch (e) {
-        console.warn('[Auth] OAuthCallbackHandler exchange error:', e);
-      }
+      const err = await exchangeOAuthCode(url);
+      if (err) console.warn('[Auth] OAuthCallbackHandler exchange error:', err.message);
     };
 
-    // Cold-start only — addEventListener omitted to prevent double-exchange race
-    // with login.tsx when Chrome Custom Tab returns type:'success' + fires Linking simultaneously
+    // Both cold-start and warm-start deep links are handled here.
+    // exchangeOAuthCode uses a module-level flag so concurrent calls from
+    // login.tsx or auth/callback.tsx are safely serialised — only one
+    // actually calls exchangeCodeForSession; the others wait and return the
+    // session that was established.
     Linking.getInitialURL().then(url => { if (url) processUrl(url); });
+    const sub = Linking.addEventListener('url', ({ url }) => processUrl(url));
+    return () => sub.remove();
   }, []);
 
   return null;

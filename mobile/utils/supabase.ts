@@ -50,3 +50,27 @@ export const supabase = createClient(
     },
   }
 );
+
+// Module-level flag preventing concurrent PKCE exchanges.
+// On Android, Chrome Custom Tab can fire both openAuthSessionAsync(result:'success')
+// AND a Linking URL event for the same redirect simultaneously. All three callers
+// (login.tsx, OAuthCallbackHandler, auth/callback.tsx) guard through this function
+// so only the first one actually calls exchangeCodeForSession; the rest wait and
+// pick up the session that was established.
+let _pkceExchangeActive = false;
+
+export async function exchangeOAuthCode(url: string): Promise<Error | null> {
+  if (_pkceExchangeActive) {
+    // Another exchange is already running — wait up to 4 s then check for session
+    await new Promise(r => setTimeout(r, 4000));
+    const { data: { session } } = await supabase.auth.getSession();
+    return session ? null : new Error('Sign in timed out. Please try again.');
+  }
+  _pkceExchangeActive = true;
+  try {
+    const { error } = await supabase.auth.exchangeCodeForSession(url);
+    return error ? new Error(error.message) : null;
+  } finally {
+    _pkceExchangeActive = false;
+  }
+}

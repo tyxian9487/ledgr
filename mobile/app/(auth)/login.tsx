@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Image, Dimensions, ActivityIndicator, Pla
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import { useTranslation } from '../../context/LanguageContext';
-import { supabase } from '../../utils/supabase';
+import { supabase, exchangeOAuthCode } from '../../utils/supabase';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -74,17 +74,10 @@ export default function LoginScreen() {
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
 
       if (result.type === 'success') {
-        // OAuthCallbackHandler in _layout.tsx may have already exchanged the code
-        // via the Linking event that fires simultaneously on Android — check first.
         const { data: { session: existing } } = await supabase.auth.getSession();
         if (!existing) {
-          const { error: exchangeErr } = await supabase.auth.exchangeCodeForSession(result.url);
-          if (exchangeErr) {
-            // OAuthCallbackHandler won the race and consumed the code_verifier.
-            // A session should exist by now — if not, surface the original error.
-            const { data: { session: raceSession } } = await supabase.auth.getSession();
-            if (!raceSession) throw exchangeErr;
-          }
+          const err = await exchangeOAuthCode(result.url);
+          if (err) throw err;
         }
       }
       // If 'cancel': OAuthCallbackHandler (Linking event) or auth/callback.tsx handles it.
