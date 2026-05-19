@@ -52,16 +52,10 @@ export const supabase = createClient(
 );
 
 // Module-level flag preventing concurrent PKCE exchanges.
-// On Android, Chrome Custom Tab can fire both openAuthSessionAsync(result:'success')
-// AND a Linking URL event for the same redirect simultaneously. All three callers
-// (login.tsx, OAuthCallbackHandler, auth/callback.tsx) guard through this function
-// so only the first one actually calls exchangeCodeForSession; the rest wait and
-// pick up the session that was established.
 let _pkceExchangeActive = false;
 
-export async function exchangeOAuthCode(url: string): Promise<Error | null> {
+async function exchangeOAuthCode(url: string): Promise<Error | null> {
   if (_pkceExchangeActive) {
-    // Another exchange is already running — wait up to 4 s then check for session
     await new Promise(r => setTimeout(r, 4000));
     const { data: { session } } = await supabase.auth.getSession();
     return session ? null : new Error('Sign in timed out. Please try again.');
@@ -73,4 +67,33 @@ export async function exchangeOAuthCode(url: string): Promise<Error | null> {
   } finally {
     _pkceExchangeActive = false;
   }
+}
+
+// Handles both Supabase auth flows:
+//   Implicit — tokens in hash fragment: kachingo://auth/callback#access_token=...
+//   PKCE     — auth code in query:      kachingo://auth/callback?code=...
+// Call this from every OAuth redirect handler instead of exchangeCodeForSession directly.
+export async function handleOAuthRedirect(url: string): Promise<Error | null> {
+  if (!url) return new Error('Empty redirect URL');
+
+  if (url.includes('#access_token=')) {
+    // Implicit flow — parse tokens from the hash fragment and set the session
+    const hash = url.split('#')[1] ?? '';
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+    if (!accessToken) return new Error('No access token in redirect URL');
+    const { error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken ?? '',
+    });
+    return error ? new Error(error.message) : null;
+  }
+
+  if (url.includes('code=')) {
+    // PKCE flow — exchange auth code for session (semaphore prevents double-exchange)
+    return exchangeOAuthCode(url);
+  }
+
+  return new Error('Unrecognised OAuth redirect URL');
 }

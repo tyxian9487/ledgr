@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { supabase, exchangeOAuthCode } from '../../utils/supabase';
+import { supabase, handleOAuthRedirect } from '../../utils/supabase';
 
 // Required so that WebBrowser.openAuthSessionAsync on Android can detect that
 // the OAuth redirect landed here and return { type: 'success' } to the caller.
@@ -34,9 +34,9 @@ export default function AuthCallback() {
           let callbackUrl = `kachingo://auth/callback?code=${encodeURIComponent(params.code)}`;
           if (params.state) callbackUrl += `&state=${encodeURIComponent(params.state)}`;
 
-          const err = await exchangeOAuthCode(callbackUrl);
+          const err = await handleOAuthRedirect(callbackUrl);
           if (err) {
-            console.warn('[Auth] exchangeCodeForSession error:', err.message);
+            console.warn('[Auth] handleOAuthRedirect error:', err.message);
             router.replace('/(auth)/login');
             return;
           }

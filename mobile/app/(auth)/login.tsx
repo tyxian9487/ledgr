@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Image, Dimensions, ActivityIndicator, Pla
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import { useTranslation } from '../../context/LanguageContext';
-import { supabase, exchangeOAuthCode } from '../../utils/supabase';
+import { supabase, handleOAuthRedirect } from '../../utils/supabase';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -74,36 +74,10 @@ export default function LoginScreen() {
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
 
       if (result.type === 'success') {
-        // DEBUG — remove after confirming root cause
-        Alert.alert('OAuth Debug', `result.url:\n${result.url ?? 'undefined'}`);
-
-        // On some Android devices, Chrome Custom Tab's BrowserResultActivity strips
-        // the query string — result.url = 'kachingo://auth/callback' with no ?code=.
-        // The full URL with the code arrives via OAuthCallbackHandler.addEventListener
-        // (OS Linking intent). Only exchange here if the code is actually present.
-        let hasCode = false;
-        try {
-          hasCode = !!new URL(result.url).searchParams.get('code');
-        } catch {
-          hasCode = result.url?.includes('code=') ?? false;
-        }
-
-        if (hasCode) {
-          const { data: { session: existing } } = await supabase.auth.getSession();
-          if (!existing) {
-            const err = await exchangeOAuthCode(result.url);
-            if (err) throw err;
-          }
-        } else {
-          // URL has no code — OAuthCallbackHandler will exchange via Linking event.
-          // Poll for the session it establishes (typically completes in < 2s).
-          let session = null;
-          for (let i = 0; i < 10; i++) {
-            await new Promise(r => setTimeout(r, 500));
-            const { data } = await supabase.auth.getSession();
-            if (data.session) { session = data.session; break; }
-          }
-          if (!session) throw new Error('Sign in timed out. Please try again.');
+        const { data: { session: existing } } = await supabase.auth.getSession();
+        if (!existing) {
+          const err = await handleOAuthRedirect(result.url);
+          if (err) throw err;
         }
       }
       // If 'cancel': OAuthCallbackHandler (Linking event) or auth/callback.tsx handles it.

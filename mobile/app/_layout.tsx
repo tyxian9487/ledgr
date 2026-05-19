@@ -12,7 +12,7 @@ import ConsentBanner from '../components/ConsentBanner';
 import TourOverlay from '../components/TourOverlay';
 import NotificationWatcher from '../components/NotificationWatcher';
 import { useColorScheme } from 'nativewind';
-import { supabase, exchangeOAuthCode } from '../utils/supabase';
+import { supabase, handleOAuthRedirect } from '../utils/supabase';
 
 // Shows JS errors on-screen in release builds so we can diagnose crashes
 class AppErrorBoundary extends Component<{ children: React.ReactNode }, { error: Error | null }> {
@@ -86,15 +86,13 @@ function OAuthCallbackHandler() {
       if (!url.includes('auth/callback')) return;
       const { data: { session } } = await supabase.auth.getSession();
       if (session) return;
-      const err = await exchangeOAuthCode(url);
+      const err = await handleOAuthRedirect(url);
       if (err) console.warn('[Auth] OAuthCallbackHandler exchange error:', err.message);
     };
 
     // Both cold-start and warm-start deep links are handled here.
-    // exchangeOAuthCode uses a module-level flag so concurrent calls from
-    // login.tsx or auth/callback.tsx are safely serialised — only one
-    // actually calls exchangeCodeForSession; the others wait and return the
-    // session that was established.
+    // handleOAuthRedirect detects implicit flow (#access_token=) vs PKCE (?code=)
+    // and routes to setSession or exchangeCodeForSession accordingly.
     Linking.getInitialURL().then(url => { if (url) processUrl(url); });
     const sub = Linking.addEventListener('url', ({ url }) => processUrl(url));
     return () => sub.remove();
