@@ -404,6 +404,45 @@ export const en = {
   'onboard.update_anytime': 'You can update these settings anytime in Profile',
   'onboard.name_placeholder': 'Enter your name',
   'onboard.name_required': 'Please enter your name to continue',
+
+  // Profile — account & new sections
+  'profile.account': 'Account',
+  'profile.linked_account': 'Linked Account',
+  'profile.subscription_plan': 'Subscription Plan',
+  'profile.notifications': 'Notifications',
+  'profile.data': 'Data',
+  'profile.export_csv': 'Export CSV',
+  'profile.generate_report': 'Generate Report',
+  'profile.budget_streak': 'Budget Streak',
+  'profile.free_trial': 'Free',
+  'profile.upgrade_banner': 'Upgrade to Pro',
+
+  // Notifications sheet
+  'notif.title': 'Notifications',
+  'notif.desc': 'Choose what you hear from us',
+  'notif.weekly_summary': 'Weekly Summary',
+  'notif.weekly_summary_desc': 'Spending report every Sunday',
+  'notif.budget_alerts': 'Budget Alerts',
+  'notif.budget_alerts_desc': 'Alert when nearing budget limit',
+  'notif.streak_reminders': 'Streak Reminders',
+  'notif.streak_reminders_desc': 'Keep your budget streak going',
+  'notif.tips': 'Money Tips',
+  'notif.tips_desc': 'Weekly financial tips & advice',
+  'notif.save': 'Save Settings',
+  'notif.saved': 'Notification preferences saved!',
+
+  // Streak card
+  'streak.current': 'Current Streak',
+  'streak.best': 'Best',
+  'streak.months': 'months',
+  'streak.keep_going': 'Keep going!',
+
+  // Linked Account screen
+  'linked.title': 'Linked Account',
+  'linked.provider': 'Sign-in method',
+  'linked.email_label': 'Email',
+  'linked.sign_out': 'Sign Out',
+  'linked.guest_note': 'Sign in to sync your data across devices',
 } as const;
 
 export type TKey = keyof typeof en;
@@ -594,6 +633,19 @@ const zh: Record<TKey, string> = {
   'onboard.select_one': '请至少选择一项', 'onboard.upload_photo': '点击上传照片',
   'onboard.update_anytime': '您可以随时在个人资料中更新这些设置',
   'onboard.name_placeholder': '输入您的姓名', 'onboard.name_required': '请输入您的姓名以继续',
+  'profile.account': '账户', 'profile.linked_account': '关联账户', 'profile.subscription_plan': '订阅计划',
+  'profile.notifications': '通知', 'profile.data': '数据', 'profile.export_csv': '导出CSV',
+  'profile.generate_report': '生成报告', 'profile.budget_streak': '预算连击',
+  'profile.free_trial': '免费', 'profile.upgrade_banner': '升级到Pro',
+  'notif.title': '通知', 'notif.desc': '管理您的通知设置',
+  'notif.weekly_summary': '每周摘要', 'notif.weekly_summary_desc': '每周日收到支出报告',
+  'notif.budget_alerts': '预算提醒', 'notif.budget_alerts_desc': '接近预算限额时提醒',
+  'notif.streak_reminders': '连击提醒', 'notif.streak_reminders_desc': '保持您的预算连击',
+  'notif.tips': '理财技巧', 'notif.tips_desc': '每周财务技巧与建议',
+  'notif.save': '保存设置', 'notif.saved': '通知偏好已保存！',
+  'streak.current': '当前连击', 'streak.best': '最佳', 'streak.months': '个月', 'streak.keep_going': '继续加油！',
+  'linked.title': '关联账户', 'linked.provider': '登录方式', 'linked.email_label': '邮箱',
+  'linked.sign_out': '退出登录', 'linked.guest_note': '登录以跨设备同步数据',
 };
 
 const ja: Record<TKey, string> = {
@@ -782,6 +834,19 @@ const ja: Record<TKey, string> = {
   'onboard.select_one': '少なくとも 1 つ選択してください', 'onboard.upload_photo': 'タップして写真をアップロード',
   'onboard.update_anytime': 'これらの設定はプロフィールからいつでも変更できます',
   'onboard.name_placeholder': '名前を入力してください', 'onboard.name_required': '続けるには名前を入力してください',
+  'profile.account': 'アカウント', 'profile.linked_account': 'リンクアカウント', 'profile.subscription_plan': 'サブスクリプション',
+  'profile.notifications': '通知', 'profile.data': 'データ', 'profile.export_csv': 'CSVエクスポート',
+  'profile.generate_report': 'レポート生成', 'profile.budget_streak': '予算ストリーク',
+  'profile.free_trial': '無料', 'profile.upgrade_banner': 'Proにアップグレード',
+  'notif.title': '通知', 'notif.desc': '通知設定を管理する',
+  'notif.weekly_summary': '週次サマリー', 'notif.weekly_summary_desc': '毎週日曜日に支出レポート',
+  'notif.budget_alerts': '予算アラート', 'notif.budget_alerts_desc': '予算上限に近づいたら通知',
+  'notif.streak_reminders': 'ストリークリマインダー', 'notif.streak_reminders_desc': '予算ストリークを維持する',
+  'notif.tips': 'マネーヒント', 'notif.tips_desc': '週次の財務ヒント',
+  'notif.save': '設定を保存', 'notif.saved': '通知設定が保存されました！',
+  'streak.current': '現在のストリーク', 'streak.best': 'ベスト', 'streak.months': 'ヶ月', 'streak.keep_going': '頑張って！',
+  'linked.title': 'リンクアカウント', 'linked.provider': 'サインイン方法', 'linked.email_label': 'メール',
+  'linked.sign_out': 'ログアウト', 'linked.guest_note': 'データを同期するためにサインインしてください',
 };
 
 const ko: Record<TKey, string> = {
@@ -971,6 +1036,19 @@ const ko: Record<TKey, string> = {
   'onboard.select_one': '최소 하나를 선택하세요', 'onboard.upload_photo': '탭하여 사진 업로드',
   'onboard.update_anytime': '프로필에서 언제든지 설정을 업데이트할 수 있습니다',
   'onboard.name_placeholder': '이름을 입력하세요', 'onboard.name_required': '계속하려면 이름을 입력해 주세요',
+  'profile.account': '계정', 'profile.linked_account': '연결 계정', 'profile.subscription_plan': '구독 플랜',
+  'profile.notifications': '알림', 'profile.data': '데이터', 'profile.export_csv': 'CSV 내보내기',
+  'profile.generate_report': '보고서 생성', 'profile.budget_streak': '예산 스트릭',
+  'profile.free_trial': '무료', 'profile.upgrade_banner': 'Pro로 업그레이드',
+  'notif.title': '알림', 'notif.desc': '알림 설정을 관리하세요',
+  'notif.weekly_summary': '주간 요약', 'notif.weekly_summary_desc': '매주 일요일 지출 보고서',
+  'notif.budget_alerts': '예산 알림', 'notif.budget_alerts_desc': '예산 한도 근접 시 알림',
+  'notif.streak_reminders': '스트릭 리마인더', 'notif.streak_reminders_desc': '예산 스트릭 유지하기',
+  'notif.tips': '재정 팁', 'notif.tips_desc': '주간 재정 팁 및 조언',
+  'notif.save': '설정 저장', 'notif.saved': '알림 설정이 저장되었습니다!',
+  'streak.current': '현재 스트릭', 'streak.best': '최고', 'streak.months': '개월', 'streak.keep_going': '계속하세요!',
+  'linked.title': '연결 계정', 'linked.provider': '로그인 방법', 'linked.email_label': '이메일',
+  'linked.sign_out': '로그아웃', 'linked.guest_note': '기기 간 데이터를 동기화하려면 로그인하세요',
 };
 
 const ms: Record<TKey, string> = {
@@ -1160,6 +1238,19 @@ const ms: Record<TKey, string> = {
   'onboard.select_one': 'Pilih sekurang-kurangnya satu pilihan', 'onboard.upload_photo': 'Ketik untuk muat naik foto',
   'onboard.update_anytime': 'Anda boleh kemas kini tetapan ini pada bila-bila masa dalam Profil',
   'onboard.name_placeholder': 'Masukkan nama anda', 'onboard.name_required': 'Sila masukkan nama anda untuk meneruskan',
+  'profile.account': 'Akaun', 'profile.linked_account': 'Akaun Terpaut', 'profile.subscription_plan': 'Pelan Langganan',
+  'profile.notifications': 'Pemberitahuan', 'profile.data': 'Data', 'profile.export_csv': 'Eksport CSV',
+  'profile.generate_report': 'Jana Laporan', 'profile.budget_streak': 'Pencapaian Belanjawan',
+  'profile.free_trial': 'Percuma', 'profile.upgrade_banner': 'Naik Taraf ke Pro',
+  'notif.title': 'Pemberitahuan', 'notif.desc': 'Urus tetapan pemberitahuan anda',
+  'notif.weekly_summary': 'Ringkasan Mingguan', 'notif.weekly_summary_desc': 'Laporan perbelanjaan setiap Ahad',
+  'notif.budget_alerts': 'Amaran Belanjawan', 'notif.budget_alerts_desc': 'Amaran apabila hampir had belanjawan',
+  'notif.streak_reminders': 'Peringatan Pencapaian', 'notif.streak_reminders_desc': 'Kekal pencapaian belanjawan anda',
+  'notif.tips': 'Tips Kewangan', 'notif.tips_desc': 'Tips & nasihat kewangan mingguan',
+  'notif.save': 'Simpan Tetapan', 'notif.saved': 'Tetapan pemberitahuan disimpan!',
+  'streak.current': 'Pencapaian Semasa', 'streak.best': 'Terbaik', 'streak.months': 'bulan', 'streak.keep_going': 'Teruskan!',
+  'linked.title': 'Akaun Terpaut', 'linked.provider': 'Kaedah log masuk', 'linked.email_label': 'E-mel',
+  'linked.sign_out': 'Log Keluar', 'linked.guest_note': 'Log masuk untuk menyegerakkan data merentas peranti',
 };
 
 export const translations: Record<string, Record<TKey, string>> = { en, zh, ja, ko, ms };
