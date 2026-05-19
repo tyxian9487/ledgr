@@ -74,10 +74,33 @@ export default function LoginScreen() {
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
 
       if (result.type === 'success') {
-        const { data: { session: existing } } = await supabase.auth.getSession();
-        if (!existing) {
-          const err = await exchangeOAuthCode(result.url);
-          if (err) throw err;
+        // On some Android devices, Chrome Custom Tab's BrowserResultActivity strips
+        // the query string — result.url = 'kachingo://auth/callback' with no ?code=.
+        // The full URL with the code arrives via OAuthCallbackHandler.addEventListener
+        // (OS Linking intent). Only exchange here if the code is actually present.
+        let hasCode = false;
+        try {
+          hasCode = !!new URL(result.url).searchParams.get('code');
+        } catch {
+          hasCode = result.url?.includes('code=') ?? false;
+        }
+
+        if (hasCode) {
+          const { data: { session: existing } } = await supabase.auth.getSession();
+          if (!existing) {
+            const err = await exchangeOAuthCode(result.url);
+            if (err) throw err;
+          }
+        } else {
+          // URL has no code — OAuthCallbackHandler will exchange via Linking event.
+          // Poll for the session it establishes (typically completes in < 2s).
+          let session = null;
+          for (let i = 0; i < 10; i++) {
+            await new Promise(r => setTimeout(r, 500));
+            const { data } = await supabase.auth.getSession();
+            if (data.session) { session = data.session; break; }
+          }
+          if (!session) throw new Error('Sign in timed out. Please try again.');
         }
       }
       // If 'cancel': OAuthCallbackHandler (Linking event) or auth/callback.tsx handles it.
