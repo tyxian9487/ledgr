@@ -1,14 +1,19 @@
 import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '../../utils/supabase';
 
+// Required so that WebBrowser.openAuthSessionAsync on Android can detect that
+// the OAuth redirect landed here and return { type: 'success' } to the caller.
+WebBrowser.maybeCompleteAuthSession();
+
 // Handles kachingo://auth/callback?code=...&state=... deep link on Android.
-// WebBrowser.openAuthSessionAsync doesn't reliably catch custom-scheme
+// WebBrowser.openAuthSessionAsync doesn't reliably intercept custom-scheme
 // redirects on Android — the OS routes them here via the intent system.
 export default function AuthCallback() {
   const router = useRouter();
-  const params = useLocalSearchParams<Record<string, string>>();
+  const params = useLocalSearchParams<{ code?: string; state?: string; error?: string; error_description?: string }>();
 
   useEffect(() => {
     async function exchange() {
@@ -20,21 +25,20 @@ export default function AuthCallback() {
         }
 
         if (params.code) {
-          // Reconstruct the full URL so Supabase can extract all PKCE params
-          const qs = Object.entries(params)
-            .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
-            .join('&');
-          const fullUrl = `kachingo://auth/callback?${qs}`;
-          const { error } = await supabase.auth.exchangeCodeForSession(fullUrl);
+          // Build a minimal URL — Supabase only needs `code` (and optionally `state`)
+          // from the query string to complete the PKCE exchange.
+          // Do NOT re-encode values: useLocalSearchParams already returns decoded strings.
+          let callbackUrl = `kachingo://auth/callback?code=${params.code}`;
+          if (params.state) callbackUrl += `&state=${params.state}`;
+
+          const { error } = await supabase.auth.exchangeCodeForSession(callbackUrl);
           if (error) {
             console.warn('[Auth] exchangeCodeForSession error:', error.message);
             router.replace('/(auth)/login');
             return;
           }
-          // Don't navigate manually — NavigationGuard in _layout.tsx reacts to
-          // the onAuthStateChange event and redirects to (tabs) automatically.
+          // Session established — NavigationGuard in _layout.tsx will redirect to (tabs).
         } else {
-          // No code and no error — nothing to do, go back to login
           router.replace('/(auth)/login');
         }
       } catch (e) {
@@ -47,8 +51,8 @@ export default function AuthCallback() {
   }, []);
 
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }}>
-      <ActivityIndicator size="large" color="#16a34a" />
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#052e16' }}>
+      <ActivityIndicator size="large" color="#4ade80" />
     </View>
   );
 }

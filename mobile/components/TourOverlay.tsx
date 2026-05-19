@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useTour, TOUR_STEPS } from '../context/TourContext';
+import { useApp } from '../context/AppContext';
 
 const mascotImg = require('../assets/mascot.png');
 
@@ -29,9 +30,13 @@ function pathnameToTab(pathname: string): string {
 export default function TourOverlay() {
   const { tourActive, tourStepIndex, currentStep, showOffer, acceptTour, declineTour, nextStep, skipTour } =
     useTour();
+  const { isAuthenticated, hasCompletedOnboarding } = useApp();
   const router = useRouter();
   const pathname = usePathname();
   const currentTab = pathnameToTab(pathname);
+
+  // Never show tour until the user is fully signed in and past onboarding
+  if (!isAuthenticated || !hasCompletedOnboarding) return null;
 
   const navigateToTab = useCallback(
     (tab: string) => {

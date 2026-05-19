@@ -79,9 +79,15 @@ export default function LoginScreen() {
       if (!data.url) throw new Error('No auth URL returned');
 
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+
       if (result.type === 'success') {
-        await supabase.auth.exchangeCodeForSession(result.url);
+        // iOS: browser captured the redirect URL directly
+        const { error: exchangeErr } = await supabase.auth.exchangeCodeForSession(result.url);
+        if (exchangeErr) throw exchangeErr;
       }
+      // On Android result.type is typically 'cancel' — the OS routes the deep link
+      // to auth/callback.tsx which handles the code exchange independently.
+      // NavigationGuard will redirect to (tabs) once the session is established.
     } catch (err) {
       Alert.alert('Sign in failed', err instanceof Error ? err.message : 'Please try again.');
     } finally {
@@ -115,9 +121,6 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#052e16' }} edges={['top', 'bottom']}>
-      {/* Upper gradient-like band */}
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '60%', backgroundColor: '#052e16' }} />
-      <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '50%', backgroundColor: '#14532d' }} />
 
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
         <View style={{ alignItems: 'center', justifyContent: 'center', marginBottom: 8, width: width * 0.5, height: width * 0.5 }}>
