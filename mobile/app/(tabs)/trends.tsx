@@ -5,8 +5,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
-  Image,
 } from 'react-native';
+import Svg, { Circle, Path, Line, Text as SvgText } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TrendingUp, TrendingDown, Minus, ChevronRight, X } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
@@ -37,6 +37,136 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 const MAX_BAR_HEIGHT = 96;
+
+// ─── SVG Line Chart ───────────────────────────────────────────────────────────
+
+function LineChart({
+  points,
+  color,
+  formatCurrency,
+}: {
+  points: { label: string; value: number }[];
+  color: string;
+  formatCurrency: (n: number) => string;
+}) {
+  const maxVal = Math.max(...points.map(p => p.value), 1);
+  const vW = 320;
+  const vH = 150;
+  const padL = 6;
+  const padR = 54;
+  const padT = 20;
+  const padB = 22;
+  const cW = vW - padL - padR;
+  const cH = vH - padT - padB;
+  const n = points.length;
+
+  function toX(i: number) { return padL + (n > 1 ? (i / (n - 1)) * cW : cW / 2); }
+  function toY(v: number) { return padT + cH * (1 - v / maxVal); }
+
+  const lineParts = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${toX(i).toFixed(1)},${toY(p.value).toFixed(1)}`);
+  const linePath = lineParts.join(' ');
+  const fillPath = `${linePath} L${toX(n - 1).toFixed(1)},${(padT + cH).toFixed(1)} L${toX(0).toFixed(1)},${(padT + cH).toFixed(1)} Z`;
+
+  // Auto-scale to 3 grid levels: max, half, 0
+  const gridLevels = [maxVal, maxVal / 2, 0];
+
+  function fmtGridLabel(v: number) {
+    if (v === 0) return '$0';
+    const s = formatCurrency(v);
+    // Strip trailing .00 for cleanliness
+    return s.replace(/\.00$/, '');
+  }
+
+  return (
+    <Svg width="100%" height={vH} viewBox={`0 0 ${vW} ${vH}`} preserveAspectRatio="none">
+      {/* Horizontal grid lines + Y labels */}
+      {gridLevels.map((v, i) => {
+        const y = toY(v);
+        return (
+          <Line
+            key={i}
+            x1={padL} y1={y}
+            x2={vW - padR + 2} y2={y}
+            stroke="#f0f0f0" strokeWidth={1}
+          />
+        );
+      })}
+
+      {/* Y-axis labels */}
+      {gridLevels.map((v, i) => {
+        const y = toY(v);
+        return (
+          <SvgText
+            key={`lbl-${i}`}
+            x={vW - padR + 6}
+            y={y + 3.5}
+            fontSize={9}
+            fill="#9ca3af"
+          >
+            {fmtGridLabel(v)}
+          </SvgText>
+        );
+      })}
+
+      {/* Fill area under line */}
+      <Path d={fillPath} fill={color} fillOpacity={0.08} />
+
+      {/* Line */}
+      <Path
+        d={linePath}
+        fill="none"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* Dots */}
+      {points.map((p, i) => {
+        const isLast = i === n - 1;
+        const cx = toX(i);
+        const cy = toY(p.value);
+        return (
+          <Circle
+            key={i}
+            cx={cx} cy={cy}
+            r={isLast ? 4.5 : 2.5}
+            fill={p.value > 0 ? color : '#e5e7eb'}
+            stroke="white"
+            strokeWidth={isLast ? 2 : 1}
+          />
+        );
+      })}
+
+      {/* Last point value label */}
+      {(() => {
+        const last = points[n - 1];
+        if (!last || last.value === 0) return null;
+        const x = toX(n - 1);
+        const y = toY(last.value) - 8;
+        return (
+          <SvgText x={x} y={y} textAnchor="middle" fontSize={9} fontWeight="bold" fill={color}>
+            {formatCurrency(last.value)}
+          </SvgText>
+        );
+      })()}
+
+      {/* X-axis labels */}
+      {points.map((p, i) => (
+        <SvgText
+          key={`x-${i}`}
+          x={toX(i)}
+          y={vH - 5}
+          textAnchor="middle"
+          fontSize={8.5}
+          fill={i === n - 1 ? color : '#9ca3af'}
+        >
+          {p.label}
+        </SvgText>
+      ))}
+    </Svg>
+  );
+}
 
 // ─── Category Detail Modal ────────────────────────────────────────────────────
 
@@ -109,7 +239,6 @@ function CategoryModal({
   const nonZero = points.filter(p => p.value > 0);
   const avg = nonZero.length > 0 ? total / nonZero.length : 0;
   const highest = points.length > 0 ? points.reduce((a, b) => b.value > a.value ? b : a, points[0]) : null;
-  const maxBarVal = Math.max(...points.map(p => p.value), 1);
 
   const periodLabel = period === 'monthly' ? t('trends.monthly')
     : period === 'quarterly' ? t('trends.quarterly')
@@ -121,8 +250,11 @@ function CategoryModal({
         {/* Header */}
         <View className="flex-row items-center justify-between px-5 pt-6 pb-3 border-b border-gray-100 dark:border-gray-800">
           <View className="flex-row items-center gap-3">
-            <View className="w-9 h-9 rounded-xl items-center justify-center" style={{ backgroundColor: color + '30' }}>
-              <View className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+            <View
+              className="w-10 h-10 rounded-full items-center justify-center"
+              style={{ backgroundColor: color + '25' }}
+            >
+              <View className="w-4 h-4 rounded-full" style={{ backgroundColor: color }} />
             </View>
             <View>
               <Text className="text-base font-bold text-gray-900 dark:text-white">{label}</Text>
@@ -138,13 +270,13 @@ function CategoryModal({
         </View>
 
         {/* Period toggle */}
-        <View className="px-5 pt-4 pb-2">
+        <View className="px-5 pt-4 pb-1">
           <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-xl p-0.5">
             {(['monthly', 'quarterly', 'annually'] as Period[]).map(p => (
               <TouchableOpacity
                 key={p}
                 onPress={() => setPeriod(p)}
-                className={`flex-1 py-1.5 rounded-[10px] items-center ${period === p ? 'bg-white dark:bg-gray-700' : ''}`}
+                className={`flex-1 py-1.5 rounded-[10px] items-center ${period === p ? 'bg-white dark:bg-gray-700 shadow-sm' : ''}`}
               >
                 <Text className={`text-[11px] font-semibold ${
                   period === p ? 'text-gray-800 dark:text-white' : 'text-gray-400 dark:text-gray-500'
@@ -157,83 +289,59 @@ function CategoryModal({
         </View>
 
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          {/* Bar chart */}
-          <View className="px-5 pt-3 pb-4">
+          {/* Line chart */}
+          <View className="px-4 pt-4 pb-2">
             {total === 0 ? (
-              <View className="h-28 items-center justify-center">
+              <View style={{ height: 150 }} className="items-center justify-center">
                 <Text className="text-sm text-gray-400">{t('trends.no_data')}</Text>
               </View>
             ) : (
-              <View className="flex-row items-end gap-1" style={{ height: MAX_BAR_HEIGHT + 28 }}>
-                {points.map((point, i) => {
-                  const heightPct = maxBarVal > 0 ? point.value / maxBarVal : 0;
-                  const barH = Math.max(heightPct * MAX_BAR_HEIGHT, point.value > 0 ? 4 : 0);
-                  const isLast = i === points.length - 1;
-                  const barBg = isLast ? color : (dark ? color + '40' : color + '30');
-                  return (
-                    <View key={point.label + i} className="flex-1 items-center gap-1">
-                      {point.value > 0 && (
-                        <Text className="text-[7px] text-gray-400 text-center" numberOfLines={1}>
-                          {formatCurrency(point.value)}
-                        </Text>
-                      )}
-                      <View className="flex-1 justify-end w-full">
-                        <View className="w-full rounded-t-sm" style={{ height: barH, backgroundColor: barBg }} />
-                      </View>
-                      <Text
-                        className={`text-[8px] font-medium ${isLast ? '' : 'text-gray-400'}`}
-                        style={isLast ? { color } : {}}
-                        numberOfLines={1}
-                      >
-                        {point.label}
-                      </Text>
-                    </View>
-                  );
-                })}
-              </View>
+              <LineChart points={points} color={color} formatCurrency={formatCurrency} />
             )}
           </View>
 
           {/* Stats row — 3 items */}
-          <View className="px-5 flex-row gap-2 mb-5">
+          <View className="px-5 flex-row gap-2 mb-5 mt-1">
             {[
-              { label: t('common.total'), value: formatCurrency(total) },
-              { label: t('trends.avg'), value: formatCurrency(avg) },
-              { label: t('trends.highest'), value: highest && highest.value > 0 ? `${formatCurrency(highest.value)} (${highest.label})` : '—' },
+              { label: 'TOTAL', value: formatCurrency(total) },
+              { label: 'AVG / PERIOD', value: formatCurrency(avg) },
+              { label: 'HIGHEST', value: highest && highest.value > 0 ? `${formatCurrency(highest.value)} (${highest.label})` : '—' },
             ].map(s => (
-              <View key={s.label} className="flex-1 bg-gray-50 dark:bg-gray-800 rounded-2xl p-2.5">
-                <Text className="text-[9px] text-gray-400 font-semibold uppercase tracking-wide mb-1">{s.label}</Text>
-                <Text className="text-xs font-bold text-gray-900 dark:text-white" numberOfLines={2}>{s.value}</Text>
+              <View key={s.label} className="flex-1 bg-gray-50 dark:bg-gray-800 rounded-2xl p-3">
+                <Text className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-1">{s.label}</Text>
+                <Text className="text-sm font-bold text-gray-900 dark:text-white" numberOfLines={2}>{s.value}</Text>
               </View>
             ))}
           </View>
 
           {/* Recent transactions */}
           <View className="px-5 pb-10">
-            <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-              {t('trends.recent')}
+            <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
+              Recent Transactions
             </Text>
             {catTxs.length === 0 ? (
               <Text className="text-sm text-gray-400 py-4 text-center">{t('trends.no_txs')}</Text>
             ) : (
-              [...catTxs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10).map((tx) => (
-                <View
-                  key={tx.id}
-                  className="flex-row items-center justify-between py-2.5 border-b border-gray-100 dark:border-gray-800"
-                >
-                  <View className="flex-1 min-w-0 mr-3">
-                    <Text className="text-sm font-medium text-gray-900 dark:text-white" numberOfLines={1}>
-                      {tx.description || label}
-                    </Text>
-                    <Text className="text-[11px] text-gray-400">
-                      {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              [...catTxs]
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                .map((tx) => (
+                  <View
+                    key={tx.id}
+                    className="flex-row items-center justify-between py-3.5 border-b border-gray-100 dark:border-gray-800"
+                  >
+                    <View className="flex-1 min-w-0 mr-3">
+                      <Text className="text-sm font-medium text-gray-900 dark:text-white" numberOfLines={1}>
+                        {tx.description || label}
+                      </Text>
+                      <Text className="text-[11px] text-gray-400 mt-0.5">
+                        {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </Text>
+                    </View>
+                    <Text className="text-sm font-bold text-red-500 flex-shrink-0">
+                      -{formatCurrency(tx.amount)}
                     </Text>
                   </View>
-                  <Text className="text-sm font-bold text-red-500 flex-shrink-0">
-                    -{formatCurrency(tx.amount)}
-                  </Text>
-                </View>
-              ))
+                ))
             )}
           </View>
         </ScrollView>
@@ -303,16 +411,9 @@ export default function TrendsScreen() {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
 
         {/* ── Header ── */}
-        <View className="px-5 pt-3 pb-2 flex-row items-center justify-between">
-          <View>
-            <Text className="text-2xl font-black text-gray-900 dark:text-white">{t('trends.title')}</Text>
-            <Text className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('trends.subtitle')}</Text>
-          </View>
-          <Image
-            source={require('../../assets/m_magnifier.png')}
-            style={{ width: 72, height: 72 }}
-            resizeMode="contain"
-          />
+        <View className="px-5 pt-4 pb-2">
+          <Text className="text-2xl font-black text-gray-900 dark:text-white">{t('trends.title')}</Text>
+          <Text className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('trends.subtitle')}</Text>
         </View>
 
         {/* ── Summary Cards ── */}
@@ -363,8 +464,9 @@ export default function TrendsScreen() {
                   <TrendingDown size={11} color="rgba(220,252,231,0.9)" />
                 )}
                 <Text className="text-[10px] text-green-100 font-semibold">
-                  {currentMonth.income >= currentMonth.expenses ? t('common.surplus') : t('common.deficit')}{' '}
-                  {formatCurrency(Math.abs(currentMonth.income - currentMonth.expenses))}
+                  {currentMonth.income >= currentMonth.expenses
+                    ? `↗ ${t('common.surplus')} ${formatCurrency(currentMonth.income - currentMonth.expenses)}`
+                    : `↘ ${t('common.deficit')} ${formatCurrency(currentMonth.expenses - currentMonth.income)}`}
                 </Text>
               </View>
             )}
@@ -385,7 +487,7 @@ export default function TrendsScreen() {
                   className={`px-3 py-1 rounded-[10px] ${view === v ? 'bg-white dark:bg-gray-700' : ''}`}
                 >
                   <Text
-                    className={`text-[11px] font-semibold capitalize ${
+                    className={`text-[11px] font-semibold ${
                       view === v
                         ? 'text-gray-800 dark:text-white'
                         : 'text-gray-400 dark:text-gray-500'
@@ -554,9 +656,9 @@ export default function TrendsScreen() {
                         surplus > 0 ? 'text-green-500' : surplus < 0 ? 'text-red-500' : 'text-gray-400'
                       }`}
                     >
-                      {surplus === 0
+                      {m.income === 0 && m.expenses === 0
                         ? '–'
-                        : `${surplus > 0 ? '+' : '-'}${formatCurrency(Math.abs(surplus))}`}
+                        : `${surplus > 0 ? '+' : surplus < 0 ? '-' : ''}${surplus !== 0 ? formatCurrency(Math.abs(surplus)) : '–'}`}
                     </Text>
                   </View>
                 </View>
