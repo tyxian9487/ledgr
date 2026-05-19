@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTourTarget } from '../../context/TourContext';
 import {
   View,
@@ -853,7 +854,8 @@ export default function ProfileScreen() {
   const [currencySearch, setCurrencySearch] = useState('');
   const [celebrationBadge, setCelebrationBadge] = useState<BadgeDef | null>(null);
   const [showStatusCelebration, setShowStatusCelebration] = useState(false);
-  const prevEarnedCountRef = useRef<number | null>(null);
+  const [seenBadgeIds, setSeenBadgeIds] = useState<Set<string>>(new Set());
+  const [seenBadgesLoaded, setSeenBadgesLoaded] = useState(false);
 
   // Tour target refs
   const tourRefStreak     = useTourTarget('profile-streak');
@@ -914,13 +916,19 @@ export default function ProfileScreen() {
   );
 
   useEffect(() => {
-    const currentCount = earnedBadgeIds.size;
-    if (prevEarnedCountRef.current !== null && currentCount > prevEarnedCountRef.current) {
-      const newBadge = [...BADGES].reverse().find(b => earnedBadgeIds.has(b.id));
-      if (newBadge) setCelebrationBadge(newBadge);
-    }
-    prevEarnedCountRef.current = currentCount;
-  }, [earnedBadgeIds]);
+    AsyncStorage.getItem('kachingo_seen_badges').then(raw => {
+      if (raw) setSeenBadgeIds(new Set(JSON.parse(raw)));
+      setSeenBadgesLoaded(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!seenBadgesLoaded) return;
+    const unseen = [...earnedBadgeIds].filter(id => !seenBadgeIds.has(id));
+    if (unseen.length === 0) return;
+    const badge = BADGES.find(b => b.id === unseen[unseen.length - 1]);
+    if (badge) setCelebrationBadge(badge);
+  }, [earnedBadgeIds, seenBadgesLoaded]);
 
   const scoreLabel =
     score >= 80
@@ -1519,7 +1527,12 @@ export default function ProfileScreen() {
         <BadgeCelebration
           badge={celebrationBadge}
           earnedCount={earnedBadgeIds.size}
-          onClose={() => setCelebrationBadge(null)}
+          onClose={() => {
+            const updated = new Set([...seenBadgeIds, celebrationBadge.id]);
+            setSeenBadgeIds(updated);
+            AsyncStorage.setItem('kachingo_seen_badges', JSON.stringify([...updated]));
+            setCelebrationBadge(null);
+          }}
         />
       ) : null}
 

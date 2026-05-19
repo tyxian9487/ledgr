@@ -48,6 +48,7 @@ interface AppContextType {
   darkMode: boolean;
   budget: BudgetSettings;
   isAuthenticated: boolean;
+  isAuthInitialized: boolean;
   hasCompletedOnboarding: boolean;
   customCategories: CustomCategory[];
   disabledCategories: string[];
@@ -150,6 +151,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const [budget, setBudget] = useState<BudgetSettings>(DEFAULT_BUDGET);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthInitialized, setIsAuthInitialized] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
   const [disabledCategories, setDisabledCategories] = useState<string[]>([]);
@@ -209,10 +211,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           avatar: meta.avatar_url || meta.picture || prev.avatar,
         }));
       }
+      // Fallback: mark auth ready if INITIAL_SESSION hasn't fired yet
+      setIsAuthInitialized(true);
     });
 
     // Auth: listen for sign-in / sign-out events
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') setIsAuthInitialized(true);
       if (session?.user) {
         setIsAuthenticated(true);
         userIdRef.current = session.user.id;
@@ -528,6 +533,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       darkMode,
       budget,
       isAuthenticated,
+      isAuthInitialized,
       hasCompletedOnboarding,
       customCategories,
       disabledCategories,

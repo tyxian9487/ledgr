@@ -46,11 +46,12 @@ class AppErrorBoundary extends Component<{ children: React.ReactNode }, { error:
 }
 
 function NavigationGuard() {
-  const { isAuthenticated, hasCompletedOnboarding } = useApp();
+  const { isAuthenticated, isAuthInitialized, hasCompletedOnboarding } = useApp();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
+    if (!isAuthInitialized) return;
     // 'auth' (no parens) is the OAuth callback folder — treat it like the auth group
     const inAuthGroup = segments[0] === '(auth)' || segments[0] === 'auth';
     if (!isAuthenticated && !inAuthGroup) {
@@ -60,7 +61,7 @@ function NavigationGuard() {
     } else if (isAuthenticated && hasCompletedOnboarding && inAuthGroup) {
       router.replace('/(tabs)');
     }
-  }, [isAuthenticated, hasCompletedOnboarding, segments, router]);
+  }, [isAuthenticated, isAuthInitialized, hasCompletedOnboarding, segments, router]);
 
   return <Slot />;
 }
