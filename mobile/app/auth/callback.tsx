@@ -28,8 +28,8 @@ export default function AuthCallback() {
           // Build a minimal URL — Supabase only needs `code` (and optionally `state`)
           // from the query string to complete the PKCE exchange.
           // Do NOT re-encode values: useLocalSearchParams already returns decoded strings.
-          let callbackUrl = `kachingo://auth/callback?code=${params.code}`;
-          if (params.state) callbackUrl += `&state=${params.state}`;
+          let callbackUrl = `kachingo://auth/callback?code=${encodeURIComponent(params.code)}`;
+          if (params.state) callbackUrl += `&state=${encodeURIComponent(params.state)}`;
 
           const { error } = await supabase.auth.exchangeCodeForSession(callbackUrl);
           if (error) {

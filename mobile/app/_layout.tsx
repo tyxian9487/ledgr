@@ -59,7 +59,7 @@ function NavigationGuard() {
     } else if (isAuthenticated && hasCompletedOnboarding && inAuthGroup) {
       router.replace('/(tabs)');
     }
-  }, [isAuthenticated, hasCompletedOnboarding, segments]);
+  }, [isAuthenticated, hasCompletedOnboarding, segments, router]);
 
   return <Slot />;
 }

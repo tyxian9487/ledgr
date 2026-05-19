@@ -53,13 +53,6 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState<'google' | 'apple' | null>(null);
   const [legal, setLegal] = useState<'terms' | 'privacy' | null>(null);
 
-  const FEATURES: { emoji: string; textKey: 'login.track' | 'login.budget_goals' | 'login.watch_savings' }[] = [
-    { emoji: '📊', textKey: 'login.track' },
-    { emoji: '🎯', textKey: 'login.budget_goals' },
-    { emoji: '📸', textKey: 'login.watch_savings' },
-    { emoji: '🌍', textKey: 'login.watch_savings' },
-  ];
-
   const FEATURE_ITEMS = [
     { emoji: '📊', text: t('login.track') },
     { emoji: '🎯', text: t('login.budget_goals') },

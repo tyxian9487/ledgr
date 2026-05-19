@@ -219,10 +219,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setIsAuthenticated(true);
         userIdRef.current = session.user.id;
         const meta = session.user.user_metadata ?? {};
-        const name = meta.full_name || meta.name || 'User';
+        const name = meta.full_name || meta.name || '';
         const email = session.user.email || '';
         const avatar = meta.avatar_url || meta.picture || null;
-        setUserProfile(prev => ({ ...prev, name, email, avatar }));
+        setUserProfile(prev => ({ ...prev, name: name || prev.name, email, avatar }));
 
         // Upsert profile row on first sign-in (replaces the DB trigger)
         if (event === 'SIGNED_IN') {
@@ -257,6 +257,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         setIsAuthenticated(false);
+        setHasCompletedOnboarding(false);
+        setTransactions(processAutoDebits(generateSampleData()));
+        setBudget(DEFAULT_BUDGET);
+        setUserProfile(DEFAULT_PROFILE);
+        setCustomCategories([]);
+        setDisabledCategories([]);
         userIdRef.current = null;
         if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
       }
