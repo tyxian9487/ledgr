@@ -593,6 +593,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
+    alignSelf: 'stretch',
     shadowColor: '#16a34a',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
