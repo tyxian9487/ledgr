@@ -190,11 +190,11 @@ export default {
       return handleScanReceipt(request, env);
     }
 
-    if (url.pathname === '/privacy-policy') {
+    if (url.pathname === '/privacy-policy' || url.pathname === '/privacy') {
       return new Response(PRIVACY_HTML, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
     }
 
-    if (url.pathname === '/terms-of-service') {
+    if (url.pathname === '/terms-of-service' || url.pathname === '/terms') {
       return new Response(TERMS_HTML, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
     }
 

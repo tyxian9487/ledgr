@@ -84,7 +84,6 @@ function OAuthCallbackHandler() {
   useEffect(() => {
     const processUrl = async (url: string) => {
       if (!url.includes('auth/callback')) return;
-      // Skip if a session already exists (e.g. auth/callback.tsx processed it first)
       const { data: { session } } = await supabase.auth.getSession();
       if (session) return;
       try {
@@ -94,11 +93,9 @@ function OAuthCallbackHandler() {
       }
     };
 
-    // Cold-start: app was launched directly from the deep link
+    // Cold-start only — addEventListener omitted to prevent double-exchange race
+    // with login.tsx when Chrome Custom Tab returns type:'success' + fires Linking simultaneously
     Linking.getInitialURL().then(url => { if (url) processUrl(url); });
-    // Warm-start: app was backgrounded while Chrome Custom Tab was open
-    const sub = Linking.addEventListener('url', ({ url }) => processUrl(url));
-    return () => sub.remove();
   }, []);
 
   return null;
