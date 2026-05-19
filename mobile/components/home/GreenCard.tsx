@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, Share } from 'react-native';
+import { useState, useRef } from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
 import Svg, { Circle, Circle as SvgCircle, Text as SvgText } from 'react-native-svg';
 import { ChevronLeft, ChevronRight, ChevronDown, Share2 } from 'lucide-react-native';
+import { captureRef } from 'react-native-view-shot';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { EXPENSE_CATEGORIES, FinancialStatus } from '../../types';
+import ShareCardView from './ShareCardView';
 
 interface Props {
   year: number;
@@ -158,6 +160,7 @@ const STATUS_CONFIG = {
 export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYearChange }: Props) {
   const { getMonthTransactions, getMonthIncome, getMonthExpenses, formatCurrency } = useApp();
   const { t } = useTranslation();
+  const shareCardRef = useRef<View>(null);
 
   const txs = getMonthTransactions(year, month);
   const totalIncome = getMonthIncome(year, month);
@@ -166,6 +169,11 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
 
   const status = getStatus(totalIncome, totalExpenses);
   const { Coin, textColor, score } = STATUS_CONFIG[status];
+
+  // Numeric score for share card (matches same formula as profile page)
+  const numericScore = totalIncome > 0
+    ? Math.min(100, Math.max(0, Math.round(100 - (totalExpenses / totalIncome) * 100)))
+    : totalExpenses === 0 ? 85 : 10;
 
   const now = new Date();
   const isFuture = new Date(year, month) >= new Date(now.getFullYear(), now.getMonth());
@@ -199,6 +207,7 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
   const topSlices = slices.slice(0, 4);
 
   return (
+    <>
     <View className="bg-green-700 rounded-3xl mx-4 overflow-hidden">
       {/* Header row: month navigation */}
       <View className="flex-row items-center px-5 pt-4 pb-2 gap-2">
@@ -262,7 +271,12 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
         <TouchableOpacity
           onPress={async () => {
             try {
-              await Share.share({ message: `${statusLabel} — Score: ${score}\n${t('common.income')}: ${formatCurrency(totalIncome)}\n${t('card.remaining')}: ${formatCurrency(Math.abs(remaining))}` });
+              const uri = await captureRef(shareCardRef, { format: 'png', quality: 1.0 });
+              const FileSystem = await import('expo-file-system');
+              const Sharing = await import('expo-sharing');
+              const dest = FileSystem.cacheDirectory + 'kachingo_card.png';
+              await FileSystem.copyAsync({ from: uri, to: dest });
+              await Sharing.shareAsync(dest, { mimeType: 'image/png', dialogTitle: 'Share your financial snapshot' });
             } catch (_) {}
           }}
           className="w-8 h-8 rounded-full bg-white/20 items-center justify-center ml-1"
@@ -330,5 +344,21 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
         </View>
       </View>
     </View>
+
+    {/* Off-screen share card — captured as PNG when share button is pressed */}
+    <View style={{ position: 'absolute', top: -9999, left: 0 }} pointerEvents="none">
+      <ShareCardView
+        ref={shareCardRef}
+        score={numericScore}
+        statusLabel={statusLabel}
+        totalIncome={totalIncome}
+        totalExpenses={totalExpenses}
+        remaining={remaining}
+        month={month}
+        year={year}
+        formatCurrency={formatCurrency}
+      />
+    </View>
+    </>
   );
 }

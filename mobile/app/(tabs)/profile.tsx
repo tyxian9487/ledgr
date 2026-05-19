@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { useTourTarget } from '../../context/TourContext';
 import {
   View,
   Text,
@@ -854,11 +855,19 @@ export default function ProfileScreen() {
   const [showStatusCelebration, setShowStatusCelebration] = useState(false);
   const prevEarnedCountRef = useRef<number | null>(null);
 
+  // Tour target refs
+  const tourRefStreak     = useTourTarget('profile-streak');
+  const tourRefAssessment = useTourTarget('profile-assessment');
+
   // ── Financial score ────────────────────────────────────────────────────────
   const currentYear = new Date().getFullYear();
+  const today = useMemo(() => new Date(), []);
   const yearTxs = useMemo(
-    () => transactions.filter(tx => new Date(tx.date).getFullYear() === currentYear),
-    [transactions, currentYear],
+    () => transactions.filter(tx => {
+      const d = new Date(tx.date);
+      return d.getFullYear() === currentYear && d <= today;
+    }),
+    [transactions, currentYear, today],
   );
   const yearIncome = yearTxs
     .filter(tx => tx.type === 'income')
@@ -868,7 +877,7 @@ export default function ProfileScreen() {
     .reduce((s, tx) => s + tx.amount, 0);
   const monthsWithData = Math.max(
     new Set(
-      transactions.map(tx => {
+      yearTxs.map(tx => {
         const d = new Date(tx.date);
         return `${d.getFullYear()}-${d.getMonth()}`;
       }),
@@ -877,10 +886,28 @@ export default function ProfileScreen() {
   );
   const avgIncome = yearIncome / monthsWithData;
   const avgExpenses = yearExpenses / monthsWithData;
-  const score =
-    yearIncome > 0
-      ? Math.min(100, Math.max(0, Math.round(100 - (yearExpenses / yearIncome) * 100)))
-      : 50;
+
+  // Multi-factor score (0–100):
+  // 1. Expense ratio: 0–60 pts — 60 at ≤50% spending, 0 at ≥100%
+  // 2. Budget adherence: 0–25 pts (12 neutral when no budget set)
+  // 3. Tracking completeness: 0–15 pts
+  let expRatioScore = 0;
+  if (yearIncome > 0) {
+    const ratio = yearExpenses / yearIncome;
+    expRatioScore = Math.max(0, Math.round(60 * (1 - Math.max(0, ratio - 0.5) / 0.5)));
+  }
+  let budgetScore = 12;
+  if (budget.expectedIncome > 0) {
+    const monthlyExpAvg = yearExpenses / monthsWithData;
+    const savingsReserve = budget.savingsGoal?.enabled ? (budget.savingsGoal.amount ?? 0) : 0;
+    const targetExp = Math.max(0, budget.expectedIncome - savingsReserve);
+    budgetScore = monthlyExpAvg <= targetExp ? 25
+      : monthlyExpAvg <= targetExp * 1.15 ? 15
+      : monthlyExpAvg <= targetExp * 1.30 ? 7 : 0;
+  }
+  const trackingScore = yearIncome > 0 && yearExpenses > 0 ? 15
+    : (yearIncome > 0 || yearExpenses > 0) ? 7 : 0;
+  const score = Math.min(100, Math.max(0, expRatioScore + budgetScore + trackingScore));
   const earnedBadgeIds = useMemo(
     () => new Set(computeBadges(transactions, budget).map(b => b.id)),
     [transactions, budget],
@@ -925,23 +952,62 @@ export default function ProfileScreen() {
     ]);
   }
 
-  function handleGenerateReport() {
+  async function handleGenerateReport() {
     const { current, best } = computeStreaks(transactions);
-    const scoreLabel2 =
-      score >= 80 ? 'Excellent' : score >= 60 ? 'Fair' : 'Needs Improvement';
-    Alert.alert(
-      '📊 Financial Report',
-      [
-        `Income this year:   ${formatCurrency(yearIncome)}`,
-        `Expenses this year: ${formatCurrency(yearExpenses)}`,
-        `Net balance:        ${formatCurrency(yearIncome - yearExpenses)}`,
-        '',
-        `Financial score: ${score}/100 (${scoreLabel2})`,
-        `Budget streak:   ${current} months current`,
-        `Best streak:     ${best} months`,
-      ].join('\n'),
-      [{ text: t('common.ok') }],
-    );
+    const scoreLabel2 = score >= 80 ? 'Excellent' : score >= 60 ? 'Fair' : 'Needs Improvement';
+    const scoreColor = score >= 80 ? '#16a34a' : score >= 60 ? '#d97706' : '#dc2626';
+    const now = new Date();
+    const dateStr = now.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>
+  body{font-family:-apple-system,Arial,sans-serif;margin:0;padding:40px;color:#111827;background:#fff}
+  .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #f3f4f6}
+  h1{color:#166534;font-size:22px;margin:0}
+  .date{color:#9ca3af;font-size:12px;margin-top:4px}
+  .score-row{display:flex;align-items:center;gap:16px;background:#f9fafb;border-radius:12px;padding:20px;margin-bottom:24px}
+  .score-circle{width:80px;height:80px;border-radius:50%;border:6px solid ${scoreColor};display:flex;align-items:center;justify-content:center;flex-direction:column;flex-shrink:0}
+  .score-num{font-size:24px;font-weight:800;color:${scoreColor};line-height:1}
+  .score-denom{font-size:11px;color:#9ca3af}
+  .score-label{font-size:18px;font-weight:700;color:${scoreColor}}
+  .score-sub{font-size:13px;color:#6b7280;margin-top:4px}
+  h2{color:#374151;font-size:14px;font-weight:700;margin:20px 0 8px;text-transform:uppercase;letter-spacing:.05em}
+  table{width:100%;border-collapse:collapse}
+  td{padding:10px 6px;border-bottom:1px solid #f3f4f6;font-size:14px}
+  .label{color:#6b7280}.value{font-weight:600;text-align:right}
+  .positive{color:#16a34a}.negative{color:#dc2626}
+  footer{margin-top:40px;color:#9ca3af;font-size:11px;text-align:center;border-top:1px solid #f3f4f6;padding-top:16px}
+</style></head><body>
+<div class="header">
+  <div><h1>📊 Financial Report</h1><div class="date">${dateStr}</div></div>
+</div>
+<div class="score-row">
+  <div class="score-circle"><span class="score-num">${score}</span><span class="score-denom">/100</span></div>
+  <div><div class="score-label">${scoreLabel2}</div><div class="score-sub">Financial Health Score</div></div>
+</div>
+<h2>This Year</h2>
+<table>
+  <tr><td class="label">Income</td><td class="value positive">${formatCurrency(yearIncome)}</td></tr>
+  <tr><td class="label">Expenses</td><td class="value">${formatCurrency(yearExpenses)}</td></tr>
+  <tr><td class="label">Net Balance</td><td class="value ${yearIncome - yearExpenses >= 0 ? 'positive' : 'negative'}">${formatCurrency(yearIncome - yearExpenses)}</td></tr>
+  <tr><td class="label">Savings Rate</td><td class="value">${yearIncome > 0 ? Math.round((1 - yearExpenses / yearIncome) * 100) : 0}%</td></tr>
+</table>
+<h2>Budget Streak</h2>
+<table>
+  <tr><td class="label">Current streak</td><td class="value">${current} month${current !== 1 ? 's' : ''}</td></tr>
+  <tr><td class="label">Best streak</td><td class="value">${best} month${best !== 1 ? 's' : ''}</td></tr>
+</table>
+<footer>Generated with Kachingo · ${dateStr}</footer>
+</body></html>`;
+
+    try {
+      const Print = await import('expo-print');
+      const Sharing = await import('expo-sharing');
+      const { uri } = await Print.printToFileAsync({ html, base64: false });
+      await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: t('profile.generate_report') });
+    } catch {
+      Alert.alert('📊 Financial Report', `Score: ${score}/100 (${scoreLabel2})\nIncome: ${formatCurrency(yearIncome)}\nExpenses: ${formatCurrency(yearExpenses)}`);
+    }
   }
 
   async function handleExportCSV() {
@@ -1053,7 +1119,9 @@ export default function ProfileScreen() {
         <SectionHeader label={t('profile.achievements')} />
 
         {/* Budget Streak */}
-        <BudgetStreakCard transactions={transactions} />
+        <View ref={tourRefStreak} collapsable={false}>
+          <BudgetStreakCard transactions={transactions} />
+        </View>
 
         {/* Badges */}
         <View className="mx-4 bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm border border-gray-800 mb-2">
@@ -1103,7 +1171,7 @@ export default function ProfileScreen() {
 
         {/* ── FINANCIAL ASSESSMENT ── */}
         <SectionHeader label={t('profile.assessment')} />
-        <View className="mx-4 mb-5">
+        <View ref={tourRefAssessment} collapsable={false} className="mx-4 mb-5">
           {/* Income / Expense year cards */}
           <View className="flex-row gap-3 mb-3">
             <View className="flex-1 bg-green-50 rounded-2xl p-4 border border-green-100">

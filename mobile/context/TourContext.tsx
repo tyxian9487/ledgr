@@ -1,5 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
+import { View } from 'react-native';
+
+export interface HighlightRect { x: number; y: number; width: number; height: number; }
 
 export interface TourStep {
   id: string;
@@ -130,6 +133,8 @@ interface TourContextType {
   tourStepIndex: number;
   currentStep: TourStep | null;
   showOffer: boolean;
+  highlightRect: HighlightRect | null;
+  setHighlightRect: (rect: HighlightRect | null) => void;
   acceptTour: () => void;
   declineTour: () => void;
   nextStep: (navigateToTab?: (tab: string) => void) => void;
@@ -141,6 +146,8 @@ const TourContext = createContext<TourContextType>({
   tourStepIndex: -1,
   currentStep: null,
   showOffer: false,
+  highlightRect: null,
+  setHighlightRect: () => {},
   acceptTour: () => {},
   declineTour: () => {},
   nextStep: () => {},
@@ -151,6 +158,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const [tourActive, setTourActive] = useState(false);
   const [tourStepIndex, setTourStepIndex] = useState(-1);
   const [showOffer, setShowOffer] = useState(false);
+  const [highlightRect, setHighlightRect] = useState<HighlightRect | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -196,6 +204,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
   const nextStep = useCallback(
     async (navigateToTab?: (tab: string) => void) => {
+      setHighlightRect(null);
       const step = TOUR_STEPS[tourStepIndex];
       if (step?.isGuide && step.guideTab && navigateToTab) {
         navigateToTab(step.guideTab);
@@ -217,6 +226,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   );
 
   const skipTour = useCallback(async () => {
+    setHighlightRect(null);
     setTourActive(false);
     setTourStepIndex(-1);
     await Promise.all([
@@ -227,7 +237,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
   return (
     <TourContext.Provider
-      value={{ tourActive, tourStepIndex, currentStep, showOffer, acceptTour, declineTour, nextStep, skipTour }}
+      value={{ tourActive, tourStepIndex, currentStep, showOffer, highlightRect, setHighlightRect, acceptTour, declineTour, nextStep, skipTour }}
     >
       {children}
     </TourContext.Provider>
@@ -236,4 +246,24 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
 export function useTour() {
   return useContext(TourContext);
+}
+
+/** Attach to a View that should be spotlit when the given tour step is active. */
+export function useTourTarget(stepId: string) {
+  const { currentStep, setHighlightRect } = useTour();
+  const ref = useRef<View>(null);
+
+  useEffect(() => {
+    if (currentStep?.id !== stepId) return;
+    const timer = setTimeout(() => {
+      ref.current?.measureInWindow((x, y, w, h) => {
+        if (w > 0 && h > 0) {
+          setHighlightRect({ x: x - 4, y: y - 4, width: w + 8, height: h + 8 });
+        }
+      });
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [currentStep?.id, stepId, setHighlightRect]);
+
+  return ref;
 }

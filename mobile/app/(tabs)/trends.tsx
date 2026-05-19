@@ -7,6 +7,7 @@ import {
   Modal,
   Image,
 } from 'react-native';
+import { useTourTarget } from '../../context/TourContext';
 
 const magnifierImg = require('../../assets/m_magnifier.png');
 import Svg, { Circle, Path, Line, Text as SvgText } from 'react-native-svg';
@@ -199,7 +200,7 @@ function CategoryModal({
   const now = new Date();
 
   const catTxs = useMemo(
-    () => transactions.filter((tx) => tx.type === 'expense' && tx.category === categoryId),
+    () => transactions.filter((tx) => tx.type === 'expense' && tx.category === categoryId && new Date(tx.date) <= now),
     [transactions, categoryId],
   );
 
@@ -361,6 +362,12 @@ export default function TrendsScreen() {
   const { colorScheme } = useColorScheme();
   const dark = colorScheme === 'dark';
 
+  // Tour target refs
+  const tourRefTop        = useTourTarget('trends-top');
+  const tourRefMonthly    = useTourTarget('trends-monthly');
+  const tourRefCategories = useTourTarget('trends-categories');
+  const tourRefIncomeVs   = useTourTarget('trends-income-vs');
+
   const [view, setView] = useState<'spending' | 'income'>('spending');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showAllCats, setShowAllCats] = useState(false);
@@ -368,12 +375,18 @@ export default function TrendsScreen() {
   const now = new Date();
   const currentYear = now.getFullYear();
 
+  // Exclude future-dated auto-debit instances from all analytics
+  const visibleTransactions = useMemo(
+    () => transactions.filter(tx => new Date(tx.date) <= now),
+    [transactions],
+  );
+
   const monthlyData = useMemo(() => {
     return Array.from({ length: 6 }, (_, i) => {
       const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
       const month = d.getMonth();
       const year = d.getFullYear();
-      const txs = transactions.filter((tx) => {
+      const txs = visibleTransactions.filter((tx) => {
         const td = new Date(tx.date);
         return td.getMonth() === month && td.getFullYear() === year;
       });
@@ -388,7 +401,7 @@ export default function TrendsScreen() {
   }, [transactions]);
 
   const categoryTotals = useMemo(() => {
-    const yearTxs = transactions.filter((tx) => {
+    const yearTxs = visibleTransactions.filter((tx) => {
       const d = new Date(tx.date);
       return d.getFullYear() === currentYear && tx.type === 'expense';
     });
@@ -423,7 +436,7 @@ export default function TrendsScreen() {
         </View>
 
         {/* ── Summary Cards ── */}
-        <View className="px-4 mt-1 flex-row gap-3">
+        <View ref={tourRefTop} collapsable={false} className="px-4 mt-1 flex-row gap-3">
           {/* Spending card */}
           <View className="flex-1 bg-red-500 rounded-2xl p-4">
             <Text className="text-[10px] text-red-100 font-bold uppercase tracking-widest mb-1">
@@ -480,7 +493,7 @@ export default function TrendsScreen() {
         </View>
 
         {/* ── Monthly Bar Chart ── */}
-        <View className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl p-5">
+        <View ref={tourRefMonthly} collapsable={false} className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl p-5">
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-sm font-bold text-gray-900 dark:text-white">
               {t('trends.monthly_overview')}
@@ -552,7 +565,7 @@ export default function TrendsScreen() {
         </View>
 
         {/* ── Category Breakdown ── */}
-        <View className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden">
+        <View ref={tourRefCategories} collapsable={false} className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden">
           <View className="flex-row items-center justify-between px-5 pt-5 pb-3">
             <Text className="text-sm font-bold text-gray-900 dark:text-white">
               {t('common.categories')}
@@ -623,7 +636,7 @@ export default function TrendsScreen() {
         </View>
 
         {/* ── Income vs Expenses ── */}
-        <View className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl p-5">
+        <View ref={tourRefIncomeVs} collapsable={false} className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl p-5">
           <Text className="text-sm font-bold text-gray-900 dark:text-white mb-4">
             {t('trends.income_vs')}
           </Text>

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
+import { useTourTarget } from '../../context/TourContext';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, Transaction } from '../../types';
 import GreenCard from '../../components/home/GreenCard';
 import GoalTrackerCard from '../../components/home/GoalTrackerCard';
@@ -45,6 +46,14 @@ export default function HomeScreen() {
     getMonthExpenses, userProfile,
   } = useApp();
   const { t } = useTranslation();
+
+  // Tour target refs
+  const tourRefGreenCard = useTourTarget('home-green-card');
+  const tourRefStats     = useTourTarget('home-stats');
+  const tourRefAddTx     = useTourTarget('home-add-tx');
+  const tourRefCapture   = useTourTarget('home-capture');
+  const tourRefBudgetBtn = useTourTarget('home-budget-btn');
+  const tourRefToggle    = useTourTarget('home-view-toggle');
 
   const [showEntry, setShowEntry] = useState(false);
   const [entryPrefill, setEntryPrefill] = useState<{ type?: 'expense' | 'income'; amount?: number; category?: string; description?: string } | undefined>(undefined);
@@ -153,22 +162,27 @@ export default function HomeScreen() {
         </View>
 
         {/* ── Green Summary Card ── */}
-        <GreenCard
-          year={viewYear}
-          month={viewMonth}
-          onPrevMonth={prevMonth}
-          onNextMonth={nextMonth}
-          onYearChange={setViewYear}
-        />
+        <View ref={tourRefGreenCard} collapsable={false}>
+          <GreenCard
+            year={viewYear}
+            month={viewMonth}
+            onPrevMonth={prevMonth}
+            onNextMonth={nextMonth}
+            onYearChange={setViewYear}
+          />
+        </View>
 
         {/* ── Goal Tracker Card ── */}
-        <GoalTrackerCard year={viewYear} month={viewMonth} />
+        <View ref={tourRefStats} collapsable={false}>
+          <GoalTrackerCard year={viewYear} month={viewMonth} />
+        </View>
 
         {/* ── Action buttons ── */}
         <View className="mx-4 mt-4 gap-y-3">
           <View className="flex-row gap-3">
             {/* Add Transaction */}
             <TouchableOpacity
+              ref={tourRefAddTx}
               onPress={() => setShowEntry(true)}
               activeOpacity={0.8}
               className="flex-1 bg-gray-900 dark:bg-gray-800 rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5"
@@ -183,6 +197,7 @@ export default function HomeScreen() {
 
             {/* Budget status */}
             <TouchableOpacity
+              ref={tourRefBudgetBtn}
               onPress={() => router.push('/(tabs)/budget')}
               activeOpacity={0.8}
               className={`flex-1 rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5 ${
@@ -418,7 +433,7 @@ export default function HomeScreen() {
               ? 'Calendar'
               : t('common.categories')}
           </Text>
-          <View className="flex-row items-center gap-1">
+          <View ref={tourRefToggle} collapsable={false} className="flex-row items-center gap-1">
             {activeFilterCount > 0 && (
               <TouchableOpacity onPress={clearFilters} className="mr-2">
                 <Text className="text-xs font-semibold text-green-600">{t('home.clear')}</Text>
@@ -465,7 +480,7 @@ export default function HomeScreen() {
       />
 
       {/* ── Camera FAB ── */}
-      <View className="absolute bottom-6 right-5">
+      <View ref={tourRefCapture} collapsable={false} className="absolute bottom-6 right-5">
         <TouchableOpacity
           onPress={() => router.push('/capture')}
           className="w-14 h-14 bg-green-600 rounded-full items-center justify-center shadow-lg"

@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useTour, TOUR_STEPS } from '../context/TourContext';
+import type { HighlightRect } from '../context/TourContext';
 import { useApp } from '../context/AppContext';
 
 const mascotImg = require('../assets/mascot.png');
@@ -28,8 +29,22 @@ function pathnameToTab(pathname: string): string {
   return 'home';
 }
 
+function Spotlight({ rect, onSkip }: { rect: HighlightRect; onSkip: () => void }) {
+  const DIM = 'rgba(0,0,0,0.72)';
+  return (
+    <>
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: rect.y, backgroundColor: DIM }} />
+      <View style={{ position: 'absolute', top: rect.y, left: 0, width: rect.x, height: rect.height, backgroundColor: DIM }} />
+      <View style={{ position: 'absolute', top: rect.y, left: rect.x + rect.width, right: 0, height: rect.height, backgroundColor: DIM }} />
+      <View style={{ position: 'absolute', top: rect.y + rect.height, left: 0, right: 0, bottom: 0, backgroundColor: DIM }} />
+      <View style={{ position: 'absolute', top: rect.y, left: rect.x, width: rect.width, height: rect.height, borderRadius: 12, borderWidth: 2, borderColor: '#16a34a' }} pointerEvents="none" />
+      <TouchableOpacity style={StyleSheet.absoluteFillObject} onPress={onSkip} activeOpacity={0} />
+    </>
+  );
+}
+
 export default function TourOverlay() {
-  const { tourActive, tourStepIndex, currentStep, showOffer, acceptTour, declineTour, nextStep, skipTour } =
+  const { tourActive, tourStepIndex, currentStep, showOffer, highlightRect, acceptTour, declineTour, nextStep, skipTour } =
     useTour();
   const { isAuthenticated, hasCompletedOnboarding, darkMode } = useApp();
   const router = useRouter();
@@ -88,8 +103,11 @@ export default function TourOverlay() {
         statusBarTranslucent
         onRequestClose={skipTour}
       >
-        {/* Dark backdrop — tapping it skips tour */}
-        <TouchableOpacity style={s.backdrop} onPress={skipTour} activeOpacity={1} />
+        {/* Backdrop — spotlight if we have a rect, otherwise uniform dark */}
+        {highlightRect
+          ? <Spotlight rect={highlightRect} onSkip={skipTour} />
+          : <TouchableOpacity style={s.backdrop} onPress={skipTour} activeOpacity={1} />
+        }
 
         {/* Card */}
         <View style={[s.card, { backgroundColor: bg }]}>

@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useTourTarget } from '../../context/TourContext';
 import { useRouter } from 'expo-router';
 import {
   View,
@@ -164,6 +165,10 @@ export default function BudgetScreen() {
   const actualIncome = getMonthIncome(now.getFullYear(), now.getMonth());
 
   const [activeTab, setActiveTab] = useState<'goals' | 'budget'>('goals');
+
+  // Tour target refs
+  const tourRefGoals  = useTourTarget('budget-goals');
+  const tourRefIncome = useTourTarget('budget-income');
   const [incomeInput, setIncomeInput] = useState(
     budget.expectedIncome > 0 ? String(budget.expectedIncome) : actualIncome > 0 ? String(Math.round(actualIncome)) : '',
   );
@@ -279,7 +284,7 @@ export default function BudgetScreen() {
         {activeTab === 'goals' && (
           <>
             {/* Monthly Savings Goal toggle */}
-            <View className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-4">
+            <View ref={tourRefGoals} collapsable={false} className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-4">
               <View className="px-5 py-4">
                 <View className="flex-row items-center justify-between mb-3">
                   <View className="flex-row items-center gap-2">
@@ -413,7 +418,7 @@ export default function BudgetScreen() {
         {activeTab === 'budget' && (
           <>
             {/* Income input */}
-            <View className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800 mb-4">
+            <View ref={tourRefIncome} collapsable={false} className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800 mb-4">
               <View className="flex-row items-center justify-between mb-2">
                 <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                   {t('budget.expected_income')}

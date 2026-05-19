@@ -1,10 +1,12 @@
 import { Tabs } from 'expo-router';
 import { Home, PieChart, TrendingUp, User } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const { colorScheme } = useColorScheme();
   const dark = colorScheme === 'dark';
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -13,8 +15,8 @@ export default function TabLayout() {
         tabBarActiveTintColor: '#16a34a',
         tabBarInactiveTintColor: dark ? '#6b7280' : '#9ca3af',
         tabBarStyle: {
-          height: 60,
-          paddingBottom: 8,
+          height: 60 + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
           backgroundColor: dark ? '#111827' : '#ffffff',
           borderTopColor: dark ? '#1f2937' : '#f3f4f6',
         },
