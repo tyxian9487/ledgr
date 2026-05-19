@@ -124,7 +124,7 @@ export const en = {
 
   // Goal form
   'gform.preview': 'Preview',
-  'gform.title': 'New Goal', 'gform.subtitle': 'Set a savings target',
+  'gform.title': 'New Goal', 'gform.subtitle': 'Set a custom savings target',
   'gform.name': 'Goal name', 'gform.name_ph': 'e.g. Emergency Fund',
   'gform.icon': 'Icon', 'gform.tap_select': 'Tap to select icon', 'gform.tap_change': 'Tap to change icon',
   'gform.color': 'Color', 'gform.target': 'Target amount', 'gform.amount_ph': '0.00',
@@ -213,7 +213,7 @@ export const en = {
 
   // Budget screen
   'budget.title': 'Budget & Goals',
-  'budget.subtitle': 'Manage your money',
+  'budget.subtitle': 'Set your financial plan',
   'budget.budget': 'Budget',
   'budget.expected_income': 'Expected Monthly Income',
   'budget.enter_income': 'Enter your monthly income',
@@ -431,7 +431,7 @@ const zh: Record<TKey, string> = {
   'trends.income': '收入', 'trends.income_vs': '收支对比', 'trends.avg': '月均',
   'trends.recent': '最近', 'trends.no_txs': '本月暂无交易', 'trends.no_expense': '暂无支出',
   'trends.show_less': '收起', 'trends.same': '与上月持平',
-  'budget.title': '预算', 'budget.subtitle': '管理您的预算', 'budget.budget': '预算',
+  'budget.title': '预算与目标', 'budget.subtitle': '制定您的财务计划', 'budget.budget': '预算',
   'budget.expected_income': '预期月收入', 'budget.enter_income': '输入您的月收入',
   'budget.allocation': '预算分配', 'budget.pct_allocated': '已分配', 'budget.pct_income': '收入占比',
   'budget.spendable': '可支配', 'budget.this_month': '本月', 'budget.fixed': '固定支出',
@@ -594,7 +594,7 @@ const ja: Record<TKey, string> = {
   'trends.income': '収入', 'trends.income_vs': '収支比較', 'trends.avg': '月平均',
   'trends.recent': '最近', 'trends.no_txs': '今月の取引はありません', 'trends.no_expense': '支出なし',
   'trends.show_less': '折りたたむ', 'trends.same': '先月と同じ',
-  'budget.title': '予算', 'budget.subtitle': '予算を管理', 'budget.budget': '予算',
+  'budget.title': '予算と目標', 'budget.subtitle': '財務計画を立てましょう', 'budget.budget': '予算',
   'budget.expected_income': '月収の目標', 'budget.enter_income': '月収を入力',
   'budget.allocation': '予算配分', 'budget.pct_allocated': '配分済み', 'budget.pct_income': '収入の割合',
   'budget.spendable': '使えるお金', 'budget.this_month': '今月', 'budget.fixed': '固定費',
@@ -758,7 +758,7 @@ const ko: Record<TKey, string> = {
   'trends.income': '수입', 'trends.income_vs': '수입 vs 지출', 'trends.avg': '월 평균',
   'trends.recent': '최근', 'trends.no_txs': '이번 달 거래 내역이 없습니다', 'trends.no_expense': '지출 내역이 없습니다',
   'trends.show_less': '접기', 'trends.same': '지난 달과 동일',
-  'budget.title': '예산', 'budget.subtitle': '예산 관리', 'budget.budget': '예산',
+  'budget.title': '예산 및 목표', 'budget.subtitle': '재정 계획을 세우세요', 'budget.budget': '예산',
   'budget.expected_income': '예상 월 수입', 'budget.enter_income': '월 수입을 입력하세요',
   'budget.allocation': '예산 배분', 'budget.pct_allocated': '배분됨', 'budget.pct_income': '수입 대비',
   'budget.spendable': '사용 가능', 'budget.this_month': '이번 달', 'budget.fixed': '고정비',
@@ -922,7 +922,7 @@ const ms: Record<TKey, string> = {
   'trends.income': 'Pendapatan', 'trends.income_vs': 'Pendapatan lwn Perbelanjaan', 'trends.avg': 'Purata Bulanan',
   'trends.recent': 'Terkini', 'trends.no_txs': 'Tiada transaksi bulan ini', 'trends.no_expense': 'Tiada perbelanjaan',
   'trends.show_less': 'Tunjuk Kurang', 'trends.same': 'Sama seperti bulan lalu',
-  'budget.title': 'Belanjawan', 'budget.subtitle': 'Urus Wang Anda', 'budget.budget': 'Belanjawan',
+  'budget.title': 'Belanjawan & Matlamat', 'budget.subtitle': 'Tetapkan pelan kewangan anda', 'budget.budget': 'Belanjawan',
   'budget.expected_income': 'Pendapatan Bulanan Dijangka', 'budget.enter_income': 'Masukkan pendapatan bulanan anda',
   'budget.allocation': 'Peruntukan Belanjawan', 'budget.pct_allocated': '% diperuntukkan', 'budget.pct_income': '% daripada pendapatan',
   'budget.spendable': 'Boleh Dibelanjakan', 'budget.this_month': 'Bulan Ini', 'budget.fixed': 'Tetap',

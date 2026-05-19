@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import {
   View,
@@ -6,8 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Image,
 } from 'react-native';
+import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   PiggyBank,
@@ -26,6 +26,8 @@ import {
   Sparkles,
   MoreHorizontal,
   Minus,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
@@ -41,17 +43,19 @@ interface BudgetGroup {
 }
 
 const BUDGET_GROUPS: BudgetGroup[] = [
-  { label: 'Housing',        color: '#14b8a6', categoryId: 'housing',       Icon: Home },
-  { label: 'Food & Dining',  color: '#f97316', categoryId: 'food',          Icon: UtensilsCrossed },
-  { label: 'Transport',      color: '#3b82f6', categoryId: 'transport',     Icon: Car },
-  { label: 'Health',         color: '#ef4444', categoryId: 'health',        Icon: Heart },
-  { label: 'Utilities',      color: '#eab308', categoryId: 'utilities',     Icon: Zap },
-  { label: 'Entertainment',  color: '#8b5cf6', categoryId: 'entertainment', Icon: Tv },
-  { label: 'Shopping',       color: '#ec4899', categoryId: 'shopping',      Icon: ShoppingBag },
-  { label: 'Subscriptions',  color: '#64748b', categoryId: 'subscriptions', Icon: RefreshCw },
-  { label: 'Personal',       color: '#a855f7', categoryId: 'personal',      Icon: Sparkles },
-  { label: 'Other',          color: '#94a3b8', categoryId: 'others',        Icon: MoreHorizontal },
+  { label: 'Housing & Rent',  color: '#14b8a6', categoryId: 'housing',       Icon: Home },
+  { label: 'Food & Dining',   color: '#f97316', categoryId: 'food',          Icon: UtensilsCrossed },
+  { label: 'Transportation',  color: '#3b82f6', categoryId: 'transport',     Icon: Car },
+  { label: 'Health & Medical',color: '#ef4444', categoryId: 'health',        Icon: Heart },
+  { label: 'Utilities',       color: '#eab308', categoryId: 'utilities',     Icon: Zap },
+  { label: 'Entertainment',   color: '#8b5cf6', categoryId: 'entertainment', Icon: Tv },
+  { label: 'Shopping',        color: '#ec4899', categoryId: 'shopping',      Icon: ShoppingBag },
+  { label: 'Subscriptions',   color: '#64748b', categoryId: 'subscriptions', Icon: RefreshCw },
+  { label: 'Personal Care',   color: '#a855f7', categoryId: 'personal',      Icon: Sparkles },
+  { label: 'Others',          color: '#94a3b8', categoryId: 'others',        Icon: MoreHorizontal },
 ];
+
+const INITIAL_VISIBLE = 5;
 
 function analyzeAllocations(income: number): BudgetAllocation[] {
   let plan: { id: string; pct: number }[];
@@ -64,10 +68,10 @@ function analyzeAllocations(income: number): BudgetAllocation[] {
     ];
   } else if (income >= 4000) {
     plan = [
-      { id: 'housing', pct: 25 }, { id: 'food', pct: 15 }, { id: 'transport', pct: 5 },
-      { id: 'health', pct: 5 },   { id: 'utilities', pct: 5 }, { id: 'entertainment', pct: 8 },
-      { id: 'shopping', pct: 7 }, { id: 'subscriptions', pct: 3 }, { id: 'personal', pct: 5 },
-      { id: 'others', pct: 7 },
+      { id: 'housing', pct: 33 }, { id: 'food', pct: 22 }, { id: 'transport', pct: 9 },
+      { id: 'health', pct: 6 },   { id: 'utilities', pct: 9 }, { id: 'entertainment', pct: 5 },
+      { id: 'shopping', pct: 5 }, { id: 'subscriptions', pct: 3 }, { id: 'personal', pct: 4 },
+      { id: 'others', pct: 4 },
     ];
   } else {
     plan = [
@@ -87,6 +91,59 @@ function analyzeAllocations(income: number): BudgetAllocation[] {
       percentage: item ? Math.round((item.pct / total) * 100) : 0,
     };
   });
+}
+
+// ─── Budget Donut Chart ───────────────────────────────────────────────────────
+
+function BudgetDonut({ allocations, netIncome, totalPct, formatCurrency }: {
+  allocations: BudgetAllocation[];
+  netIncome: number;
+  totalPct: number;
+  formatCurrency: (n: number) => string;
+}) {
+  const size = 180;
+  const radius = size * 0.36;
+  const circumference = 2 * Math.PI * radius;
+  const cx = size / 2;
+  const cy = size / 2;
+  const strokeWidth = size * 0.15;
+
+  const slices = allocations.filter(a => a.percentage > 0).map(a => ({
+    color: a.color,
+    pct: totalPct > 0 ? (a.percentage / totalPct) * 100 : 0,
+  }));
+
+  let offset = 0;
+
+  return (
+    <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <Circle cx={cx} cy={cy} r={radius} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={strokeWidth} />
+      {slices.map((s, i) => {
+        const dash = (s.pct / 100) * circumference;
+        const gap = circumference - dash;
+        const rotation = (offset / 100) * 360 - 90;
+        offset += s.pct;
+        return (
+          <Circle
+            key={i}
+            cx={cx} cy={cy} r={radius}
+            fill="none"
+            stroke={s.color}
+            strokeWidth={strokeWidth}
+            strokeDasharray={`${dash} ${gap}`}
+            strokeDashoffset={0}
+            transform={`rotate(${rotation}, ${cx}, ${cy})`}
+          />
+        );
+      })}
+      <SvgText x={cx} y={cy - 7} textAnchor="middle" fontSize={11} fill="rgba(255,255,255,0.65)">
+        Spendable
+      </SvgText>
+      <SvgText x={cx} y={cy + 12} textAnchor="middle" fontSize={15} fontWeight="bold" fill="white">
+        {formatCurrency(netIncome)}
+      </SvgText>
+    </Svg>
+  );
 }
 
 // ─── Budget Screen ────────────────────────────────────────────────────────────
@@ -122,6 +179,8 @@ export default function BudgetScreen() {
   );
   const [analyzed, setAnalyzed] = useState(budget.allocations.length > 0);
   const [saved, setSaved] = useState(false);
+  const [showAllAllocations, setShowAllAllocations] = useState(false);
+  const [expandedAlloc, setExpandedAlloc] = useState<string | null>(null);
 
   const income = parseFloat(incomeInput) || 0;
   const savingsAmt = income > 0 && savingsValue
@@ -149,6 +208,12 @@ export default function BudgetScreen() {
     setAnalyzed(true);
   }
 
+  function handleReset() {
+    if (income <= 0) return;
+    const result = analyzeAllocations(netIncome > 0 ? netIncome : income);
+    setAllocations(result);
+  }
+
   function adjustPct(idx: number, delta: number) {
     setAllocations((prev) =>
       prev.map((a, i) => i === idx ? { ...a, percentage: Math.max(0, Math.min(100, a.percentage + delta)) } : a),
@@ -166,17 +231,21 @@ export default function BudgetScreen() {
   }, [income, allocations, savingsEnabled, savingsValue, savingsMode, updateBudget, budget.customGoals]);
 
   const activeGoalCount = (savingsEnabled ? 1 : 0) + (budget.customGoals?.length ?? 0);
+  const visibleAllocations = showAllAllocations
+    ? allocations
+    : allocations.slice(0, INITIAL_VISIBLE);
+  const hiddenCount = allocations.length - INITIAL_VISIBLE;
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" edges={['top']}>
       {/* Header */}
-      <View className="bg-white px-5 pt-2 pb-4 border-b border-gray-100">
-        <Text className="text-xl font-bold text-gray-900">{t('budget.title')}</Text>
+      <View className="bg-white dark:bg-gray-900 px-5 pt-2 pb-4 border-b border-gray-100 dark:border-gray-800">
+        <Text className="text-xl font-bold text-gray-900 dark:text-white">{t('budget.title')}</Text>
         <Text className="text-xs text-gray-400 mt-0.5">{t('budget.subtitle')}</Text>
       </View>
 
       {/* Tab bar */}
-      <View className="bg-white border-b border-gray-100 flex-row px-5">
+      <View className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 flex-row px-5">
         {(['goals', 'budget'] as const).map((tab) => (
           <TouchableOpacity
             key={tab}
@@ -205,22 +274,13 @@ export default function BudgetScreen() {
         {/* ── GOALS TAB ── */}
         {activeTab === 'goals' && (
           <>
-            {/* Goals hero image */}
-            <View className="items-center mb-2">
-              <Image
-                source={require('../../assets/m_savingsjar.png')}
-                style={{ width: 120, height: 120 }}
-                resizeMode="contain"
-              />
-            </View>
-
             {/* Monthly Savings Goal toggle */}
-            <View className="bg-white rounded-3xl border border-gray-100 overflow-hidden mb-4">
+            <View className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-4">
               <View className="px-5 py-4">
                 <View className="flex-row items-center justify-between mb-3">
                   <View className="flex-row items-center gap-2">
-                    <PiggyBank size={16} color="#22c55e" />
-                    <Text className="text-sm font-semibold text-gray-900">{t('budget.monthly_savings')}</Text>
+                    <Text style={{ fontSize: 16 }}>🐷</Text>
+                    <Text className="text-sm font-semibold text-gray-900 dark:text-white">{t('budget.monthly_savings')}</Text>
                   </View>
                   <TouchableOpacity onPress={() => setSavingsEnabled((v) => !v)}>
                     {savingsEnabled
@@ -232,25 +292,25 @@ export default function BudgetScreen() {
                 {savingsEnabled && (
                   <>
                     {/* Mode toggle */}
-                    <View className="flex-row gap-2 mb-3">
+                    <View className="flex-row gap-2 mb-3 bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
                       {(['pct', 'fixed'] as const).map((m) => (
                         <TouchableOpacity
                           key={m}
                           onPress={() => setSavingsMode(m)}
-                          className={`flex-1 py-1.5 rounded-xl items-center ${savingsMode === m ? 'bg-green-600' : 'bg-gray-100'}`}
+                          className={`flex-1 py-2 rounded-lg items-center ${savingsMode === m ? 'bg-green-600' : ''}`}
                         >
-                          <Text className={`text-xs font-bold ${savingsMode === m ? 'text-white' : 'text-gray-400'}`}>
-                            {m === 'pct' ? t('budget.pct_income') : `${t('budget.fixed')} ${getCurrencySymbol()}`}
+                          <Text className={`text-xs font-bold ${savingsMode === m ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                            {m === 'pct' ? `% ${t('common.income')}` : `${t('budget.fixed')} ${getCurrencySymbol()}`}
                           </Text>
                         </TouchableOpacity>
                       ))}
                     </View>
 
                     {/* Value input */}
-                    <View className="flex-row items-center border border-gray-100 rounded-xl px-3 py-2 gap-2 bg-gray-50">
-                      <Text className="text-gray-400 text-sm">{savingsMode === 'pct' ? '%' : getCurrencySymbol()}</Text>
+                    <View className="flex-row items-center border border-gray-100 dark:border-gray-700 rounded-xl px-3 py-2.5 gap-2 bg-gray-50 dark:bg-gray-800">
+                      <Text className="text-gray-400 text-sm font-bold">{savingsMode === 'pct' ? '%' : getCurrencySymbol()}</Text>
                       <TextInput
-                        className="flex-1 text-sm font-bold text-gray-900"
+                        className="flex-1 text-lg font-bold text-gray-900 dark:text-white"
                         placeholder={savingsMode === 'pct' ? '20' : '1000'}
                         placeholderTextColor="#d1d5db"
                         keyboardType="decimal-pad"
@@ -259,7 +319,7 @@ export default function BudgetScreen() {
                       />
                     </View>
                     {savingsAmt > 0 && (
-                      <Text className="text-xs text-green-600 font-semibold mt-1.5 text-right">
+                      <Text className="text-sm text-green-600 font-semibold mt-2 text-right">
                         = {formatCurrency(savingsAmt)} / mo
                       </Text>
                     )}
@@ -279,7 +339,7 @@ export default function BudgetScreen() {
               const monthPct = monthlyTarget > 0 ? Math.min(100, (monthSaved / monthlyTarget) * 100) : 0;
 
               return (
-                <View key={goal.id} className="bg-white rounded-3xl border border-gray-100 p-5 mb-4">
+                <View key={goal.id} className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 p-5 mb-4">
                   <View className="flex-row items-center gap-3 mb-3">
                     <View
                       className="w-10 h-10 rounded-2xl items-center justify-center flex-shrink-0"
@@ -288,7 +348,7 @@ export default function BudgetScreen() {
                       <Text style={{ fontSize: 20 }}>{goal.icon || '🎯'}</Text>
                     </View>
                     <View className="flex-1 min-w-0">
-                      <Text className="text-sm font-semibold text-gray-900" numberOfLines={1}>{goal.name}</Text>
+                      <Text className="text-sm font-semibold text-gray-900 dark:text-white" numberOfLines={1}>{goal.name}</Text>
                       <Text className="text-xs text-gray-400">
                         {t('budget.month_of', { x: currentMonthIdx + 1, y: durationMonths })} · {formatCurrency(monthlyTarget)}{t('common.per_month')}
                       </Text>
@@ -304,33 +364,30 @@ export default function BudgetScreen() {
                       {formatCurrency(monthSaved)} / {formatCurrency(monthlyTarget)}
                     </Text>
                   </View>
-                  <View className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <View
-                      className="h-full rounded-full"
-                      style={{ width: `${monthPct}%`, backgroundColor: goal.color }}
-                    />
+                  <View className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <View className="h-full rounded-full" style={{ width: `${monthPct}%`, backgroundColor: goal.color }} />
                   </View>
                   <View className="flex-row justify-between mt-2 items-center">
                     <Text className="text-xs text-gray-400">Total: {formatCurrency(goal.savedAmount)} / {formatCurrency(goal.targetAmount)}</Text>
                     <Text className="text-xs font-medium text-gray-500">{Math.round(totalPctGoal)}%</Text>
                   </View>
 
-                  {/* See progress link */}
                   <TouchableOpacity
                     onPress={() => router.push(`/goal/${goal.id}` as any)}
-                    className="mt-3 pt-3 border-t border-gray-50 flex-row items-center justify-center"
+                    className="mt-3 pt-3 border-t border-gray-50 dark:border-gray-800 flex-row items-center justify-center"
                     activeOpacity={0.7}
                   >
-                    <Text className="text-xs font-semibold" style={{ color: goal.color }}>
-                      See progress →
-                    </Text>
+                    <Text className="text-xs font-semibold" style={{ color: goal.color }}>See progress →</Text>
                   </TouchableOpacity>
                 </View>
               );
             })}
 
-            {/* Add Goal placeholder */}
-            <TouchableOpacity onPress={() => router.push('/goal/new' as any)} className="w-full py-4 rounded-3xl border-2 border-dashed border-gray-200 flex-row items-center justify-center gap-2 mb-4">
+            {/* Add Goal */}
+            <TouchableOpacity
+              onPress={() => router.push('/goal/new' as any)}
+              className="w-full py-4 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex-row items-center justify-center gap-2 mb-4"
+            >
               <Plus size={16} color="#9ca3af" />
               <Text className="text-sm font-semibold text-gray-400">{t('budget.add_goal')}</Text>
             </TouchableOpacity>
@@ -341,19 +398,29 @@ export default function BudgetScreen() {
         {activeTab === 'budget' && (
           <>
             {/* Income input */}
-            <View className="bg-white rounded-3xl p-5 border border-gray-100 mb-4">
-              <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-                {t('budget.expected_income')}
-              </Text>
+            <View className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800 mb-4">
+              <View className="flex-row items-center justify-between mb-2">
+                <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  {t('budget.expected_income')}
+                </Text>
+                <View className="bg-gray-100 dark:bg-gray-800 rounded-full px-2.5 py-0.5 flex-row items-center gap-1">
+                  <Text className="text-[10px] text-gray-500 dark:text-gray-400">Variable</Text>
+                </View>
+              </View>
               {actualIncome > 0 && !budget.expectedIncome && (
                 <Text className="text-xs text-green-600 mb-2 font-medium">
                   {t('budget.auto_filled', { month: now.toLocaleString('default', { month: 'long' }) })}
                 </Text>
               )}
-              <View className="flex-row items-center border-2 border-gray-100 rounded-2xl px-4 py-3 bg-gray-50 gap-2 mb-4">
-                <Text className="text-gray-400 font-semibold text-lg">{getCurrencySymbol()}</Text>
+              {actualIncome > 0 && budget.expectedIncome > 0 && (
+                <Text className="text-xs text-green-600 mb-2 font-medium">
+                  Auto-filled from your {now.toLocaleString('default', { month: 'long' })} income
+                </Text>
+              )}
+              <View className="flex-row items-center border-2 border-gray-100 dark:border-gray-700 rounded-2xl px-4 py-3 bg-gray-50 dark:bg-gray-800 gap-2 mb-4">
+                <Text className="text-gray-400 font-semibold text-xl">{getCurrencySymbol()}</Text>
                 <TextInput
-                  className="flex-1 text-xl font-bold text-gray-900"
+                  className="flex-1 text-xl font-bold text-gray-900 dark:text-white"
                   placeholder="e.g. 5000"
                   placeholderTextColor="#d1d5db"
                   keyboardType="decimal-pad"
@@ -365,7 +432,7 @@ export default function BudgetScreen() {
               <TouchableOpacity
                 onPress={handleAnalyze}
                 disabled={income <= 0}
-                className={`py-3.5 rounded-2xl items-center flex-row justify-center gap-2 ${income > 0 ? 'bg-green-600' : 'bg-gray-200'}`}
+                className={`py-3.5 rounded-2xl items-center flex-row justify-center gap-2 ${income > 0 ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'}`}
               >
                 <Sparkles size={16} color={income > 0 ? 'white' : '#9ca3af'} />
                 <Text className={`font-bold ${income > 0 ? 'text-white' : 'text-gray-400'}`}>
@@ -377,35 +444,50 @@ export default function BudgetScreen() {
               )}
               {analyzed && income > 0 && (
                 <Text className="text-xs text-green-600 font-medium mt-2">
-                  ✓ {t('budget.allocation_generated')}
+                  ✓ {t('budget.allocation_generated')} · Savings locked at {savingsEnabled && savingsAmt > 0 ? Math.round((savingsAmt / income) * 100) : 0}%
                 </Text>
               )}
             </View>
 
-            {/* Savings summary row when goals exist */}
+            {/* Active Goals summary */}
             {(savingsEnabled && savingsAmt > 0 || customGoalMonthly > 0) && income > 0 && (
-              <View className="bg-white rounded-3xl p-5 border border-gray-100 mb-4">
+              <View className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800 mb-4">
                 <View className="flex-row items-center justify-between mb-3">
                   <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('budget.active_goals')}</Text>
-                  <View className="bg-green-100 rounded-full px-2 py-0.5">
-                    <Text className="text-xs font-bold text-green-700">
+                  <View className="bg-green-100 dark:bg-green-900/30 rounded-full px-2.5 py-0.5">
+                    <Text className="text-xs font-bold text-green-700 dark:text-green-400">
                       {t('budget.x_active', { n: activeGoalCount })}
                     </Text>
                   </View>
                 </View>
                 {savingsEnabled && savingsAmt > 0 && (
-                  <View className="flex-row items-center justify-between py-2.5 border-b border-gray-50">
+                  <View className="flex-row items-center justify-between py-2.5 border-b border-gray-50 dark:border-gray-800">
                     <View className="flex-row items-center gap-2.5">
                       <View className="w-7 h-7 rounded-xl items-center justify-center" style={{ backgroundColor: '#22c55e20' }}>
-                        <PiggyBank size={13} color="#22c55e" />
+                        <Text style={{ fontSize: 13 }}>🐷</Text>
                       </View>
-                      <Text className="text-sm text-gray-600">{t('budget.monthly_savings')}</Text>
+                      <Text className="text-sm text-gray-600 dark:text-gray-300">{t('budget.monthly_savings')}</Text>
                     </View>
-                    <Text className="text-sm font-semibold text-gray-700">−{formatCurrency(savingsAmt)}/mo</Text>
+                    <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">−{formatCurrency(savingsAmt)}/mo</Text>
                   </View>
                 )}
-                <View className="flex-row items-center justify-between pt-3 border-t border-gray-100 mt-1">
-                  <Text className="text-sm font-bold text-gray-700">{t('budget.spendable')}</Text>
+                {(budget.customGoals ?? []).map(goal => {
+                  const months = Math.max(1, Math.round(goal.durationDays / 30));
+                  const monthly = goal.targetAmount / months;
+                  return (
+                    <View key={goal.id} className="flex-row items-center justify-between py-2.5 border-b border-gray-50 dark:border-gray-800">
+                      <View className="flex-row items-center gap-2.5">
+                        <View className="w-7 h-7 rounded-xl items-center justify-center" style={{ backgroundColor: goal.color + '20' }}>
+                          <Text style={{ fontSize: 13 }}>{goal.icon || '🎯'}</Text>
+                        </View>
+                        <Text className="text-sm text-gray-600 dark:text-gray-300" numberOfLines={1}>{goal.name}</Text>
+                      </View>
+                      <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">−{formatCurrency(monthly)}/mo</Text>
+                    </View>
+                  );
+                })}
+                <View className="flex-row items-center justify-between pt-3 mt-1">
+                  <Text className="text-sm font-bold text-gray-700 dark:text-white">{t('budget.spendable')}</Text>
                   <View className="flex-row items-baseline gap-1">
                     <Text className="text-base font-black text-green-600">{formatCurrency(netIncome)}</Text>
                     <Text className="text-xs text-gray-400">/ {formatCurrency(income)}</Text>
@@ -414,50 +496,73 @@ export default function BudgetScreen() {
               </View>
             )}
 
-            {/* Allocation list */}
-            {analyzed && (
-              <View className="bg-white rounded-3xl border border-gray-100 overflow-hidden mb-4">
-                <View className="flex-row items-center justify-between px-5 pt-4 pb-3 border-b border-gray-50">
-                  <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+            {/* Budget Allocation donut card */}
+            {analyzed && income > 0 && (
+              <View className="rounded-3xl overflow-hidden mb-4" style={{ backgroundColor: '#15803d' }}>
+                <View className="flex-row items-center justify-between px-5 pt-4 pb-2">
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: 'white', letterSpacing: 1, textTransform: 'uppercase' }}>
                     {t('budget.allocation')}
                   </Text>
-                  <View className={`px-2 py-0.5 rounded-full ${Math.abs(totalPct - 100) < 1 ? 'bg-green-100' : 'bg-orange-100'}`}>
-                    <Text className={`text-xs font-bold ${Math.abs(totalPct - 100) < 1 ? 'text-green-700' : 'text-orange-600'}`}>
-                      {totalPct.toFixed(0)}{t('budget.pct_allocated')}
+                  <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 }}>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: 'white' }}>
+                      {totalPct.toFixed(0)}% allocated
                     </Text>
                   </View>
                 </View>
+                <View className="items-center py-2">
+                  <BudgetDonut
+                    allocations={allocations}
+                    netIncome={netIncome}
+                    totalPct={totalPct}
+                    formatCurrency={formatCurrency}
+                  />
+                </View>
+                <Text style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.5)', paddingBottom: 16 }}>
+                  Tap a category below to adjust
+                </Text>
+              </View>
+            )}
 
-                {allocations.map((alloc, idx) => {
-                  const group = BUDGET_GROUPS[idx];
+            {/* Adjust Manually section */}
+            {analyzed && (
+              <View className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-4">
+                <View className="flex-row items-center justify-between px-5 pt-4 pb-3 border-b border-gray-50 dark:border-gray-800">
+                  <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                    Adjust Manually
+                  </Text>
+                  <TouchableOpacity onPress={handleReset} className="flex-row items-center gap-1">
+                    <RefreshCw size={11} color="#9ca3af" />
+                    <Text className="text-xs font-semibold text-gray-400">Reset</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {visibleAllocations.map((alloc, idx) => {
+                  const group = BUDGET_GROUPS.find(g => g.categoryId === alloc.categoryId);
                   if (!group) return null;
                   const { Icon } = group;
                   const budgetAmt = netIncome > 0 ? Math.round(netIncome * alloc.percentage / 100) : 0;
                   const actual = actualByCategory[alloc.categoryId] || 0;
                   const over = actual > budgetAmt && budgetAmt > 0;
                   const spentPct = budgetAmt > 0 ? Math.min(100, (actual / budgetAmt) * 100) : 0;
+                  const isExpanded = expandedAlloc === alloc.categoryId;
 
                   return (
-                    <View key={alloc.categoryId} className="border-b border-gray-50 last:border-0 px-5 py-3.5">
-                      <View className="flex-row items-center gap-3">
+                    <View key={alloc.categoryId} className="border-b border-gray-50 dark:border-gray-800 last:border-0">
+                      <TouchableOpacity
+                        onPress={() => setExpandedAlloc(isExpanded ? null : alloc.categoryId)}
+                        className="flex-row items-center gap-3 px-5 py-3.5"
+                        activeOpacity={0.7}
+                      >
                         <View
-                          className="w-7 h-7 rounded-xl items-center justify-center flex-shrink-0"
+                          className="w-8 h-8 rounded-xl items-center justify-center flex-shrink-0"
                           style={{ backgroundColor: alloc.color + '20' }}
                         >
-                          <Icon size={14} color={alloc.color} />
+                          <Icon size={15} color={alloc.color} />
                         </View>
                         <View className="flex-1 min-w-0">
-                          <View className="flex-row items-center justify-between mb-1">
-                            <Text className="text-sm font-medium text-gray-800">{alloc.label}</Text>
-                            <View className="flex-row items-center gap-2">
-                              <Text className="text-sm font-bold" style={{ color: alloc.color }}>{alloc.percentage}%</Text>
-                              {budgetAmt > 0 && (
-                                <Text className="text-xs text-gray-400">{formatCurrency(budgetAmt)}</Text>
-                              )}
-                            </View>
-                          </View>
-                          {budgetAmt > 0 && (
-                            <View className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <Text className="text-sm font-medium text-gray-800 dark:text-gray-200">{alloc.label}</Text>
+                          {actual > 0 && budgetAmt > 0 && (
+                            <View className="h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mt-1.5">
                               <View
                                 className="h-full rounded-full"
                                 style={{ width: `${spentPct}%`, backgroundColor: over ? '#ef4444' : alloc.color }}
@@ -465,25 +570,48 @@ export default function BudgetScreen() {
                             </View>
                           )}
                         </View>
-                        {/* +/- controls */}
-                        <View className="flex-row items-center gap-1 ml-2">
+                        <Text className="text-sm font-bold mr-1" style={{ color: alloc.color }}>{alloc.percentage}%</Text>
+                        {budgetAmt > 0 && (
+                          <Text className="text-xs text-gray-400 mr-1">{formatCurrency(budgetAmt)}</Text>
+                        )}
+                        {isExpanded
+                          ? <ChevronUp size={14} color="#d1d5db" />
+                          : <ChevronDown size={14} color="#d1d5db" />}
+                      </TouchableOpacity>
+
+                      {isExpanded && (
+                        <View className="px-5 pb-3 flex-row items-center justify-end gap-3">
                           <TouchableOpacity
                             onPress={() => adjustPct(idx, -1)}
-                            className="w-6 h-6 rounded-full bg-gray-100 items-center justify-center"
+                            className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
                           >
-                            <Minus size={10} color="#6b7280" />
+                            <Minus size={12} color="#6b7280" />
                           </TouchableOpacity>
+                          <Text className="text-base font-black text-gray-900 dark:text-white w-10 text-center">
+                            {alloc.percentage}%
+                          </Text>
                           <TouchableOpacity
                             onPress={() => adjustPct(idx, 1)}
-                            className="w-6 h-6 rounded-full bg-gray-100 items-center justify-center"
+                            className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
                           >
-                            <Plus size={10} color="#6b7280" />
+                            <Plus size={12} color="#6b7280" />
                           </TouchableOpacity>
                         </View>
-                      </View>
+                      )}
                     </View>
                   );
                 })}
+
+                {hiddenCount > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setShowAllAllocations(v => !v)}
+                    className="py-3.5 items-center border-t border-gray-50 dark:border-gray-800"
+                  >
+                    <Text className="text-sm font-semibold text-green-600">
+                      {showAllAllocations ? 'Show less' : `Show ${hiddenCount} more categories`}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             )}
 
@@ -491,7 +619,7 @@ export default function BudgetScreen() {
             {analyzed && (
               <TouchableOpacity
                 onPress={handleSave}
-                className="bg-green-600 rounded-2xl py-4 items-center mb-6 shadow-md"
+                className="bg-green-600 rounded-2xl py-4 items-center mb-6"
               >
                 <Text className="text-white font-bold text-base">
                   {saved ? '✓ ' : ''}{t('budget.save_plan')}
@@ -501,7 +629,7 @@ export default function BudgetScreen() {
 
             {/* This month summary */}
             {analyzed && income > 0 && (
-              <View className="bg-white rounded-3xl p-5 border border-gray-100 mb-4">
+              <View className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800 mb-4">
                 <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
                   {t('budget.this_month')}
                 </Text>
@@ -518,12 +646,12 @@ export default function BudgetScreen() {
                       return (
                         <View key={a.categoryId} className="mb-3">
                           <View className="flex-row items-center justify-between mb-1">
-                            <Text className="text-xs font-medium text-gray-800">{a.label}</Text>
+                            <Text className="text-xs font-medium text-gray-800 dark:text-gray-200">{a.label}</Text>
                             <Text className={`text-xs font-bold ${over ? 'text-red-500' : 'text-green-600'}`}>
                               {formatCurrency(actual)} / {formatCurrency(budgetAmt)}
                             </Text>
                           </View>
-                          <View className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <View className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                             <View
                               className="h-full rounded-full"
                               style={{ width: `${pct}%`, backgroundColor: over ? '#f87171' : a.color }}
