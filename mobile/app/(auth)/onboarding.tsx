@@ -19,7 +19,7 @@ import { useTranslation } from '../../context/LanguageContext';
 import { CURRENCIES } from '../../types';
 import { ChevronRight, ChevronLeft, Check, Search, X, Camera } from 'lucide-react-native';
 
-const defaultAvatar = require('../../assets/mascot.png');
+const defaultAvatar = require('../../assets/m_expression_wink.png');
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
