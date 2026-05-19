@@ -7,223 +7,659 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  Modal,
+  StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { CURRENCIES } from '../../types';
-import { Check, ChevronRight, ChevronLeft, PartyPopper } from 'lucide-react-native';
+import { ChevronRight, ChevronLeft, Check, Search, X } from 'lucide-react-native';
 
-const TOTAL_STEPS = 3;
+// ─── Data ────────────────────────────────────────────────────────────────────
+
+const SPEND_ON_OPTIONS = [
+  { id: 'self',     labelKey: 'onboard.myself'   as const, emoji: '🙋' },
+  { id: 'family',   labelKey: 'onboard.family'   as const, emoji: '👨‍👩‍👧' },
+  { id: 'partner',  labelKey: 'onboard.partner'  as const, emoji: '💑' },
+  { id: 'children', labelKey: 'onboard.children' as const, emoji: '🧒' },
+  { id: 'friends',  labelKey: 'onboard.friends'  as const, emoji: '👫' },
+  { id: 'others',   labelKey: 'onboard.others'   as const, emoji: '🌍' },
+];
+
+const SPEND_WHAT_OPTIONS = [
+  { id: 'food',          emoji: '🍽️', catKey: 'cat.food'          as const },
+  { id: 'housing',       emoji: '🏠', catKey: 'cat.housing'       as const },
+  { id: 'transport',     emoji: '🚗', catKey: 'cat.transport'     as const },
+  { id: 'shopping',      emoji: '🛍️', catKey: 'cat.shopping'      as const },
+  { id: 'entertainment', emoji: '🎬', catKey: 'cat.entertainment' as const },
+  { id: 'health',        emoji: '💪', catKey: 'cat.health'        as const },
+  { id: 'education',     emoji: '📚', catKey: 'cat.education'     as const },
+  { id: 'subscriptions', emoji: '📱', catKey: 'cat.subscriptions' as const },
+  { id: 'travel',        emoji: '✈️', catKey: 'cat.travel'        as const },
+  { id: 'investments',   emoji: '💰', catKey: 'cat.investments'   as const },
+  { id: 'personal',      emoji: '💆', catKey: 'cat.personal'      as const },
+];
+
+const SAT_OPTIONS = [
+  { val: 1, emoji: '😟', labelKey: 'onboard.sat.1' as const, subKey: 'onboard.sat.1.sub' as const },
+  { val: 2, emoji: '😕', labelKey: 'onboard.sat.2' as const, subKey: 'onboard.sat.2.sub' as const },
+  { val: 3, emoji: '😐', labelKey: 'onboard.sat.3' as const, subKey: 'onboard.sat.3.sub' as const },
+  { val: 4, emoji: '😊', labelKey: 'onboard.sat.4' as const, subKey: 'onboard.sat.4.sub' as const },
+  { val: 5, emoji: '😄', labelKey: 'onboard.sat.5' as const, subKey: 'onboard.sat.5.sub' as const },
+];
+
+const DISC_OPTIONS = [
+  { val: true,  emoji: '🎯', labelKey: 'onboard.disc.yes' as const, subKey: 'onboard.disc.yes.sub' as const },
+  { val: false, emoji: '💪', labelKey: 'onboard.disc.no'  as const, subKey: 'onboard.disc.no.sub'  as const },
+];
+
+const TOTAL_STEPS = 5;
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function OnboardingScreen() {
   const { updateUserProfile, completeOnboarding } = useApp();
   const { t } = useTranslation();
 
   const [step, setStep] = useState(1);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [touched, setTouched] = useState(false);
+
+  // Step 1 state
   const [name, setName] = useState('');
   const [currency, setCurrency] = useState('USD');
-  const [search, setSearch] = useState('');
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+  const [currencySearch, setCurrencySearch] = useState('');
 
-  const filteredCurrencies = CURRENCIES.filter(
-    (c) =>
-      c.code.toLowerCase().includes(search.toLowerCase()) ||
-      c.name.toLowerCase().includes(search.toLowerCase()),
+  // Survey state
+  const [satisfaction, setSatisfaction] = useState<number | null>(null);
+  const [disciplined, setDisciplined] = useState<boolean | null>(null);
+  const [spendOn, setSpendOn] = useState<string[]>([]);
+  const [spendWhat, setSpendWhat] = useState<string[]>([]);
+
+  const hasName = name.trim().length > 0;
+  const initial = hasName ? name.trim().charAt(0).toUpperCase() : '?';
+
+  const selectedCurrency = CURRENCIES.find(c => c.code === currency);
+  const filteredCurrencies = CURRENCIES.filter(c =>
+    !currencySearch ||
+    c.code.toLowerCase().includes(currencySearch.toLowerCase()) ||
+    c.name.toLowerCase().includes(currencySearch.toLowerCase()),
   );
 
-  const canNext = step === 1 ? name.trim().length > 0 : true;
+  const STEP_TITLES = [
+    t('onboard.setup'),
+    t('onboard.financial_state'),
+    t('onboard.discipline'),
+    t('onboard.spend_on'),
+    t('onboard.spend_what'),
+  ];
 
-  const handleNext = () => {
+  const canProceed =
+    step === 1 ? hasName :
+    step === 2 ? satisfaction !== null :
+    step === 3 ? disciplined !== null :
+    step === 4 ? spendOn.length > 0 :
+    step === 5 ? spendWhat.length > 0 :
+    false;
+
+  function handleNext() {
+    if (!canProceed) {
+      if (step === 1) setTouched(true);
+      return;
+    }
     if (step === 1) {
-      updateUserProfile({ name: name.trim() });
+      updateUserProfile({ name: name.trim(), currency });
+      setShowWelcome(true);
+      return;
     }
     if (step < TOTAL_STEPS) {
-      setStep((s) => s + 1);
+      setStep(s => s + 1);
+      return;
     }
-  };
-
-  const handleBack = () => {
-    if (step > 1) setStep((s) => s - 1);
-  };
-
-  const handleFinish = () => {
-    updateUserProfile({ currency });
+    // Final step — complete onboarding
     completeOnboarding();
-  };
+  }
 
-  // Progress dots
-  const renderDots = () => (
-    <View className="flex-row justify-center gap-x-2 mb-8">
-      {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-        <View
-          key={i}
-          className={`rounded-full h-2 ${
-            i + 1 === step ? 'w-6 bg-green-600' : 'w-2 bg-gray-200'
-          }`}
-        />
-      ))}
-    </View>
-  );
+  function handleBack() {
+    if (step > 1) setStep(s => s - 1);
+  }
 
+  // ── Welcome screen ──────────────────────────────────────────────────────────
+  if (showWelcome) {
+    return (
+      <View style={s.welcomeRoot}>
+        <View style={s.welcomeAvatar}>
+          <Text style={s.welcomeInitial}>{initial}</Text>
+        </View>
+        <Text style={s.welcomeTitle}>{t('onboard.welcome', { name: name.trim() })}</Text>
+        <Text style={s.welcomeBody}>{t('onboard.intro')}</Text>
+        <TouchableOpacity
+          onPress={() => { setShowWelcome(false); setStep(2); }}
+          activeOpacity={0.85}
+          style={s.primaryBtn}
+        >
+          <Text style={s.primaryBtnTxt}>{t('onboard.lets_go')}</Text>
+          <ChevronRight size={18} color="#fff" />
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // ── Main onboarding ─────────────────────────────────────────────────────────
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-white"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      {/* Header strip */}
-      <View className="bg-green-600 h-2" />
-
-      <View className="flex-1 px-6 pt-12">
-        {renderDots()}
-
-        {/* ── Step 1: Name ── */}
-        {step === 1 && (
-          <View className="flex-1">
-            <Text className="text-2xl font-bold text-gray-900 mb-2">
-              {t('onboarding.step1.title')}
-            </Text>
-            <Text className="text-gray-500 mb-8">
-              We'll personalise Kachingo for you.
-            </Text>
-            <TextInput
-              className="border border-gray-200 rounded-2xl px-4 py-4 text-base text-gray-900 bg-gray-50"
-              placeholder={t('onboarding.step1.placeholder')}
-              placeholderTextColor="#9ca3af"
-              value={name}
-              onChangeText={setName}
-              autoFocus
-              returnKeyType="next"
-              onSubmitEditing={handleNext}
+    <SafeAreaView style={s.root} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        {/* Progress bar */}
+        <View style={s.progressRow}>
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+            <View
+              key={i}
+              style={[s.progressSegment, { backgroundColor: i < step ? '#16a34a' : '#e5e7eb' }]}
             />
-          </View>
-        )}
+          ))}
+        </View>
 
-        {/* ── Step 2: Currency ── */}
-        {step === 2 && (
-          <View className="flex-1">
-            <Text className="text-2xl font-bold text-gray-900 mb-2">
-              {t('onboarding.step2.title')}
-            </Text>
-            <Text className="text-gray-500 mb-4">
-              This will be your default display currency.
-            </Text>
-
-            <TextInput
-              className="border border-gray-200 rounded-2xl px-4 py-3 text-base text-gray-900 bg-gray-50 mb-3"
-              placeholder={t('onboarding.step2.search')}
-              placeholderTextColor="#9ca3af"
-              value={search}
-              onChangeText={setSearch}
-              returnKeyType="search"
-            />
-
-            <FlatList
-              data={filteredCurrencies}
-              keyExtractor={(item) => item.code}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              renderItem={({ item }) => {
-                const selected = item.code === currency;
-                return (
-                  <TouchableOpacity
-                    onPress={() => setCurrency(item.code)}
-                    activeOpacity={0.7}
-                    className={`flex-row items-center px-4 py-3 mb-1 rounded-xl ${
-                      selected ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
-                    }`}
-                  >
-                    <Text
-                      className={`text-sm font-bold w-12 ${
-                        selected ? 'text-green-700' : 'text-gray-500'
-                      }`}
-                    >
-                      {item.code}
-                    </Text>
-                    <Text
-                      className={`flex-1 text-sm ${
-                        selected ? 'text-green-900 font-medium' : 'text-gray-700'
-                      }`}
-                    >
-                      {item.name}
-                    </Text>
-                    {selected && <Check size={16} color="#16a34a" />}
-                  </TouchableOpacity>
-                );
-              }}
-            />
-          </View>
-        )}
-
-        {/* ── Step 3: Done ── */}
-        {step === 3 && (
-          <View className="flex-1 items-center justify-center">
-            <View className="bg-green-100 rounded-full w-24 h-24 items-center justify-center mb-6">
-              <PartyPopper size={48} color="#16a34a" />
-            </View>
-            <Text className="text-2xl font-bold text-gray-900 mb-3 text-center">
-              {t('onboarding.step3.title')}
-            </Text>
-            <Text className="text-gray-500 text-center text-base px-4">
-              {t('onboarding.step3.subtitle')}
-            </Text>
-            <View className="mt-4 bg-gray-50 rounded-2xl px-6 py-4 w-full">
-              <View className="flex-row justify-between mb-2">
-                <Text className="text-gray-500 text-sm">Name</Text>
-                <Text className="text-gray-900 font-medium text-sm">{name || 'User'}</Text>
-              </View>
-              <View className="flex-row justify-between">
-                <Text className="text-gray-500 text-sm">Currency</Text>
-                <Text className="text-gray-900 font-medium text-sm">{currency}</Text>
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Navigation buttons */}
-        <View className="flex-row items-center pb-10 pt-6 gap-x-3">
-          {step > 1 && (
-            <TouchableOpacity
-              onPress={handleBack}
-              activeOpacity={0.8}
-              className="flex-row items-center justify-center border border-gray-200 rounded-2xl py-4 px-5"
-            >
-              <ChevronLeft size={20} color="#374151" />
-              <Text className="text-gray-700 font-medium ml-1">
-                {t('onboarding.back')}
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          {step < TOTAL_STEPS ? (
-            <TouchableOpacity
-              onPress={handleNext}
-              disabled={!canNext}
-              activeOpacity={0.8}
-              className={`flex-1 flex-row items-center justify-center rounded-2xl py-4 ${
-                canNext ? 'bg-green-600' : 'bg-gray-200'
-              }`}
-            >
-              <Text
-                className={`font-semibold text-base mr-1 ${
-                  canNext ? 'text-white' : 'text-gray-400'
-                }`}
-              >
-                {t('onboarding.next')}
-              </Text>
-              <ChevronRight size={20} color={canNext ? '#fff' : '#9ca3af'} />
+        {/* Header: back button + title */}
+        <View style={s.header}>
+          {step > 1 ? (
+            <TouchableOpacity onPress={handleBack} style={s.backBtn} activeOpacity={0.7}>
+              <ChevronLeft size={16} color="#374151" />
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity
-              onPress={handleFinish}
-              activeOpacity={0.8}
-              className="flex-1 flex-row items-center justify-center bg-green-600 rounded-2xl py-4"
-            >
-              <Text className="text-white font-semibold text-base">
-                {t('onboarding.finish')}
-              </Text>
-            </TouchableOpacity>
+            <View style={{ width: 32 }} />
           )}
+          <Text style={s.stepTitle}>{STEP_TITLES[step - 1]}</Text>
         </View>
-      </View>
-    </KeyboardAvoidingView>
+
+        {/* Scrollable content */}
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+
+          {/* ── Step 1: Profile setup ── */}
+          {step === 1 && (
+            <View style={s.section}>
+              <Text style={s.fieldLabel}>{t('onboard.your_name')}</Text>
+              <TextInput
+                style={[s.input, touched && !hasName ? s.inputError : undefined]}
+                placeholder={t('onboard.name_placeholder')}
+                placeholderTextColor="#9ca3af"
+                value={name}
+                onChangeText={v => { setName(v); setTouched(false); }}
+                onBlur={() => setTouched(true)}
+                autoFocus
+                returnKeyType="next"
+              />
+              {touched && !hasName && (
+                <Text style={s.errorText}>{t('onboard.name_required')}</Text>
+              )}
+
+              <Text style={[s.fieldLabel, { marginTop: 20 }]}>{t('onboard.currency')}</Text>
+              <TouchableOpacity
+                onPress={() => setShowCurrencyPicker(true)}
+                activeOpacity={0.8}
+                style={s.currencyBtn}
+              >
+                <View>
+                  <Text style={s.currencyCode}>{selectedCurrency?.code ?? 'USD'}</Text>
+                  <Text style={s.currencyName}>{selectedCurrency?.name ?? 'US Dollar'}</Text>
+                </View>
+                <ChevronRight size={16} color="#9ca3af" />
+              </TouchableOpacity>
+
+              {/* What to expect */}
+              <View style={s.infoBox}>
+                <Text style={s.infoBoxTitle}>{t('onboard.what_expect')}</Text>
+                {[
+                  t('onboard.sample_data'),
+                  t('onboard.replace_real'),
+                  t('onboard.data_stays'),
+                ].map(item => (
+                  <View key={item} style={s.infoRow}>
+                    <Check size={13} color="#16a34a" strokeWidth={3} />
+                    <Text style={s.infoRowText}>{item}</Text>
+                  </View>
+                ))}
+              </View>
+
+              <Text style={s.hint}>{t('onboard.update_anytime')}</Text>
+            </View>
+          )}
+
+          {/* ── Step 2: Financial satisfaction ── */}
+          {step === 2 && (
+            <View style={s.section}>
+              <Text style={s.stepSub}>{t('onboard.how_satisfied')}</Text>
+              {SAT_OPTIONS.map(opt => {
+                const sel = satisfaction === opt.val;
+                return (
+                  <TouchableOpacity
+                    key={opt.val}
+                    onPress={() => setSatisfaction(opt.val)}
+                    activeOpacity={0.8}
+                    style={[s.radioCard, sel && s.radioCardSel]}
+                  >
+                    <Text style={s.radioEmoji}>{opt.emoji}</Text>
+                    <View style={s.radioBody}>
+                      <Text style={[s.radioLabel, sel && s.radioLabelSel]}>{t(opt.labelKey)}</Text>
+                      <Text style={s.radioSub}>{t(opt.subKey)}</Text>
+                    </View>
+                    <View style={[s.radioCircle, sel && s.radioCircleSel]}>
+                      {sel && <View style={s.radioInner} />}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {/* ── Step 3: Discipline ── */}
+          {step === 3 && (
+            <View style={s.section}>
+              <Text style={s.stepSub}>{t('onboard.describe')}</Text>
+              {DISC_OPTIONS.map(opt => {
+                const sel = disciplined === opt.val;
+                return (
+                  <TouchableOpacity
+                    key={String(opt.val)}
+                    onPress={() => setDisciplined(opt.val)}
+                    activeOpacity={0.8}
+                    style={[s.radioCard, sel && s.radioCardSel, { paddingVertical: 20 }]}
+                  >
+                    <Text style={[s.radioEmoji, { fontSize: 36 }]}>{opt.emoji}</Text>
+                    <View style={s.radioBody}>
+                      <Text style={[s.radioLabel, sel && s.radioLabelSel]}>{t(opt.labelKey)}</Text>
+                      <Text style={[s.radioSub, { marginTop: 4 }]}>{t(opt.subKey)}</Text>
+                    </View>
+                    <View style={[s.radioCircle, sel && s.radioCircleSel]}>
+                      {sel && <View style={s.radioInner} />}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {/* ── Step 4: Who do you spend on? ── */}
+          {step === 4 && (
+            <View style={s.section}>
+              <View style={s.grid}>
+                {SPEND_ON_OPTIONS.map(opt => {
+                  const sel = spendOn.includes(opt.id);
+                  return (
+                    <TouchableOpacity
+                      key={opt.id}
+                      onPress={() =>
+                        setSpendOn(prev => sel ? prev.filter(x => x !== opt.id) : [...prev, opt.id])
+                      }
+                      activeOpacity={0.8}
+                      style={[s.gridCard, sel && s.gridCardSel]}
+                    >
+                      {sel && (
+                        <View style={s.gridCheckBadge}>
+                          <Check size={11} color="#fff" strokeWidth={3} />
+                        </View>
+                      )}
+                      <Text style={s.gridEmoji}>{opt.emoji}</Text>
+                      <Text style={[s.gridLabel, sel && s.gridLabelSel]}>{t(opt.labelKey)}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          {/* ── Step 5: What do you spend on? ── */}
+          {step === 5 && (
+            <View style={s.section}>
+              <View style={s.grid2col}>
+                {SPEND_WHAT_OPTIONS.map(opt => {
+                  const sel = spendWhat.includes(opt.id);
+                  return (
+                    <TouchableOpacity
+                      key={opt.id}
+                      onPress={() =>
+                        setSpendWhat(prev => sel ? prev.filter(x => x !== opt.id) : [...prev, opt.id])
+                      }
+                      activeOpacity={0.8}
+                      style={[s.grid2Card, sel && s.gridCardSel]}
+                    >
+                      {sel && (
+                        <View style={[s.gridCheckBadge, { width: 18, height: 18 }]}>
+                          <Check size={9} color="#fff" strokeWidth={3} />
+                        </View>
+                      )}
+                      <Text style={[s.gridEmoji, { fontSize: 24 }]}>{opt.emoji}</Text>
+                      <Text style={[s.grid2Label, sel && s.gridLabelSel]}>{t(opt.catKey)}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+        </ScrollView>
+
+        {/* CTA button */}
+        <View style={s.ctaArea}>
+          <TouchableOpacity
+            onPress={handleNext}
+            activeOpacity={0.85}
+            style={[s.ctaBtn, !canProceed && s.ctaBtnDisabled]}
+          >
+            <Text style={[s.ctaBtnTxt, !canProceed && s.ctaBtnTxtDisabled]}>
+              {step === TOTAL_STEPS ? t('onboard.get_started') : t('onboard.continue')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+
+      {/* Currency picker bottom sheet */}
+      <Modal
+        visible={showCurrencyPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowCurrencyPicker(false)}
+      >
+        <TouchableOpacity
+          style={s.pickerBackdrop}
+          activeOpacity={1}
+          onPress={() => setShowCurrencyPicker(false)}
+        />
+        <View style={s.pickerSheet}>
+          <View style={s.pickerHandle} />
+          <View style={s.pickerHeader}>
+            <Text style={s.pickerTitle}>{t('onboard.select_currency')}</Text>
+            <TouchableOpacity onPress={() => setShowCurrencyPicker(false)} style={s.pickerClose}>
+              <X size={16} color="#6b7280" />
+            </TouchableOpacity>
+          </View>
+          <View style={s.pickerSearch}>
+            <Search size={14} color="#9ca3af" />
+            <TextInput
+              style={s.pickerSearchInput}
+              placeholder={t('onboard.search_currency')}
+              placeholderTextColor="#9ca3af"
+              value={currencySearch}
+              onChangeText={setCurrencySearch}
+              autoFocus
+            />
+            {currencySearch.length > 0 && (
+              <TouchableOpacity onPress={() => setCurrencySearch('')}>
+                <X size={14} color="#9ca3af" />
+              </TouchableOpacity>
+            )}
+          </View>
+          <FlatList
+            data={filteredCurrencies}
+            keyExtractor={item => item.code}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            renderItem={({ item }) => {
+              const sel = item.code === currency;
+              return (
+                <TouchableOpacity
+                  onPress={() => { setCurrency(item.code); setShowCurrencyPicker(false); setCurrencySearch(''); }}
+                  activeOpacity={0.7}
+                  style={[s.currencyRow, sel && s.currencyRowSel]}
+                >
+                  <Text style={s.currencyRowCode}>{item.code}</Text>
+                  <Text style={[s.currencyRowName, sel && s.currencyRowNameSel]}>{item.name}</Text>
+                  {sel && <Check size={15} color="#16a34a" />}
+                </TouchableOpacity>
+              );
+            }}
+          />
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 }
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#f9fafb' },
+
+  // Welcome
+  welcomeRoot: {
+    flex: 1,
+    backgroundColor: '#f9fafb',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  welcomeAvatar: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#16a34a',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+    shadowColor: '#16a34a',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  welcomeInitial: { color: '#fff', fontSize: 36, fontWeight: '900' },
+  welcomeTitle: { fontSize: 24, fontWeight: '800', color: '#111827', textAlign: 'center', marginBottom: 10 },
+  welcomeBody: { fontSize: 14, color: '#6b7280', textAlign: 'center', lineHeight: 21, marginBottom: 32 },
+
+  // Progress
+  progressRow: { flexDirection: 'row', gap: 6, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 },
+  progressSegment: { flex: 1, height: 4, borderRadius: 2 },
+
+  // Header
+  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 14 },
+  backBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
+  },
+  stepTitle: { flex: 1, fontSize: 22, fontWeight: '800', color: '#111827' },
+
+  // Scroll
+  scrollContent: { paddingBottom: 16 },
+  section: { paddingHorizontal: 20, paddingTop: 4 },
+  stepSub: { fontSize: 13, color: '#9ca3af', marginBottom: 16, lineHeight: 18 },
+
+  // Form fields
+  fieldLabel: { fontSize: 11, fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
+  input: {
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#f3f4f6',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 15,
+    color: '#111827',
+  },
+  inputError: { borderColor: '#ef4444' },
+  errorText: { fontSize: 12, color: '#ef4444', marginTop: 6, marginLeft: 4 },
+
+  // Currency button
+  currencyBtn: {
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#f3f4f6',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  currencyCode: { fontSize: 14, fontWeight: '700', color: '#111827' },
+  currencyName: { fontSize: 12, color: '#9ca3af', marginTop: 2 },
+
+  // Info box
+  infoBox: {
+    marginTop: 20,
+    backgroundColor: '#f0fdf4',
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+    borderRadius: 16,
+    padding: 16,
+  },
+  infoBoxTitle: { fontSize: 11, fontWeight: '800', color: '#16a34a', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 },
+  infoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 6 },
+  infoRowText: { fontSize: 12, color: '#166534', flex: 1, lineHeight: 17 },
+  hint: { fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 16 },
+
+  // Radio cards
+  radioCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#f3f4f6',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 10,
+  },
+  radioCardSel: { borderColor: '#16a34a', backgroundColor: '#f0fdf4' },
+  radioEmoji: { fontSize: 28, lineHeight: 34 },
+  radioBody: { flex: 1 },
+  radioLabel: { fontSize: 14, fontWeight: '700', color: '#111827' },
+  radioLabelSel: { color: '#15803d' },
+  radioSub: { fontSize: 12, color: '#9ca3af', marginTop: 2 },
+  radioCircle: {
+    width: 22, height: 22, borderRadius: 11,
+    borderWidth: 2, borderColor: '#d1d5db',
+    alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
+  },
+  radioCircleSel: { borderColor: '#16a34a', backgroundColor: '#16a34a' },
+  radioInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' },
+
+  // Grid (who/what do you spend on)
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  gridCard: {
+    width: '47%',
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#f3f4f6',
+    borderRadius: 16,
+    paddingVertical: 20,
+    alignItems: 'center',
+    gap: 8,
+    position: 'relative',
+  },
+  gridCardSel: { borderColor: '#16a34a', backgroundColor: '#f0fdf4' },
+  gridCheckBadge: {
+    position: 'absolute',
+    top: 10, right: 10,
+    width: 22, height: 22,
+    borderRadius: 11,
+    backgroundColor: '#16a34a',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gridEmoji: { fontSize: 32 },
+  gridLabel: { fontSize: 13, fontWeight: '600', color: '#111827', textAlign: 'center' },
+  gridLabelSel: { color: '#15803d' },
+
+  // Grid 2-col horizontal cards (what do you spend on)
+  grid2col: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  grid2Card: {
+    width: '47%',
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#f3f4f6',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    position: 'relative',
+  },
+  grid2Label: { fontSize: 12, fontWeight: '600', color: '#111827', flex: 1 },
+
+  // CTA
+  ctaArea: { paddingHorizontal: 20, paddingVertical: 16 },
+  primaryBtn: {
+    backgroundColor: '#16a34a',
+    borderRadius: 16,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    shadowColor: '#16a34a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  primaryBtnTxt: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  ctaBtn: {
+    backgroundColor: '#16a34a',
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+    shadowColor: '#16a34a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  ctaBtnDisabled: { backgroundColor: '#e5e7eb', shadowOpacity: 0, elevation: 0 },
+  ctaBtnTxt: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  ctaBtnTxtDisabled: { color: '#9ca3af' },
+
+  // Currency picker
+  pickerBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+  pickerSheet: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '80%',
+    paddingBottom: 32,
+  },
+  pickerHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#e5e7eb', alignSelf: 'center', marginTop: 12 },
+  pickerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  pickerTitle: { fontSize: 17, fontWeight: '700', color: '#111827' },
+  pickerClose: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' },
+  pickerSearch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#f9fafb',
+    marginHorizontal: 16,
+    marginVertical: 10,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  pickerSearchInput: { flex: 1, fontSize: 14, color: '#111827' },
+  currencyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f9fafb',
+  },
+  currencyRowSel: { backgroundColor: '#f0fdf4' },
+  currencyRowCode: { fontSize: 12, fontWeight: '700', color: '#9ca3af', width: 48 },
+  currencyRowName: { flex: 1, fontSize: 14, color: '#111827' },
+  currencyRowNameSel: { fontWeight: '600', color: '#15803d' },
+});
