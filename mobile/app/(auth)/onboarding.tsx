@@ -9,13 +9,17 @@ import {
   Platform,
   ScrollView,
   Modal,
+  Image,
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { CURRENCIES } from '../../types';
-import { ChevronRight, ChevronLeft, Check, Search, X } from 'lucide-react-native';
+import { ChevronRight, ChevronLeft, Check, Search, X, Camera } from 'lucide-react-native';
+
+const defaultAvatar = require('../../assets/mascot.png');
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -70,8 +74,23 @@ export default function OnboardingScreen() {
   // Step 1 state
   const [name, setName] = useState('');
   const [currency, setCurrency] = useState('USD');
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [currencySearch, setCurrencySearch] = useState('');
+
+  async function pickAvatar() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setAvatarUri(result.assets[0].uri);
+    }
+  }
 
   // Survey state
   const [satisfaction, setSatisfaction] = useState<number | null>(null);
@@ -111,7 +130,7 @@ export default function OnboardingScreen() {
       return;
     }
     if (step === 1) {
-      updateUserProfile({ name: name.trim(), currency });
+      updateUserProfile({ name: name.trim(), currency, ...(avatarUri ? { avatar: avatarUri } : {}) });
       setShowWelcome(true);
       return;
     }
@@ -180,7 +199,19 @@ export default function OnboardingScreen() {
           {/* ── Step 1: Profile setup ── */}
           {step === 1 && (
             <View style={s.section}>
-              <Text style={s.fieldLabel}>{t('onboard.your_name')}</Text>
+              {/* Avatar picker */}
+              <TouchableOpacity onPress={pickAvatar} activeOpacity={0.85} style={s.avatarWrap}>
+                <Image
+                  source={avatarUri ? { uri: avatarUri } : defaultAvatar}
+                  style={s.avatarImg}
+                />
+                <View style={s.cameraBadge}>
+                  <Camera size={14} color="#fff" />
+                </View>
+              </TouchableOpacity>
+              <Text style={s.avatarHint}>Tap to upload photo</Text>
+
+              <Text style={[s.fieldLabel, { marginTop: 20 }]}>{t('onboard.your_name')}</Text>
               <TextInput
                 style={[s.input, touched && !hasName ? s.inputError : undefined]}
                 placeholder={t('onboard.name_placeholder')}
@@ -421,6 +452,39 @@ export default function OnboardingScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#f9fafb' },
+
+  // Avatar picker
+  avatarWrap: {
+    alignSelf: 'center',
+    marginTop: 12,
+    marginBottom: 4,
+    position: 'relative',
+  },
+  avatarImg: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#e5e7eb',
+  },
+  cameraBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#16a34a',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#f9fafb',
+  },
+  avatarHint: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#9ca3af',
+    marginBottom: 8,
+  },
 
   // Welcome
   welcomeRoot: {
