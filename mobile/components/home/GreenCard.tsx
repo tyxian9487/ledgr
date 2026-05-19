@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import Svg, { Circle, Circle as SvgCircle, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
 import { ChevronLeft, ChevronRight, ChevronDown, Share2 } from 'lucide-react-native';
 import { captureRef } from 'react-native-view-shot';
 import { useApp } from '../../context/AppContext';
@@ -65,85 +65,68 @@ function getStatus(income: number, expenses: number): FinancialStatus {
 }
 
 interface DonutRingProps {
-  slices: { color: string; pct: number }[];
+  slices: { id: string; color: string; pct: number }[];
   size?: number;
   centerLabel?: string;
   centerValue?: string;
+  selectedId?: string | null;
+  onSlicePress?: (id: string) => void;
 }
 
-function DonutRing({ slices, size = 120, centerLabel, centerValue }: DonutRingProps) {
-  const radius = size * 0.38;
-  const circumference = 2 * Math.PI * radius;
+function DonutRing({ slices, size = 200, centerLabel, centerValue, selectedId, onSlicePress }: DonutRingProps) {
+  const outerR = size * 0.42;
+  const innerR = size * 0.27;
   const cx = size / 2;
   const cy = size / 2;
-  const strokeWidth = size * 0.12;
 
-  let offset = 0;
+  function pt(angle: number, r: number) {
+    const rad = (angle - 90) * Math.PI / 180;
+    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+  }
+
+  function arcPath(startAngle: number, endAngle: number): string {
+    const delta = Math.min(endAngle - startAngle, 359.9);
+    const ea = startAngle + delta;
+    const p1 = pt(startAngle, outerR);
+    const p2 = pt(ea, outerR);
+    const p3 = pt(ea, innerR);
+    const p4 = pt(startAngle, innerR);
+    const large = delta > 180 ? 1 : 0;
+    return `M ${p1.x} ${p1.y} A ${outerR} ${outerR} 0 ${large} 1 ${p2.x} ${p2.y} L ${p3.x} ${p3.y} A ${innerR} ${innerR} 0 ${large} 0 ${p4.x} ${p4.y} Z`;
+  }
+
+  let angle = 0;
+  const segments = slices.map(s => {
+    const start = angle;
+    angle += (s.pct / 100) * 360;
+    return { ...s, start, end: angle };
+  });
 
   return (
     <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {/* Background ring */}
       <Circle
-        cx={cx}
-        cy={cy}
-        r={radius}
+        cx={cx} cy={cy}
+        r={(outerR + innerR) / 2}
         fill="none"
         stroke="rgba(255,255,255,0.15)"
-        strokeWidth={strokeWidth}
+        strokeWidth={outerR - innerR}
       />
-      {/* Segments */}
-      {slices.length === 0 ? null : slices.length === 1 ? (
-        <Circle
-          cx={cx}
-          cy={cy}
-          r={radius}
-          fill="none"
-          stroke={slices[0].color}
-          strokeWidth={strokeWidth}
+      {segments.length === 0 ? null : segments.map(s => (
+        <Path
+          key={s.id}
+          d={arcPath(s.start, s.end)}
+          fill={s.color}
+          opacity={selectedId && selectedId !== s.id ? 0.3 : 1}
+          onPress={() => onSlicePress?.(s.id)}
         />
-      ) : (
-        slices.map((s, i) => {
-          const dash = (s.pct / 100) * circumference;
-          const gap = circumference - dash;
-          const rotation = (offset / 100) * 360 - 90;
-          offset += s.pct;
-          return (
-            <Circle
-              key={i}
-              cx={cx}
-              cy={cy}
-              r={radius}
-              fill="none"
-              stroke={s.color}
-              strokeWidth={strokeWidth}
-              strokeDasharray={`${dash} ${gap}`}
-              strokeDashoffset={0}
-              transform={`rotate(${rotation}, ${cx}, ${cy})`}
-            />
-          );
-        })
-      )}
-      {/* Center labels */}
+      ))}
       {centerLabel ? (
-        <SvgText
-          x={cx}
-          y={cy - 5}
-          textAnchor="middle"
-          fontSize={size * 0.07}
-          fill="rgba(255,255,255,0.7)"
-        >
+        <SvgText x={cx} y={cy - 6} textAnchor="middle" fontSize={size * 0.065} fill="rgba(255,255,255,0.65)">
           {centerLabel}
         </SvgText>
       ) : null}
       {centerValue ? (
-        <SvgText
-          x={cx}
-          y={cy + 10}
-          textAnchor="middle"
-          fontSize={size * 0.09}
-          fontWeight="bold"
-          fill="white"
-        >
+        <SvgText x={cx} y={cy + 13} textAnchor="middle" fontSize={size * 0.09} fontWeight="bold" fill="white">
           {centerValue}
         </SvgText>
       ) : null}
@@ -182,6 +165,11 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 6 }, (_, idx) => currentYear - idx);
   const [showYearPicker, setShowYearPicker] = useState(false);
+  const [selectedSliceId, setSelectedSliceId] = useState<string | null>(null);
+
+  function handleSlicePress(id: string) {
+    setSelectedSliceId(prev => prev === id ? null : id);
+  }
 
   const statusLabel =
     status === 'excellent'
@@ -203,8 +191,6 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
     amount: categoryTotals[c.id],
     pct: totalExpenses > 0 ? (categoryTotals[c.id] / totalExpenses) * 100 : 0,
   }));
-
-  const topSlices = slices.slice(0, 4);
 
   return (
     <>
@@ -285,37 +271,34 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
         </TouchableOpacity>
       </View>
 
-      {/* Donut + category legend */}
-      <View className="flex-row items-center px-4 pb-3 gap-4">
-        {/* Donut */}
+      {/* Donut — centered, tappable segments */}
+      <View className="items-center pb-1">
         <DonutRing
-          slices={slices.map((s) => ({ color: s.color, pct: s.pct }))}
-          size={130}
+          slices={slices.map((s) => ({ id: s.id, color: s.color, pct: s.pct }))}
+          size={200}
           centerLabel={t('card.total_expenses')}
           centerValue={formatCurrency(totalExpenses)}
+          selectedId={selectedSliceId}
+          onSlicePress={handleSlicePress}
         />
-
-        {/* Category legend */}
-        <View className="flex-1 gap-2">
-          {topSlices.length === 0 ? (
-            <Text className="text-white/50 text-xs">{t('card.no_expenses')}</Text>
-          ) : (
-            topSlices.map((s) => (
-              <View key={s.id} className="flex-row items-center gap-2">
-                <View
-                  className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: s.color }}
-                />
-                <Text className="text-white/80 text-xs flex-1" numberOfLines={1}>
-                  {s.label}
-                </Text>
-                <Text className="text-white text-xs font-bold flex-shrink-0">
-                  {formatCurrency(s.amount)}
-                </Text>
+        {/* Segment detail chip */}
+        {(() => {
+          const sel = slices.find(s => s.id === selectedSliceId);
+          if (sel) {
+            return (
+              <View className="flex-row items-center gap-2 px-4 py-2 rounded-2xl bg-white/15 mb-3 -mt-1">
+                <View className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: sel.color }} />
+                <Text className="text-white/90 text-sm font-semibold flex-1" numberOfLines={1}>{sel.label}</Text>
+                <Text className="text-white font-bold text-sm">{formatCurrency(sel.amount)}</Text>
+                <Text className="text-white/50 text-xs">({sel.pct.toFixed(0)}%)</Text>
               </View>
-            ))
-          )}
-        </View>
+            );
+          }
+          if (slices.length === 0) {
+            return <Text className="text-white/40 text-xs mb-3 -mt-1">{t('card.no_expenses')}</Text>;
+          }
+          return <Text className="text-white/35 text-xs mb-3 -mt-1">Tap a segment to explore</Text>;
+        })()}
       </View>
 
       {/* Income / Remaining row */}

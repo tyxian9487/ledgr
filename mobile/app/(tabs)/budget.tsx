@@ -406,10 +406,13 @@ export default function BudgetScreen() {
             {/* Add Goal */}
             <TouchableOpacity
               onPress={() => router.push('/goal/new' as any)}
-              className="w-full py-4 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex-row items-center justify-center gap-2 mb-4"
+              className="w-full flex-row items-center gap-3 px-1 py-3 mb-4"
+              activeOpacity={0.7}
             >
-              <Plus size={16} color="#9ca3af" />
-              <Text className="text-sm font-semibold text-gray-400">{t('budget.add_goal')}</Text>
+              <View className="w-11 h-11 rounded-2xl items-center justify-center flex-shrink-0" style={{ backgroundColor: '#22c55e25' }}>
+                <Plus size={20} color="#22c55e" strokeWidth={1.8} />
+              </View>
+              <Text className="text-sm font-semibold" style={{ color: '#22c55e' }}>{t('budget.add_goal')}</Text>
             </TouchableOpacity>
           </>
         )}
