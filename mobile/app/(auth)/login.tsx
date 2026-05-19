@@ -74,6 +74,9 @@ export default function LoginScreen() {
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
 
       if (result.type === 'success') {
+        // DEBUG — remove after confirming root cause
+        Alert.alert('OAuth Debug', `result.url:\n${result.url ?? 'undefined'}`);
+
         // On some Android devices, Chrome Custom Tab's BrowserResultActivity strips
         // the query string — result.url = 'kachingo://auth/callback' with no ?code=.
         // The full URL with the code arrives via OAuthCallbackHandler.addEventListener
