@@ -27,7 +27,15 @@
         "backgroundColor": "#FF6B9D"
       },
       "package": "com.kachingo.app",
-      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"]
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": false,
+          "data": [{ "scheme": "kachingo" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "plugins": [
       "expo-router",

@@ -1,7 +1,7 @@
 import '../global.css';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import React, { useEffect, Component } from 'react';
-import { View, Text, ScrollView, useColorScheme as useSystemColorScheme } from 'react-native';
+import { View, Text, ScrollView, useColorScheme as useSystemColorScheme, Linking } from 'react-native';
 import { AppProvider, useApp } from '../context/AppContext';
 import { LanguageProvider } from '../context/LanguageContext';
 import { PurchasesProvider, usePurchases } from '../context/PurchasesContext';
@@ -12,6 +12,7 @@ import ConsentBanner from '../components/ConsentBanner';
 import TourOverlay from '../components/TourOverlay';
 import NotificationWatcher from '../components/NotificationWatcher';
 import { useColorScheme } from 'nativewind';
+import { supabase } from '../utils/supabase';
 
 // Shows JS errors on-screen in release builds so we can diagnose crashes
 class AppErrorBoundary extends Component<{ children: React.ReactNode }, { error: Error | null }> {
@@ -75,6 +76,34 @@ function DarkModeBridge() {
   return null;
 }
 
+// Directly processes kachingo://auth/callback deep links via the Linking API.
+// This is more reliable than relying on expo-router to navigate to auth/callback.tsx
+// on Android — the OS fires the deep link intent after the Chrome Custom Tab closes,
+// and the router may not navigate in time (or at all if the app returns from background).
+function OAuthCallbackHandler() {
+  useEffect(() => {
+    const processUrl = async (url: string) => {
+      if (!url.includes('auth/callback')) return;
+      // Skip if a session already exists (e.g. auth/callback.tsx processed it first)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) return;
+      try {
+        await supabase.auth.exchangeCodeForSession(url);
+      } catch (e) {
+        console.warn('[Auth] OAuthCallbackHandler exchange error:', e);
+      }
+    };
+
+    // Cold-start: app was launched directly from the deep link
+    Linking.getInitialURL().then(url => { if (url) processUrl(url); });
+    // Warm-start: app was backgrounded while Chrome Custom Tab was open
+    const sub = Linking.addEventListener('url', ({ url }) => processUrl(url));
+    return () => sub.remove();
+  }, []);
+
+  return null;
+}
+
 // Keeps userProfile.plan in sync with the RevenueCat entitlement
 function EntitlementSyncBridge() {
   const { isPro } = usePurchases();
@@ -96,6 +125,7 @@ export default function RootLayout() {
             <AppProvider>
               <TourProvider>
                 <LanguageProvider>
+                  <OAuthCallbackHandler />
                   <DarkModeBridge />
                   <EntitlementSyncBridge />
                   <NotificationWatcher />

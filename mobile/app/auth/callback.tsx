@@ -16,6 +16,9 @@ export default function AuthCallback() {
   const params = useLocalSearchParams<{ code?: string; state?: string; error?: string; error_description?: string }>();
 
   useEffect(() => {
+    // Wait until params are actually populated (can arrive async on Android)
+    if (!params.code && !params.error) return;
+
     async function exchange() {
       try {
         if (params.error) {
@@ -25,9 +28,11 @@ export default function AuthCallback() {
         }
 
         if (params.code) {
-          // Build a minimal URL — Supabase only needs `code` (and optionally `state`)
-          // from the query string to complete the PKCE exchange.
-          // Do NOT re-encode values: useLocalSearchParams already returns decoded strings.
+          // OAuthCallbackHandler in _layout.tsx may have already processed this URL
+          // via Linking.addEventListener — skip if a session already exists.
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) return;
+
           let callbackUrl = `kachingo://auth/callback?code=${encodeURIComponent(params.code)}`;
           if (params.state) callbackUrl += `&state=${encodeURIComponent(params.state)}`;
 
@@ -37,7 +42,7 @@ export default function AuthCallback() {
             router.replace('/(auth)/login');
             return;
           }
-          // Session established — NavigationGuard in _layout.tsx will redirect to (tabs).
+          // Session established — NavigationGuard will redirect to (tabs) or onboarding.
         } else {
           router.replace('/(auth)/login');
         }
@@ -48,7 +53,7 @@ export default function AuthCallback() {
     }
 
     exchange();
-  }, []);
+  }, [params.code, params.error]);
 
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#052e16' }}>
