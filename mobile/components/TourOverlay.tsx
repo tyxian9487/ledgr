@@ -12,6 +12,7 @@ import { useTour, TOUR_STEPS } from '../context/TourContext';
 import { useApp } from '../context/AppContext';
 
 const mascotImg = require('../assets/mascot.png');
+const mapMascotImg = require('../assets/m_map.png');
 
 const TAB_ROUTES: Record<string, string> = {
   home: '/(tabs)/',
@@ -59,7 +60,7 @@ export default function TourOverlay() {
       {/* ── Quick Tour Offer ── */}
       <Modal visible={showOffer} transparent={false} animationType="fade" statusBarTranslucent>
         <View style={s.offerRoot}>
-          <Image source={mascotImg} style={s.mascot} resizeMode="contain" />
+          <Image source={mapMascotImg} style={s.mascot} resizeMode="contain" />
           <Text style={s.offerTitle}>Quick tour?</Text>
           <Text style={s.offerDesc}>
             We'll walk you through Kachingo's key features in about 2 minutes. Skip anytime.

@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+
+const goalMascotImg = require('../assets/m_goal.png');
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
@@ -107,6 +109,17 @@ export default function AchievementsScreen() {
             })}
           </View>
         </View>
+
+        {/* ── All badges earned celebration ── */}
+        {earnedBadges.size === BADGES.length && (
+          <View className="bg-green-50 border border-green-200 rounded-3xl p-5 mb-4 items-center">
+            <Image source={goalMascotImg} style={{ width: 100, height: 100 }} resizeMode="contain" />
+            <Text className="text-lg font-black text-green-700 mt-2 text-center">Trophy Cabinet Complete!</Text>
+            <Text className="text-xs text-green-600 text-center mt-1 leading-relaxed">
+              You've earned every badge. You're a Kachingo master 🏆
+            </Text>
+          </View>
+        )}
 
         {/* ── Knowledge Base ── */}
         <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">

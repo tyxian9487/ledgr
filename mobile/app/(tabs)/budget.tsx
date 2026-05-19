@@ -6,7 +6,10 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  Image,
 } from 'react-native';
+
+const savingsJarImg = require('../../assets/m_savingsjar.png');
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -383,6 +386,17 @@ export default function BudgetScreen() {
                 </View>
               );
             })}
+
+            {/* Empty state when no goals */}
+            {!savingsEnabled && (budget.customGoals ?? []).length === 0 && (
+              <View className="items-center py-6 mb-2">
+                <Image source={savingsJarImg} style={{ width: 110, height: 110 }} resizeMode="contain" />
+                <Text className="text-sm font-bold text-gray-700 mt-3 text-center">Start saving towards a goal</Text>
+                <Text className="text-xs text-gray-400 mt-1 text-center leading-relaxed">
+                  Enable monthly savings above or create a custom goal below
+                </Text>
+              </View>
+            )}
 
             {/* Add Goal */}
             <TouchableOpacity

@@ -9,7 +9,10 @@ import {
   Alert,
   TextInput,
   ActivityIndicator,
+  Image,
 } from 'react-native';
+
+const happyMascotImg = require('../../assets/m_expression_happy.png');
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
@@ -1105,6 +1108,9 @@ export default function ProfileScreen() {
 
           {/* Score ring */}
           <View className="bg-white rounded-2xl p-5 items-center gap-3 shadow-sm border border-gray-50 mb-3">
+            {score >= 80 && (
+              <Image source={happyMascotImg} style={{ width: 72, height: 72 }} resizeMode="contain" />
+            )}
             <ScoreRing score={score} onPress={() => setShowStatusCelebration(true)} />
             <View className="items-center">
               <Text className="font-bold text-base text-gray-900">{scoreLabel}</Text>

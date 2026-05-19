@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+
+const paymentMascotImg = require('../../assets/m_payment.png');
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { playCoinSound } from '../../utils/sounds';
 import {
@@ -206,9 +208,12 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
 
           {/* Header */}
           <View className="flex-row items-center justify-between px-5 py-3">
-            <Text className="text-lg font-bold text-gray-900 dark:text-white">
-              {transactionId ? t('tx.edit') : t('tx.new')}
-            </Text>
+            <View className="flex-row items-center gap-2">
+              <Image source={paymentMascotImg} style={{ width: 36, height: 36 }} resizeMode="contain" />
+              <Text className="text-lg font-bold text-gray-900 dark:text-white">
+                {transactionId ? t('tx.edit') : t('tx.new')}
+              </Text>
+            </View>
             <TouchableOpacity
               onPress={onClose}
               className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
