@@ -11,6 +11,7 @@ import { useRouter, usePathname } from 'expo-router';
 import { useTour, TOUR_STEPS } from '../context/TourContext';
 import type { HighlightRect } from '../context/TourContext';
 import { useApp } from '../context/AppContext';
+import { useTranslation } from '../context/LanguageContext';
 
 const mascotImg = require('../assets/mascot.png');
 const mapMascotImg = require('../assets/m_map.png');
@@ -47,6 +48,7 @@ export default function TourOverlay() {
   const { tourActive, tourStepIndex, currentStep, showOffer, highlightRect, acceptTour, declineTour, nextStep, skipTour } =
     useTour();
   const { isAuthenticated, hasCompletedOnboarding, darkMode } = useApp();
+  const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
   const currentTab = pathnameToTab(pathname);
@@ -82,15 +84,15 @@ export default function TourOverlay() {
       <Modal visible={showOffer} transparent={false} animationType="fade" statusBarTranslucent>
         <View style={[s.offerRoot, { backgroundColor: bg }]}>
           <Image source={mapMascotImg} style={s.mascot} resizeMode="contain" />
-          <Text style={[s.offerTitle, { color: textPrimary }]}>Quick tour?</Text>
+          <Text style={[s.offerTitle, { color: textPrimary }]}>{t('tour.title')}</Text>
           <Text style={[s.offerDesc, { color: textSecondary }]}>
-            We'll walk you through Kachingo's key features in about 2 minutes. Skip anytime.
+            {t('tour.desc')}
           </Text>
           <TouchableOpacity onPress={acceptTour} activeOpacity={0.85} style={s.primaryBtn}>
-            <Text style={s.primaryBtnTxt}>Show me around →</Text>
+            <Text style={s.primaryBtnTxt}>{t('tour.offer_start')}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={declineTour} activeOpacity={0.75} style={[s.secondaryBtn, { borderColor: border }]}>
-            <Text style={[s.secondaryBtnTxt, { color: textSecondary }]}>Skip for now</Text>
+            <Text style={[s.secondaryBtnTxt, { color: textSecondary }]}>{t('tour.offer_skip')}</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -134,15 +136,15 @@ export default function TourOverlay() {
             </Text>
           </View>
 
-          <Text style={[s.title, { color: textPrimary }]}>{currentStep?.title}</Text>
-          <Text style={[s.body, { color: textSecondary }]}>{currentStep?.body}</Text>
+          <Text style={[s.title, { color: textPrimary }]}>{t((currentStep?.title ?? '') as any)}</Text>
+          <Text style={[s.body, { color: textSecondary }]}>{t((currentStep?.body ?? '') as any)}</Text>
 
           <View style={s.actions}>
             <TouchableOpacity onPress={skipTour}>
-              <Text style={[s.skipTxt, { color: skipColor }]}>Skip tour</Text>
+              <Text style={[s.skipTxt, { color: skipColor }]}>{t('tour.skip')}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleNext} style={s.nextBtn}>
-              <Text style={s.nextTxt}>{isLastStep ? 'Finish 🎉' : 'Next →'}</Text>
+              <Text style={s.nextTxt}>{isLastStep ? t('tour.finish') : t('tour.next')}</Text>
             </TouchableOpacity>
           </View>
         </View>

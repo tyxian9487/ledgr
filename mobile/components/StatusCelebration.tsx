@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Modal, View, Text, TouchableOpacity, Share } from 'react-native';
 import { playRewardSound, playWarningSound } from '../utils/sounds';
+import { useTranslation } from '../context/LanguageContext';
 
 type Status = 'excellent' | 'sustained' | 'critical';
 
@@ -16,29 +17,24 @@ const STATUS_CONFIG = {
     bgColor: '#052e16',
     accentColor: '#4ade80',
     icon: '🥇',
-    title: 'Excellent Health!',
-    msg: 'Your finances are in excellent shape. Keep up the great work and stay consistent!',
   },
   sustained: {
     color: '#eab308',
     bgColor: '#1c1917',
     accentColor: '#fbbf24',
     icon: '🥈',
-    title: 'Fair Health',
-    msg: "You're managing well. A few targeted adjustments and you'll reach excellent health.",
   },
   critical: {
     color: '#ef4444',
     bgColor: '#1c0a0a',
     accentColor: '#f87171',
     icon: '⚠️',
-    title: 'Needs Attention',
-    msg: 'Expenses are high relative to income. Focus on reducing your biggest spending categories.',
   },
 };
 
 export default function StatusCelebration({ status, score, onClose }: Props) {
   const cfg = STATUS_CONFIG[status];
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (status === 'critical') playWarningSound();
@@ -46,9 +42,10 @@ export default function StatusCelebration({ status, score, onClose }: Props) {
   }, []);
 
   async function handleShare() {
+    const title = t(`status.${status}.title` as any);
     try {
       await Share.share({
-        message: `My financial health score is ${score}/100 — ${cfg.title} 💰 Tracked with Kachingo!`,
+        message: t('status.share_msg', { score: String(score), title }),
       });
     } catch {}
   }
@@ -95,10 +92,10 @@ export default function StatusCelebration({ status, score, onClose }: Props) {
           </View>
 
           <Text style={{ color: '#fff', fontWeight: '900', fontSize: 24, textAlign: 'center', marginBottom: 10 }}>
-            {cfg.title}
+            {t(`status.${status}.title` as any)}
           </Text>
           <Text style={{ color: 'rgba(255,255,255,0.65)', fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 36, paddingHorizontal: 8 }}>
-            {cfg.msg}
+            {t(`status.${status}.msg` as any)}
           </Text>
 
           {/* Share */}
@@ -111,7 +108,7 @@ export default function StatusCelebration({ status, score, onClose }: Props) {
             activeOpacity={0.85}
           >
             <Text style={{ color: status === 'excellent' ? '#052e16' : '#fff', fontWeight: '700', fontSize: 15 }}>
-              Share My Score
+              {t('status.share_btn')}
             </Text>
           </TouchableOpacity>
 
@@ -124,7 +121,7 @@ export default function StatusCelebration({ status, score, onClose }: Props) {
             }}
             activeOpacity={0.7}
           >
-            <Text style={{ color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: 15 }}>Close</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.6)', fontWeight: '600', fontSize: 15 }}>{t('status.close')}</Text>
           </TouchableOpacity>
         </View>
       </View>

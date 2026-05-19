@@ -277,9 +277,9 @@ function CategoryManagerSheet({ onClose }: { onClose: () => void }) {
   }
 
   function handleDelete(id: string) {
-    Alert.alert('Delete Category', 'Remove this custom category?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => removeCustomCategory(id) },
+    Alert.alert(t('catmgr.delete_title'), t('catmgr.delete_confirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: () => removeCustomCategory(id) },
     ]);
   }
 
@@ -561,6 +561,7 @@ function NotificationsSheet({ onClose }: { onClose: () => void }) {
 function SubscriptionSheet({ onClose }: { onClose: () => void }) {
   const { isPro, isLoading, presentPaywallIfNeeded, presentCustomerCenter, restorePurchases } =
     usePurchases();
+  const { t } = useTranslation();
   const [working, setWorking] = useState(false);
 
   async function handleUpgrade() {
@@ -568,12 +569,12 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
     try {
       const result = await presentPaywallIfNeeded();
       if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
-        Alert.alert('Welcome to Kachingo Pro!', 'All premium features are now unlocked.');
+        Alert.alert(t('profile.welcome_pro_title'), t('profile.welcome_pro_msg'));
         onClose();
       }
     } catch (e) {
       if (!isUserCancelledError(e)) {
-        Alert.alert('Purchase failed', 'Something went wrong. Please try again.');
+        Alert.alert(t('profile.purchase_failed'), t('profile.something_wrong'));
       }
     } finally {
       setWorking(false);
@@ -593,13 +594,13 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
     try {
       const hasPro = await restorePurchases();
       Alert.alert(
-        hasPro ? 'Restored!' : 'Nothing to restore',
+        hasPro ? t('profile.restored_title') : t('profile.nothing_to_restore'),
         hasPro
-          ? 'Kachingo Pro has been restored.'
-          : 'No previous purchases were found for this account.',
+          ? t('profile.pro_restored_msg')
+          : t('profile.no_purchases_msg'),
       );
     } catch {
-      Alert.alert('Restore failed', 'Something went wrong. Please try again.');
+      Alert.alert(t('profile.restore_failed'), t('profile.something_wrong'));
     } finally {
       setWorking(false);
     }
@@ -609,7 +610,7 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
         <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-          <Text className="text-lg font-bold text-gray-900 dark:text-white">Subscription</Text>
+          <Text className="text-lg font-bold text-gray-900 dark:text-white">{t('profile.subscription')}</Text>
           <TouchableOpacity
             onPress={onClose}
             className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
@@ -629,11 +630,11 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
                 <View className="flex-row items-center gap-2 mb-1">
                   <Star size={16} color="#4ade80" fill="#4ade80" />
                   <Text className="text-green-400 font-black text-sm uppercase tracking-widest">
-                    Kachingo Pro
+                    {t('profile.pro_title')}
                   </Text>
                 </View>
                 <Text className="text-white/60 text-xs text-center">
-                  You have access to all premium features
+                  {t('profile.pro_access')}
                 </Text>
               </View>
               <View className="bg-white border-t border-gray-50 dark:border-gray-900">
@@ -646,7 +647,7 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
                     <Settings size={15} color="#16a34a" />
                   </View>
                   <Text className="flex-1 text-sm font-medium text-gray-900 dark:text-white">
-                    Manage Subscription
+                    {t('profile.manage_sub')}
                   </Text>
                   <ChevronRight size={14} color="#d1d5db" />
                 </TouchableOpacity>
@@ -660,7 +661,7 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
                     <RotateCcw size={15} color="#6b7280" />
                   </View>
                   <Text className="flex-1 text-sm font-medium text-gray-900 dark:text-white">
-                    Restore Purchases
+                    {t('profile.restore_purchases')}
                   </Text>
                   {working ? (
                     <ActivityIndicator size="small" color="#6b7280" />
@@ -678,9 +679,9 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
                 <View className="w-12 h-12 rounded-2xl bg-green-400/20 items-center justify-center mb-3">
                   <Zap size={24} color="#4ade80" />
                 </View>
-                <Text className="text-white font-black text-base mb-1">Unlock Kachingo Pro</Text>
+                <Text className="text-white font-black text-base mb-1">{t('profile.unlock_pro')}</Text>
                 <Text className="text-white/60 text-xs text-center leading-relaxed mb-4">
-                  Advanced analytics, unlimited goals, AI receipt scanning & more
+                  {t('profile.pro_subtitle')}
                 </Text>
                 <TouchableOpacity
                   onPress={handleUpgrade}
@@ -691,17 +692,17 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
                   {working ? (
                     <ActivityIndicator size="small" color="#052e16" />
                   ) : (
-                    <Text className="text-green-950 font-black text-sm">Upgrade to Pro</Text>
+                    <Text className="text-green-950 font-black text-sm">{t('profile.upgrade_pro')}</Text>
                   )}
                 </TouchableOpacity>
               </View>
               <View className="bg-white px-5 py-3 border-t border-gray-50 dark:border-gray-900">
-                {[
-                  'Unlimited savings goals',
-                  'AI-powered receipt scanning',
-                  'Advanced spending trends',
-                  'Priority support',
-                ].map(feat => (
+                {([
+                  t('profile.pro_feature1'),
+                  t('profile.pro_feature2'),
+                  t('profile.pro_feature3'),
+                  t('profile.pro_feature4'),
+                ] as string[]).map(feat => (
                   <View key={feat} className="flex-row items-center gap-2 py-1.5">
                     <Star size={12} color="#16a34a" fill="#16a34a" />
                     <Text className="text-xs text-gray-600">{feat}</Text>
@@ -715,7 +716,7 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
                 activeOpacity={0.7}
               >
                 <RotateCcw size={12} color="#9ca3af" />
-                <Text className="text-xs text-gray-400">Restore previous purchases</Text>
+                <Text className="text-xs text-gray-400">{t('profile.restore_prev')}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -954,7 +955,7 @@ export default function ProfileScreen() {
         onPress: async () => {
           const AsyncStorage = require('@react-native-async-storage/async-storage').default;
           await AsyncStorage.clear();
-          Alert.alert('Done', 'All data cleared. Restart the app.');
+          Alert.alert(t('common.done'), t('profile.data_cleared_msg'));
         },
       },
     ]);
@@ -962,7 +963,7 @@ export default function ProfileScreen() {
 
   async function handleGenerateReport() {
     const { current, best } = computeStreaks(transactions);
-    const scoreLabel2 = score >= 80 ? 'Excellent' : score >= 60 ? 'Fair' : 'Needs Improvement';
+    const scoreLabel2 = score >= 80 ? t('profile.score_excellent') : score >= 60 ? t('profile.score_fair') : t('profile.score_needs_imp');
     const scoreColor = score >= 80 ? '#16a34a' : score >= 60 ? '#d97706' : '#dc2626';
     const now = new Date();
     const dateStr = now.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });

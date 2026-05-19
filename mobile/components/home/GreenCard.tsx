@@ -262,7 +262,7 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
               const Sharing = await import('expo-sharing');
               const dest = FileSystem.cacheDirectory + 'kachingo_card.png';
               await FileSystem.copyAsync({ from: uri, to: dest });
-              await Sharing.shareAsync(dest, { mimeType: 'image/png', dialogTitle: 'Share your financial snapshot' });
+              await Sharing.shareAsync(dest, { mimeType: 'image/png', dialogTitle: t('card.share_dialog') });
             } catch (_) {}
           }}
           className="w-8 h-8 rounded-full bg-white/20 items-center justify-center ml-1"
@@ -297,7 +297,7 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
           if (slices.length === 0) {
             return <Text className="text-white/40 text-xs mb-3 -mt-1">{t('card.no_expenses')}</Text>;
           }
-          return <Text className="text-white/35 text-xs mb-3 -mt-1">Tap a segment to explore</Text>;
+          return <Text className="text-white/35 text-xs mb-3 -mt-1">{t('card.tap_segment')}</Text>;
         })()}
       </View>
 

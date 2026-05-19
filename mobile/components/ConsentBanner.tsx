@@ -1,7 +1,9 @@
 import { View, Text, TouchableOpacity, Modal } from 'react-native';
 import { useApp } from '../context/AppContext';
+import { useTranslation } from '../context/LanguageContext';
 
 export default function ConsentBanner() {
+  const { t } = useTranslation();
   const { analyticsConsent, isAuthenticated, hasCompletedOnboarding, grantAnalyticsConsent, denyAnalyticsConsent } = useApp();
 
   const visible = isAuthenticated && hasCompletedOnboarding && analyticsConsent === null;
@@ -17,10 +19,10 @@ export default function ConsentBanner() {
           </View>
 
           <Text className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-            Help improve Kachingo
+            {t('consent.title')}
           </Text>
           <Text className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-6">
-            We'd like to collect anonymous usage data to understand how people use the app and make it better. No personal financial data is ever shared.
+            {t('consent.desc')}
           </Text>
 
           <TouchableOpacity
@@ -28,7 +30,7 @@ export default function ConsentBanner() {
             activeOpacity={0.8}
             className="bg-green-600 rounded-2xl py-4 items-center mb-3"
           >
-            <Text className="text-white font-semibold text-base">Accept</Text>
+            <Text className="text-white font-semibold text-base">{t('consent.accept')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -36,7 +38,7 @@ export default function ConsentBanner() {
             activeOpacity={0.8}
             className="rounded-2xl py-4 items-center"
           >
-            <Text className="text-gray-400 dark:text-gray-600 text-base">No thanks</Text>
+            <Text className="text-gray-400 dark:text-gray-600 text-base">{t('consent.decline')}</Text>
           </TouchableOpacity>
         </View>
       </View>

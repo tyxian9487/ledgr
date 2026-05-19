@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Modal, View, Text, TouchableOpacity } from 'react-native';
 import { playRewardSound } from '../utils/sounds';
 import { BADGES, BadgeDef } from '../utils/achievements';
+import { useTranslation } from '../context/LanguageContext';
 
 interface Props {
   badge: BadgeDef;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function BadgeCelebration({ badge, earnedCount, onClose }: Props) {
+  const { t } = useTranslation();
   useEffect(() => {
     playRewardSound();
   }, []);
@@ -45,22 +47,22 @@ export default function BadgeCelebration({ badge, earnedCount, onClose }: Props)
           {/* "Badge Unlocked" label */}
           <View style={{ backgroundColor: '#dcfce7', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 4, marginBottom: 12 }}>
             <Text style={{ color: '#15803d', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2 }}>
-              Badge Unlocked!
+              {t('badge.unlocked')}
             </Text>
           </View>
 
           <Text style={{ fontSize: 20, fontWeight: '900', color: '#111827', textAlign: 'center', marginBottom: 6 }}>
-            {badge.label}
+            {t(`badge.${badge.id}.label` as any)}
           </Text>
           <Text style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', lineHeight: 20, marginBottom: 20 }}>
-            {badge.description}
+            {t(`badge.${badge.id}.desc` as any)}
           </Text>
 
           {/* Remaining pill */}
           {remaining > 0 && (
             <View style={{ backgroundColor: '#f3f4f6', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, marginBottom: 20 }}>
               <Text style={{ color: '#6b7280', fontSize: 12, fontWeight: '600' }}>
-                {remaining} more badge{remaining !== 1 ? 's' : ''} to unlock
+                {t('badge.remaining', { n: String(remaining), s: remaining !== 1 ? 's' : '' })}
               </Text>
             </View>
           )}
@@ -70,7 +72,7 @@ export default function BadgeCelebration({ badge, earnedCount, onClose }: Props)
             style={{ width: '100%', backgroundColor: '#16a34a', borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}
             activeOpacity={0.8}
           >
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Continue</Text>
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>{t('badge.continue')}</Text>
           </TouchableOpacity>
         </View>
       </View>

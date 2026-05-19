@@ -5,17 +5,15 @@ import { useApp } from '../context/AppContext';
 import { useTranslation } from '../context/LanguageContext';
 import { computeBadges } from '../utils/achievements';
 
-interface Badge {
+interface BadgeRef {
   id: string;
-  label: string;
-  desc: string;
   icon: string;
 }
 
 export default function NotificationWatcher() {
   const { transactions, budget, isAuthenticated } = useApp();
   const { t } = useTranslation();
-  const [pendingBadge, setPendingBadge] = useState<Badge | null>(null);
+  const [pendingBadge, setPendingBadge] = useState<BadgeRef | null>(null);
   const seenRef = useRef<Set<string>>(new Set());
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -28,7 +26,7 @@ export default function NotificationWatcher() {
         seenRef.current.add(badge.id);
         if (seenRef.current.size > 1) {
           // Only trigger notification for badges earned after initial load
-          setPendingBadge(badge);
+          setPendingBadge({ id: badge.id, icon: badge.icon });
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
       }
@@ -65,10 +63,10 @@ export default function NotificationWatcher() {
             {t('badge.unlocked')}
           </Text>
           <Text className="text-lg font-bold dark:text-white text-center mb-2">
-            {pendingBadge.label}
+            {t(`badge.${pendingBadge.id}.label` as any)}
           </Text>
           <Text className="text-sm text-gray-500 dark:text-gray-400 text-center leading-relaxed">
-            {pendingBadge.desc}
+            {t(`badge.${pendingBadge.id}.desc` as any)}
           </Text>
           <TouchableOpacity
             onPress={() => setPendingBadge(null)}

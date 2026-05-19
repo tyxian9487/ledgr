@@ -7,10 +7,12 @@ import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { BADGES, computeBadges, computeStreaks, tipsForScore } from '../utils/achievements';
+import { useTranslation } from '../context/LanguageContext';
 
 export default function AchievementsScreen() {
   const router = useRouter();
   const { transactions, budget } = useApp();
+  const { t } = useTranslation();
 
   const { current: currentStreak, best: bestStreak } = useMemo(
     () => computeStreaks(transactions),
@@ -46,29 +48,29 @@ export default function AchievementsScreen() {
         >
           <ChevronLeft size={18} color="#374151" />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-gray-900 flex-1">Achievements</Text>
+        <Text className="text-xl font-bold text-gray-900 flex-1">{t('achieve.title')}</Text>
         <View className="bg-green-100 rounded-full px-3 py-1">
-          <Text className="text-xs font-bold text-green-700">{earnedBadges.size}/{BADGES.length} earned</Text>
+          <Text className="text-xs font-bold text-green-700">{t('achieve.earned_count', { n: String(earnedBadges.size), total: String(BADGES.length) })}</Text>
         </View>
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
 
         {/* ── Streak Card ── */}
-        <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Streak</Text>
+        <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">{t('achieve.streak_section')}</Text>
         <View className="bg-white rounded-3xl p-5 mb-4 border border-gray-100">
           <View className="flex-row gap-3">
             <View className="flex-1 bg-orange-50 rounded-2xl p-4 items-center border border-orange-100">
               <Text style={{ fontSize: 34 }}>🔥</Text>
               <Text className="text-3xl font-black text-orange-500 mt-1">{currentStreak}</Text>
-              <Text className="text-xs text-orange-500 font-bold mt-0.5">Current</Text>
-              <Text className="text-[10px] text-gray-400">months</Text>
+              <Text className="text-xs text-orange-500 font-bold mt-0.5">{t('achieve.current')}</Text>
+              <Text className="text-[10px] text-gray-400">{t('achieve.months')}</Text>
             </View>
             <View className="flex-1 bg-amber-50 rounded-2xl p-4 items-center border border-amber-100">
               <Text style={{ fontSize: 34 }}>⭐</Text>
               <Text className="text-3xl font-black text-amber-500 mt-1">{bestStreak}</Text>
-              <Text className="text-xs text-amber-500 font-bold mt-0.5">Best</Text>
-              <Text className="text-[10px] text-gray-400">months</Text>
+              <Text className="text-xs text-amber-500 font-bold mt-0.5">{t('achieve.best')}</Text>
+              <Text className="text-[10px] text-gray-400">{t('achieve.months')}</Text>
             </View>
           </View>
           <Text className="text-[11px] text-gray-400 text-center mt-3 leading-relaxed">
@@ -77,7 +79,7 @@ export default function AchievementsScreen() {
         </View>
 
         {/* ── Badges ── */}
-        <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Badges</Text>
+        <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">{t('achieve.badges_section')}</Text>
         <View className="bg-white rounded-3xl p-4 mb-4 border border-gray-100">
           <View className="flex-row flex-wrap gap-2">
             {BADGES.map(badge => {
@@ -93,15 +95,15 @@ export default function AchievementsScreen() {
                     className={`text-[10px] font-bold text-center mt-1.5 ${earned ? 'text-green-700' : 'text-gray-400'}`}
                     numberOfLines={2}
                   >
-                    {badge.label}
+                    {t(`badge.${badge.id}.label` as any)}
                   </Text>
                   {earned ? (
                     <View className="mt-1.5 bg-green-100 rounded-full px-2 py-0.5">
-                      <Text className="text-[9px] text-green-600 font-bold">✓ Earned</Text>
+                      <Text className="text-[9px] text-green-600 font-bold">{t('achieve.earned_badge')}</Text>
                     </View>
                   ) : (
                     <Text className="text-[9px] text-gray-300 mt-1" numberOfLines={2} style={{ textAlign: 'center' }}>
-                      {badge.description}
+                      {t(`badge.${badge.id}.desc` as any)}
                     </Text>
                   )}
                 </View>
@@ -114,25 +116,25 @@ export default function AchievementsScreen() {
         {earnedBadges.size === BADGES.length && (
           <View className="bg-green-50 border border-green-200 rounded-3xl p-5 mb-4 items-center">
             <Image source={goalMascotImg} style={{ width: 100, height: 100 }} resizeMode="contain" />
-            <Text className="text-lg font-black text-green-700 mt-2 text-center">Trophy Cabinet Complete!</Text>
+            <Text className="text-lg font-black text-green-700 mt-2 text-center">{t('achieve.complete_title')}</Text>
             <Text className="text-xs text-green-600 text-center mt-1 leading-relaxed">
-              You've earned every badge. You're a Kachingo master 🏆
+              {t('achieve.complete_msg')}
             </Text>
           </View>
         )}
 
         {/* ── Knowledge Base ── */}
         <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">
-          Financial Tips
+          {t('achieve.tips_section')}
         </Text>
         <View className="gap-3 mb-4">
           {tips.map(tip => (
             <View key={tip.id} className="bg-white rounded-2xl p-4 border border-gray-100">
               <View className="flex-row items-start gap-2 mb-2">
                 <View className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />
-                <Text className="text-sm font-bold text-gray-900 flex-1">{tip.title}</Text>
+                <Text className="text-sm font-bold text-gray-900 flex-1">{t(`tip.${tip.id}.title` as any)}</Text>
               </View>
-              <Text className="text-xs text-gray-500 leading-relaxed pl-3.5">{tip.body}</Text>
+              <Text className="text-xs text-gray-500 leading-relaxed pl-3.5">{t(`tip.${tip.id}.body` as any)}</Text>
             </View>
           ))}
         </View>

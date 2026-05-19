@@ -33,9 +33,9 @@ export default function GoalDetailScreen() {
   if (!goal) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950 items-center justify-center" edges={['top']}>
-        <Text className="dark:text-white">Goal not found</Text>
+        <Text className="dark:text-white">{t('goal.not_found')}</Text>
         <TouchableOpacity onPress={() => router.back()} className="mt-4">
-          <Text className="text-green-600">Go Back</Text>
+          <Text className="text-green-600">{t('goal.go_back')}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -320,16 +320,16 @@ export default function GoalDetailScreen() {
       {showDeleteConfirm && (
         <View className="absolute inset-0 bg-black/50 items-center justify-center px-6">
           <View className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full">
-            <Text className="text-base font-bold text-gray-900 dark:text-white mb-2">Delete Goal</Text>
+            <Text className="text-base font-bold text-gray-900 dark:text-white mb-2">{t('goal.delete_title')}</Text>
             <Text className="text-sm text-gray-500 dark:text-gray-400 mb-5">
-              Delete "{goal.name}"? This cannot be undone.
+              {t('goal.delete_confirm', { name: goal.name })}
             </Text>
             <View className="flex-row gap-3">
               <TouchableOpacity onPress={() => setShowDeleteConfirm(false)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-700 items-center">
-                <Text className="font-semibold text-gray-600 dark:text-gray-300">Cancel</Text>
+                <Text className="font-semibold text-gray-600 dark:text-gray-300">{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleDelete} className="flex-1 py-3 rounded-xl bg-red-500 items-center">
-                <Text className="font-semibold text-white">Delete</Text>
+                <Text className="font-semibold text-white">{t('common.delete')}</Text>
               </TouchableOpacity>
             </View>
           </View>

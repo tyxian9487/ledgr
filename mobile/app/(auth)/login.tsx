@@ -57,7 +57,7 @@ export default function LoginScreen() {
     { emoji: '📊', text: t('login.track') },
     { emoji: '🎯', text: t('login.budget_goals') },
     { emoji: '📸', text: t('login.watch_savings') },
-    { emoji: '🌍', text: '5 languages supported' },
+    { emoji: '🌍', text: t('login.languages') },
   ];
 
   const handleGoogleSignIn = async () => {
@@ -82,7 +82,7 @@ export default function LoginScreen() {
       }
       // If 'cancel': OAuthCallbackHandler (Linking event) or auth/callback.tsx handles it.
     } catch (err) {
-      Alert.alert('Sign in failed', err instanceof Error ? err.message : 'Please try again.');
+      Alert.alert(t('login.sign_in_failed'), err instanceof Error ? err.message : 'Please try again.');
     } finally {
       setLoading(null);
     }
@@ -105,7 +105,7 @@ export default function LoginScreen() {
       if (error) throw error;
     } catch (err: any) {
       if (err?.code !== 'ERR_REQUEST_CANCELED') {
-        Alert.alert('Sign in failed', err instanceof Error ? err.message : 'Please try again.');
+        Alert.alert(t('login.sign_in_failed'), err instanceof Error ? err.message : 'Please try again.');
       }
     } finally {
       setLoading(null);

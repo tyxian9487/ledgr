@@ -307,9 +307,9 @@ function CategoryModal({
           {/* Stats row — 3 items */}
           <View className="px-5 flex-row gap-2 mb-5 mt-1">
             {[
-              { label: 'TOTAL', value: formatCurrency(total) },
-              { label: 'AVG / PERIOD', value: formatCurrency(avg) },
-              { label: 'HIGHEST', value: highest && highest.value > 0 ? `${formatCurrency(highest.value)} (${highest.label})` : '—' },
+              { label: t('trends.total'), value: formatCurrency(total) },
+              { label: t('trends.avg_period'), value: formatCurrency(avg) },
+              { label: t('trends.highest_val'), value: highest && highest.value > 0 ? `${formatCurrency(highest.value)} (${highest.label})` : '—' },
             ].map(s => (
               <View key={s.label} className="flex-1 bg-gray-50 dark:bg-gray-800 rounded-2xl p-3">
                 <Text className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-1">{s.label}</Text>
@@ -321,7 +321,7 @@ function CategoryModal({
           {/* Recent transactions */}
           <View className="px-5 pb-10">
             <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
-              Recent Transactions
+              {t('trends.recent_txs')}
             </Text>
             {catTxs.length === 0 ? (
               <Text className="text-sm text-gray-400 py-4 text-center">{t('trends.no_txs')}</Text>

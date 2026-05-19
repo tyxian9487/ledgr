@@ -396,9 +396,9 @@ export default function BudgetScreen() {
             {!savingsEnabled && (budget.customGoals ?? []).length === 0 && (
               <View className="items-center py-6 mb-2">
                 <Image source={savingsJarImg} style={{ width: 110, height: 110 }} resizeMode="contain" />
-                <Text className="text-sm font-bold text-gray-700 mt-3 text-center">Start saving towards a goal</Text>
+                <Text className="text-sm font-bold text-gray-700 mt-3 text-center">{t('budget.start_saving')}</Text>
                 <Text className="text-xs text-gray-400 mt-1 text-center leading-relaxed">
-                  Enable monthly savings above or create a custom goal below
+                  {t('budget.empty_goals_desc')}
                 </Text>
               </View>
             )}
@@ -427,7 +427,7 @@ export default function BudgetScreen() {
                   {t('budget.expected_income')}
                 </Text>
                 <View className="bg-gray-100 dark:bg-gray-800 rounded-full px-2.5 py-0.5 flex-row items-center gap-1">
-                  <Text className="text-[10px] text-gray-500 dark:text-gray-400">Variable</Text>
+                  <Text className="text-[10px] text-gray-500 dark:text-gray-400">{t('budget.variable')}</Text>
                 </View>
               </View>
               {actualIncome > 0 && !budget.expectedIncome && (
@@ -528,7 +528,7 @@ export default function BudgetScreen() {
                   </Text>
                   <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 }}>
                     <Text style={{ fontSize: 11, fontWeight: '700', color: 'white' }}>
-                      {totalPct.toFixed(0)}% allocated
+                      {t('budget.pct_badge', { pct: totalPct.toFixed(0) })}
                     </Text>
                   </View>
                 </View>
@@ -541,7 +541,7 @@ export default function BudgetScreen() {
                   />
                 </View>
                 <Text style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.5)', paddingBottom: 16 }}>
-                  Tap a category below to adjust
+                  {t('budget.tap_adjust')}
                 </Text>
               </View>
             )}
@@ -551,11 +551,11 @@ export default function BudgetScreen() {
               <View className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-4">
                 <View className="flex-row items-center justify-between px-5 pt-4 pb-3 border-b border-gray-50 dark:border-gray-800">
                   <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                    Adjust Manually
+                    {t('budget.adjust_manual')}
                   </Text>
                   <TouchableOpacity onPress={handleReset} className="flex-row items-center gap-1">
                     <RefreshCw size={11} color="#9ca3af" />
-                    <Text className="text-xs font-semibold text-gray-400">Reset</Text>
+                    <Text className="text-xs font-semibold text-gray-400">{t('budget.reset')}</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -631,7 +631,7 @@ export default function BudgetScreen() {
                     className="py-3.5 items-center border-t border-gray-50 dark:border-gray-800"
                   >
                     <Text className="text-sm font-semibold text-green-600">
-                      {showAllAllocations ? 'Show less' : `Show ${hiddenCount} more categories`}
+                      {showAllAllocations ? t('budget.show_less') : t('budget.show_more_cats', { n: String(hiddenCount) })}
                     </Text>
                   </TouchableOpacity>
                 )}
