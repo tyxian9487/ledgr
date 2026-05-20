@@ -279,42 +279,34 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
         </TouchableOpacity>
       </View>
 
-      {/* Donut + legend — aligned with the status and stat windows */}
-      <View className="mx-4 mb-3 rounded-2xl bg-white/10 p-3">
-        <View className="flex-row items-center">
-          <View className="items-center justify-center">
-            <DonutRing
-              slices={slices.map((s) => ({ id: s.id, color: s.color, pct: s.pct }))}
-              size={150}
-              centerLabel={t('card.total_expenses')}
-              centerValue={formatCurrency(totalExpenses)}
-              selectedId={selectedSliceId}
-              onSlicePress={handleSlicePress}
-            />
-          </View>
-
-          <View className="flex-1 ml-3 gap-2">
-            {slices.length > 0 ? (
-              slices.slice(0, 4).map(slice => {
-                const selected = selectedSliceId === slice.id;
-                return (
-                  <TouchableOpacity
-                    key={slice.id}
-                    onPress={() => handleSlicePress(slice.id)}
-                    activeOpacity={0.75}
-                    className={`flex-row items-center rounded-xl px-2.5 py-2 ${selected ? 'bg-white/15' : ''}`}
-                  >
-                    <View className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: slice.color }} />
-                    <Text className="text-white/75 text-xs flex-1" numberOfLines={1}>{slice.label}</Text>
-                    <Text className="text-white font-bold text-xs">{formatCurrency(slice.amount)}</Text>
-                  </TouchableOpacity>
-                );
-              })
-            ) : (
-              <Text className="text-white/40 text-xs text-center">{t('card.no_expenses')}</Text>
-            )}
-          </View>
-        </View>
+      {/* Donut — centered, tappable segments */}
+      <View className="items-center pb-1">
+        <DonutRing
+          slices={slices.map((s) => ({ id: s.id, color: s.color, pct: s.pct }))}
+          size={200}
+          centerLabel={t('card.total_expenses')}
+          centerValue={formatCurrency(totalExpenses)}
+          selectedId={selectedSliceId}
+          onSlicePress={handleSlicePress}
+        />
+        {/* Segment detail chip */}
+        {(() => {
+          const sel = slices.find(s => s.id === selectedSliceId);
+          if (sel) {
+            return (
+              <View className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-white/15 mb-3 -mt-1 max-w-[88%]">
+                <View className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: sel.color }} />
+                <Text className="text-white/90 text-xs font-semibold flex-shrink" numberOfLines={1}>{sel.label}</Text>
+                <Text className="text-white font-bold text-xs">{formatCurrency(sel.amount)}</Text>
+                <Text className="text-white/50 text-[10px]">({sel.pct.toFixed(0)}%)</Text>
+              </View>
+            );
+          }
+          if (slices.length === 0) {
+            return <Text className="text-white/40 text-xs mb-3 -mt-1">{t('card.no_expenses')}</Text>;
+          }
+          return <Text className="text-white/35 text-xs mb-3 -mt-1">{t('card.tap_segment')}</Text>;
+        })()}
       </View>
 
       {/* Income / Remaining row */}
@@ -357,6 +349,13 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
         year={year}
         formatCurrency={formatCurrency}
         slices={slices}
+        labels={{
+          financialStatus: t('card.financial_status'),
+          score: t('card.score'),
+          noExpenses: t('card.no_expenses'),
+          income: t('common.income').toUpperCase(),
+          remaining: t('card.remaining').toUpperCase(),
+        }}
       />
     </View>
     </>

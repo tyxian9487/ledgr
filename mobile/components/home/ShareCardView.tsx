@@ -17,10 +17,17 @@ interface Props {
   year: number;
   formatCurrency: (n: number) => string;
   slices: Array<{ id: string; label: string; color: string; amount: number; pct: number }>;
+  labels: {
+    financialStatus: string;
+    score: string;
+    noExpenses: string;
+    income: string;
+    remaining: string;
+  };
 }
 
 const ShareCardView = forwardRef<View, Props>(function ShareCardView(
-  { score, statusLabel, totalIncome, totalExpenses, remaining, month, year, formatCurrency, slices },
+  { score, statusLabel, totalIncome, totalExpenses, remaining, month, year, formatCurrency, slices, labels },
   ref,
 ) {
   const dateStr = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -42,10 +49,10 @@ const ShareCardView = forwardRef<View, Props>(function ShareCardView(
         </View>
         <View style={s.statusCopy}>
           <Text style={[s.statusLabel, { color: statusColor }]}>{statusLabel}</Text>
-          <Text style={s.statusSub}>Financial Status</Text>
+          <Text style={s.statusSub}>{labels.financialStatus}</Text>
         </View>
         <View style={s.scoreBadge}>
-          <Text style={s.scoreLabel}>Score</Text>
+          <Text style={s.scoreLabel}>{labels.score}</Text>
           <Text style={s.scoreNum}>{scoreText}</Text>
         </View>
       </View>
@@ -64,18 +71,18 @@ const ShareCardView = forwardRef<View, Props>(function ShareCardView(
               <Text style={s.legendAmount}>{formatCurrency(slice.amount)}</Text>
             </View>
           )) : (
-            <Text style={s.noExpenses}>No expenses this month</Text>
+            <Text style={s.noExpenses}>{labels.noExpenses}</Text>
           )}
         </View>
       </View>
 
       <View style={s.bottomRow}>
         <View style={s.statBox}>
-          <Text style={s.statLabel}>INCOME</Text>
+          <Text style={s.statLabel}>{labels.income}</Text>
           <Text style={s.statValue}>{formatCurrency(totalIncome)}</Text>
         </View>
         <View style={[s.statBox, { marginLeft: 12 }]}>
-          <Text style={s.statLabel}>REMAINING</Text>
+          <Text style={s.statLabel}>{labels.remaining}</Text>
           <Text style={[s.statValue, remaining < 0 && { color: '#fca5a5' }]}>
             {formatCurrency(Math.abs(remaining))}
           </Text>

@@ -252,7 +252,7 @@ function CategoryModal({
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View className="flex-1 bg-white dark:bg-gray-900">
         {/* Header */}
-        <View className="flex-row items-center justify-between px-5 pt-6 pb-3 border-b border-gray-100 dark:border-gray-800">
+        <View className="flex-row items-center justify-between px-5 pt-12 pb-3 border-b border-gray-100 dark:border-gray-800">
           <View className="flex-row items-center gap-3">
             <View
               className="w-10 h-10 rounded-full items-center justify-center"

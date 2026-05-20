@@ -57,7 +57,7 @@ export default function NewGoalScreen() {
 
   function handleSave() {
     const err = validate();
-    if (err) { Alert.alert('Validation', err); return; }
+    if (err) { Alert.alert(t('gform.validation'), err); return; }
 
     addCustomGoal({
       name: name.trim(),
@@ -210,7 +210,7 @@ export default function NewGoalScreen() {
           <TextInput
             value={customMonths}
             onChangeText={setCustomMonths}
-            placeholder="Number of months (e.g. 12)"
+            placeholder={t('gform.custom_months_ph')}
             placeholderTextColor={phColor}
             keyboardType="number-pad"
             className="bg-white dark:bg-gray-900 border-2 border-green-200 dark:border-green-900 rounded-2xl px-4 py-3.5 text-sm text-gray-900 dark:text-white mb-5 focus:border-green-500"
