@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Circle as SvgCircle, Path, Text as SvgText } from 'react-native-svg';
 import { ChevronLeft, ChevronRight, ChevronDown, Share2 } from 'lucide-react-native';
 import { captureRef } from 'react-native-view-shot';
 import { useApp } from '../../context/AppContext';
