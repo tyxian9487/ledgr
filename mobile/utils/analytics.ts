@@ -1,6 +1,16 @@
-import { Mixpanel } from 'mixpanel-react-native';
+import type { Mixpanel } from 'mixpanel-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+
+// Lazy load — mixpanel-react-native lacks codegenConfig and may fail to
+// initialize on New Architecture Android. Wrapping in try-catch prevents
+// a fatal crash; analytics simply becomes a no-op on affected devices.
+let MixpanelClass: (new (token: string, trackAutoEvents: boolean) => Mixpanel) | null = null;
+try {
+  MixpanelClass = require('mixpanel-react-native').Mixpanel;
+} catch (e) {
+  console.warn('[Analytics] mixpanel-react-native failed to load:', e);
+}
 
 const MIXPANEL_TOKEN = '7da9020d9537b75ac0595651281a8b99';
 const USER_ID_KEY = 'kachingo_analytics_uid';
@@ -16,8 +26,8 @@ async function getOrCreateUserId(): Promise<string> {
 }
 
 export async function initMixpanel(): Promise<void> {
-  if (mp) return;
-  const instance = new Mixpanel(MIXPANEL_TOKEN, /* trackAutomaticEvents */ false);
+  if (mp || !MixpanelClass) return;
+  const instance = new MixpanelClass(MIXPANEL_TOKEN, /* trackAutomaticEvents */ false);
   await instance.init();
   instance.registerSuperProperties({ platform: Platform.OS });
   mp = instance;

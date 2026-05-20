@@ -1,13 +1,38 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import Purchases, {
-  LOG_LEVEL,
-  type CustomerInfo,
-  type PurchasesOffering,
-  type PurchasesPackage,
-  type CustomerInfoUpdateListener,
-  PURCHASES_ERROR_CODE,
+import type {
+  CustomerInfo,
+  PurchasesOffering,
+  PurchasesPackage,
+  CustomerInfoUpdateListener,
 } from 'react-native-purchases';
-import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
+import type { PAYWALL_RESULT } from 'react-native-purchases-ui';
+
+// ── Safe lazy load — react-native-purchases lacks codegenConfig and may crash
+// on New Architecture Android. require() inside try-catch prevents a fatal
+// startup crash; the app degrades gracefully (isPro = false, all purchase
+// calls are no-ops) instead of exiting to the home screen.
+let _Purchases: any = null;
+let _RevenueCatUI: any = null;
+let _LOG_LEVEL: any = {};
+let _PURCHASES_ERROR_CODE: any = {};
+let _PAYWALL_RESULT_VALUES: typeof PAYWALL_RESULT = {} as any;
+
+try {
+  const m = require('react-native-purchases');
+  _Purchases = m.default ?? m.Purchases ?? m;
+  _LOG_LEVEL = m.LOG_LEVEL ?? {};
+  _PURCHASES_ERROR_CODE = m.PURCHASES_ERROR_CODE ?? {};
+} catch (e) {
+  console.warn('[RevenueCat] react-native-purchases failed to load:', e);
+}
+
+try {
+  const m = require('react-native-purchases-ui');
+  _RevenueCatUI = m.default ?? m;
+  _PAYWALL_RESULT_VALUES = m.PAYWALL_RESULT ?? ({} as any);
+} catch (e) {
+  console.warn('[RevenueCat] react-native-purchases-ui failed to load:', e);
+}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -53,6 +78,10 @@ export function PurchasesProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function init() {
       try {
+        if (!_Purchases) {
+          console.warn('[RevenueCat] SDK not available — purchases disabled');
+          return;
+        }
         if (!RC_API_KEY) {
           console.warn('[RevenueCat] No API key — purchases disabled');
           return;
@@ -66,15 +95,15 @@ export function PurchasesProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (__DEV__) {
-          Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+          _Purchases.setLogLevel(_LOG_LEVEL.DEBUG);
         }
 
-        Purchases.configure({ apiKey: RC_API_KEY });
+        _Purchases.configure({ apiKey: RC_API_KEY });
         setIsConfigured(true);
 
         const [info, offerings] = await Promise.all([
-          Purchases.getCustomerInfo(),
-          Purchases.getOfferings(),
+          _Purchases.getCustomerInfo(),
+          _Purchases.getOfferings(),
         ]);
 
         setCustomerInfo(info);
@@ -87,7 +116,7 @@ export function PurchasesProvider({ children }: { children: React.ReactNode }) {
         listenerRef.current = (updatedInfo: CustomerInfo) => {
           setCustomerInfo(updatedInfo);
         };
-        Purchases.addCustomerInfoUpdateListener(listenerRef.current);
+        _Purchases.addCustomerInfoUpdateListener(listenerRef.current);
       } catch (e) {
         console.warn('[RevenueCat] init error:', e);
       } finally {
@@ -98,45 +127,50 @@ export function PurchasesProvider({ children }: { children: React.ReactNode }) {
     init();
 
     return () => {
-      if (listenerRef.current) {
-        Purchases.removeCustomerInfoUpdateListener(listenerRef.current);
+      if (listenerRef.current && _Purchases) {
+        _Purchases.removeCustomerInfoUpdateListener(listenerRef.current);
       }
     };
   }, []);
 
   // Returns true if the purchase granted the Pro entitlement
   const purchasePackage = useCallback(async (pkg: PurchasesPackage): Promise<boolean> => {
-    const { customerInfo: info } = await Purchases.purchasePackage(pkg);
+    if (!_Purchases) return false;
+    const { customerInfo: info } = await _Purchases.purchasePackage(pkg);
     setCustomerInfo(info);
     return !!info.entitlements.active[PRO_ENTITLEMENT_ID];
   }, []);
 
   // Returns true if restored purchases include Pro entitlement
   const restorePurchases = useCallback(async (): Promise<boolean> => {
-    const info = await Purchases.restorePurchases();
+    if (!_Purchases) return false;
+    const info = await _Purchases.restorePurchases();
     setCustomerInfo(info);
     return !!info.entitlements.active[PRO_ENTITLEMENT_ID];
   }, []);
 
   const presentPaywall = useCallback((): Promise<PAYWALL_RESULT> => {
-    return RevenueCatUI.presentPaywall(
+    if (!_RevenueCatUI) return Promise.resolve(_PAYWALL_RESULT_VALUES.CANCELLED ?? ('CANCELLED' as any));
+    return _RevenueCatUI.presentPaywall(
       currentOffering ? { offering: currentOffering } : undefined,
     );
   }, [currentOffering]);
 
   // Presents the paywall only if the user does not have the Pro entitlement
   const presentPaywallIfNeeded = useCallback((): Promise<PAYWALL_RESULT> => {
-    return RevenueCatUI.presentPaywallIfNeeded({
+    if (!_RevenueCatUI) return Promise.resolve(_PAYWALL_RESULT_VALUES.NOT_PRESENTED ?? ('NOT_PRESENTED' as any));
+    return _RevenueCatUI.presentPaywallIfNeeded({
       requiredEntitlementIdentifier: PRO_ENTITLEMENT_ID,
       ...(currentOffering ? { offering: currentOffering } : {}),
     });
   }, [currentOffering]);
 
   const presentCustomerCenter = useCallback((): Promise<void> => {
-    return RevenueCatUI.presentCustomerCenter({
+    if (!_RevenueCatUI) return Promise.resolve();
+    return _RevenueCatUI.presentCustomerCenter({
       callbacks: {
-        onRestoreCompleted: ({ customerInfo: info }) => setCustomerInfo(info),
-        onRestoreFailed: ({ error }) =>
+        onRestoreCompleted: ({ customerInfo: info }: { customerInfo: CustomerInfo }) => setCustomerInfo(info),
+        onRestoreFailed: ({ error }: { error: unknown }) =>
           console.warn('[RevenueCat] Customer Center restore failed:', error),
       },
     });
@@ -144,7 +178,8 @@ export function PurchasesProvider({ children }: { children: React.ReactNode }) {
 
   const refreshCustomerInfo = useCallback(async (): Promise<void> => {
     try {
-      const info = await Purchases.getCustomerInfo();
+      if (!_Purchases) return;
+      const info = await _Purchases.getCustomerInfo();
       setCustomerInfo(info);
     } catch (e) {
       console.warn('[RevenueCat] refresh error:', e);
@@ -183,10 +218,11 @@ export function usePurchases(): PurchasesContextType {
 // ── Error helpers ─────────────────────────────────────────────────────────────
 
 export function isUserCancelledError(error: unknown): boolean {
+  const cancelCode = _PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR ?? 1;
   return (
     typeof error === 'object' &&
     error !== null &&
     'code' in error &&
-    (error as { code: number }).code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR
+    (error as { code: number }).code === cancelCode
   );
 }
