@@ -49,7 +49,10 @@
         "expo-build-properties",
         {
           "ios": { "newArchEnabled": true },
-          "android": { "newArchEnabled": true }
+          "android": {
+            "newArchEnabled": true,
+            "extraProguardRules": "-keep class expo.** { *; }\n-keep interface expo.** { *; }\n-keepclassmembers class expo.** { *; }"
+          }
         }
       ]
     ],
