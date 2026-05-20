@@ -3,7 +3,7 @@ import { Modal, View, Text, TouchableOpacity, Share } from 'react-native';
 import { playRewardSound, playWarningSound } from '../utils/sounds';
 import { useTranslation } from '../context/LanguageContext';
 
-type Status = 'excellent' | 'sustained' | 'critical';
+type Status = 'excellent' | 'fair' | 'critical';
 
 interface Props {
   status: Status;
@@ -18,7 +18,7 @@ const STATUS_CONFIG = {
     accentColor: '#4ade80',
     icon: '🥇',
   },
-  sustained: {
+  fair: {
     color: '#eab308',
     bgColor: '#1c1917',
     accentColor: '#fbbf24',

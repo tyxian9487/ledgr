@@ -1539,7 +1539,7 @@ export default function ProfileScreen() {
 
       {showStatusCelebration ? (
         <StatusCelebration
-          status={score >= 80 ? 'excellent' : score >= 60 ? 'sustained' : 'critical'}
+          status={score >= 80 ? 'excellent' : score >= 60 ? 'fair' : 'critical'}
           score={score}
           onClose={() => setShowStatusCelebration(false)}
         />
