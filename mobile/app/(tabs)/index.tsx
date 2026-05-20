@@ -185,12 +185,12 @@ export default function HomeScreen() {
               ref={tourRefAddTx}
               onPress={() => setShowEntry(true)}
               activeOpacity={0.8}
-              className="flex-1 bg-gray-900 dark:bg-gray-800 rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5"
+              className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5"
             >
               <View className="w-7 h-7 rounded-full bg-green-600 items-center justify-center">
                 <Plus size={15} color="white" strokeWidth={2.5} />
               </View>
-              <Text className="text-white text-sm font-semibold flex-shrink flex-1" numberOfLines={1}>
+              <Text className="text-gray-900 dark:text-white text-sm font-semibold flex-shrink flex-1" numberOfLines={1}>
                 {t('home.add_transaction')}
               </Text>
             </TouchableOpacity>
@@ -202,22 +202,22 @@ export default function HomeScreen() {
               activeOpacity={0.8}
               className={`flex-1 rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5 ${
                 !hasBudget
-                  ? 'bg-gray-900 dark:bg-gray-800'
+                  ? 'bg-gray-100 dark:bg-gray-800'
                   : isOverBudget
-                  ? 'bg-red-950/80 dark:bg-red-900/30'
-                  : 'bg-green-950/80 dark:bg-green-900/30'
+                  ? 'bg-red-50 dark:bg-red-900/30'
+                  : 'bg-green-50 dark:bg-green-900/30'
               }`}
             >
               <View className={`w-7 h-7 rounded-full items-center justify-center ${
-                !hasBudget ? 'bg-gray-600' : isOverBudget ? 'bg-red-500' : 'bg-green-600'
+                !hasBudget ? 'bg-gray-400 dark:bg-gray-600' : isOverBudget ? 'bg-red-500' : 'bg-green-600'
               }`}>
                 <Target size={14} color="white" strokeWidth={2.5} />
               </View>
               <View className="flex-1 min-w-0">
                 <Text className={`text-sm font-semibold leading-tight ${
-                  !hasBudget ? 'text-white'
-                    : isOverBudget ? 'text-red-400'
-                    : 'text-green-400'
+                  !hasBudget ? 'text-gray-700 dark:text-white'
+                    : isOverBudget ? 'text-red-600 dark:text-red-400'
+                    : 'text-green-700 dark:text-green-400'
                 }`} numberOfLines={1}>
                   {!hasBudget
                     ? t('home.set_budget')
@@ -233,7 +233,7 @@ export default function HomeScreen() {
               </View>
               {hasBudget && (
                 isOverBudget
-                  ? <TrendingDown size={14} color="#f87171" />
+                  ? <TrendingDown size={14} color="#ef4444" />
                   : <TrendingUp size={14} color="#22c55e" />
               )}
             </TouchableOpacity>
@@ -247,11 +247,11 @@ export default function HomeScreen() {
               className={`flex-1 rounded-2xl px-4 py-3 flex-row items-center gap-2 ${
                 showSearch
                   ? 'bg-green-600'
-                  : 'bg-gray-900 dark:bg-gray-800'
+                  : 'bg-gray-100 dark:bg-gray-800'
               }`}
             >
-              <Search size={15} color={showSearch ? 'white' : '#9ca3af'} />
-              <Text className={`text-sm font-semibold ${showSearch ? 'text-white' : 'text-gray-300'}`}>
+              <Search size={15} color={showSearch ? 'white' : '#6b7280'} />
+              <Text className={`text-sm font-semibold ${showSearch ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>
                 {t('common.search')}
               </Text>
               {showSearch && q ? (
@@ -265,11 +265,11 @@ export default function HomeScreen() {
               className={`flex-1 rounded-2xl px-4 py-3 flex-row items-center gap-2 ${
                 showFilter
                   ? 'bg-green-600'
-                  : 'bg-gray-900 dark:bg-gray-800'
+                  : 'bg-gray-100 dark:bg-gray-800'
               }`}
             >
-              <SlidersHorizontal size={15} color={showFilter ? 'white' : (activeFilterCount > 0 ? '#22c55e' : '#9ca3af')} />
-              <Text className={`text-sm font-semibold ${showFilter ? 'text-white' : (activeFilterCount > 0 ? 'text-green-500' : 'text-gray-300')}`}>
+              <SlidersHorizontal size={15} color={showFilter ? 'white' : (activeFilterCount > 0 ? '#22c55e' : '#6b7280')} />
+              <Text className={`text-sm font-semibold ${showFilter ? 'text-white' : (activeFilterCount > 0 ? 'text-green-600 dark:text-green-500' : 'text-gray-600 dark:text-gray-300')}`}>
                 {t('home.filter')}
               </Text>
               {activeFilterCount > 0 && (
