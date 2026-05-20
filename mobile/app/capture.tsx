@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { Camera, X, ImageIcon, RefreshCw } from 'lucide-react-native';
+import { Camera, X, ImageIcon } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Stage = 'preview' | 'processing' | 'review';
@@ -28,7 +28,7 @@ const PENDING_RECEIPT_KEY = 'kachingo_pending_receipt';
 
 async function parseReceiptWithClaude(base64: string, mediaType: string): Promise<ParsedReceipt> {
   const workerUrl = process.env.EXPO_PUBLIC_WORKER_URL;
-  if (!workerUrl) throw new Error('EXPO_PUBLIC_WORKER_URL is not set');
+  if (!workerUrl) throw new Error('Receipt scanning is not configured for this build.');
 
   const res = await fetch(`${workerUrl}/api/scan-receipt`, {
     method: 'POST',
@@ -46,12 +46,21 @@ async function parseReceiptWithClaude(base64: string, mediaType: string): Promis
 export default function CaptureScreen() {
   const router = useRouter();
   const cameraRef = useRef<CameraView>(null);
-  const [permission, requestPermission] = useCameraPermissions();
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
 
   const [stage, setStage] = useState<Stage>('preview');
   const [capturedUri, setCapturedUri] = useState<string | null>(null);
   const [parsed, setParsed] = useState<ParsedReceipt | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [isCameraReady, setIsCameraReady] = useState(false);
+  const [mountError, setMountError] = useState<string | null>(null);
+
+  // Auto-request camera permission when screen opens
+  useEffect(() => {
+    if (cameraPermission && !cameraPermission.granted && cameraPermission.canAskAgain) {
+      requestCameraPermission();
+    }
+  }, [cameraPermission]);
 
   // ── Core: process an image (base64 string + mediaType) ────────────────────
   const processImage = useCallback(async (base64: string, mediaType: string, uri: string) => {
@@ -71,33 +80,43 @@ export default function CaptureScreen() {
 
   // ── Camera capture ─────────────────────────────────────────────────────────
   const capturePhoto = useCallback(async () => {
-    if (!cameraRef.current) return;
+    if (!cameraRef.current || !isCameraReady) return;
     try {
       const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.7 });
-      if (!photo?.base64) return;
+      if (!photo?.base64) {
+        setScanError('Failed to capture photo. Please try again.');
+        return;
+      }
       await processImage(photo.base64, 'image/jpeg', photo.uri);
     } catch {
       setScanError('Failed to capture photo. Please try again.');
       setStage('preview');
     }
-  }, [processImage]);
+  }, [processImage, isCameraReady]);
 
   // ── Gallery picker ─────────────────────────────────────────────────────────
   const pickFromGallery = useCallback(async () => {
+    // Explicitly request media library permission first
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      setScanError('Gallery access is required to upload a photo.');
+      return;
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       quality: 0.7,
       base64: true,
     });
 
-    if (result.canceled || !result.assets[0]) return;
+    if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
     if (!asset.base64) {
-      setScanError('Could not read image. Please try another photo.');
+      setScanError('Could not read image data. Please try another photo.');
       return;
     }
-    const ext = (asset.mimeType || 'image/jpeg') as string;
-    await processImage(asset.base64, ext, asset.uri);
+    const mediaType = (asset.mimeType || 'image/jpeg') as string;
+    await processImage(asset.base64, mediaType, asset.uri);
   }, [processImage]);
 
   // ── Reset ──────────────────────────────────────────────────────────────────
@@ -105,6 +124,7 @@ export default function CaptureScreen() {
     setCapturedUri(null);
     setParsed(null);
     setScanError(null);
+    setMountError(null);
     setStage('preview');
   }, []);
 
@@ -114,23 +134,22 @@ export default function CaptureScreen() {
     try {
       await AsyncStorage.setItem(PENDING_RECEIPT_KEY, JSON.stringify(parsed));
       router.replace('/(tabs)');
-      // The home screen should read PENDING_RECEIPT_KEY on focus and offer to add the transaction.
     } catch {
       Alert.alert('Error', 'Could not save receipt data. Please try again.');
     }
   }, [parsed, router]);
 
   // ── Permission not yet determined ──────────────────────────────────────────
-  if (!permission) {
+  if (!cameraPermission) {
     return (
-      <View className="flex-1 bg-black items-center justify-center">
+      <View style={StyleSheet.absoluteFillObject} className="bg-black items-center justify-center">
         <ActivityIndicator color="#fff" />
       </View>
     );
   }
 
-  // ── Permission denied ──────────────────────────────────────────────────────
-  if (!permission.granted) {
+  // ── Permission denied (and can't ask again — needs settings) ───────────────
+  if (!cameraPermission.granted) {
     return (
       <SafeAreaView className="flex-1 bg-black items-center justify-center px-8">
         <Camera size={48} color="rgba(255,255,255,0.6)" />
@@ -140,13 +159,19 @@ export default function CaptureScreen() {
         <Text className="text-white/60 text-sm text-center leading-relaxed mb-8">
           Allow camera access to scan receipts and automatically extract transaction details.
         </Text>
-        <TouchableOpacity
-          onPress={requestPermission}
-          className="w-full py-4 rounded-2xl bg-green-600 items-center mb-3"
-          activeOpacity={0.8}
-        >
-          <Text className="text-white font-bold">Allow Camera</Text>
-        </TouchableOpacity>
+        {cameraPermission.canAskAgain ? (
+          <TouchableOpacity
+            onPress={requestCameraPermission}
+            className="w-full py-4 rounded-2xl bg-green-600 items-center mb-3"
+            activeOpacity={0.8}
+          >
+            <Text className="text-white font-bold">Allow Camera</Text>
+          </TouchableOpacity>
+        ) : (
+          <Text className="text-white/60 text-sm text-center mb-8">
+            Camera access was denied. Please enable it in your device Settings.
+          </Text>
+        )}
         <TouchableOpacity
           onPress={pickFromGallery}
           className="w-full py-4 rounded-2xl bg-white/15 border border-white/20 items-center mb-3"
@@ -258,57 +283,74 @@ export default function CaptureScreen() {
 
   // ── Preview / camera stage ─────────────────────────────────────────────────
   return (
-    <View className="flex-1 bg-black">
-      {/* Camera viewfinder */}
-      <View className="flex-1 relative overflow-hidden">
+    <View style={{ flex: 1, backgroundColor: '#000' }}>
+      {/* Camera viewfinder — use style prop directly, not className, for native view sizing */}
+      <View style={{ flex: 1, position: 'relative' }}>
         <CameraView
           ref={cameraRef}
-          className="flex-1"
+          style={{ flex: 1 }}
           facing="back"
+          onCameraReady={() => setIsCameraReady(true)}
+          onMountError={(e) => setMountError(e.message ?? 'Camera failed to start')}
         />
 
+        {/* Camera mount error overlay */}
+        {mountError ? (
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center', padding: 32 }]}>
+            <Camera size={40} color="rgba(255,255,255,0.5)" />
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600', textAlign: 'center', marginTop: 16, marginBottom: 8 }}>
+              Camera unavailable
+            </Text>
+            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, textAlign: 'center', marginBottom: 24 }}>
+              {mountError}
+            </Text>
+            <TouchableOpacity onPress={pickFromGallery} style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 28 }}>
+              <Text style={{ color: '#fff', fontWeight: '600' }}>Use Gallery Instead</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         {/* Receipt frame overlay */}
-        <View
-          className="absolute inset-0 items-center justify-center"
-          pointerEvents="none"
-        >
+        {!mountError && (
           <View
-            style={{
-              width: '78%',
-              height: '62%',
-              borderWidth: 2,
-              borderColor: 'rgba(255,255,255,0.65)',
-              borderRadius: 16,
-              shadowColor: '#000',
-              shadowOpacity: 0.6,
-              shadowRadius: 0,
-              shadowOffset: { width: 0, height: 0 },
-            }}
-          />
-        </View>
+            style={[StyleSheet.absoluteFillObject, { alignItems: 'center', justifyContent: 'center' }]}
+            pointerEvents="none"
+          >
+            <View
+              style={{
+                width: '78%',
+                height: '62%',
+                borderWidth: 2,
+                borderColor: 'rgba(255,255,255,0.65)',
+                borderRadius: 16,
+              }}
+            />
+          </View>
+        )}
 
         {/* Align hint */}
-        <View className="absolute bottom-36 left-0 right-0 items-center" pointerEvents="none">
-          <Text className="text-white/80 text-xs">Align receipt within frame</Text>
-        </View>
+        {!mountError && (
+          <View style={{ position: 'absolute', bottom: 144, left: 0, right: 0, alignItems: 'center' }} pointerEvents="none">
+            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>Align receipt within frame</Text>
+          </View>
+        )}
 
         {/* Error banner */}
         {scanError ? (
-          <View className="absolute top-16 left-5 right-5 bg-red-500/80 rounded-2xl px-4 py-3">
-            <Text className="text-white text-xs text-center font-medium">{scanError}</Text>
+          <View style={{ position: 'absolute', top: 64, left: 20, right: 20, backgroundColor: 'rgba(239,68,68,0.8)', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12 }}>
+            <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center', fontWeight: '500' }}>{scanError}</Text>
           </View>
         ) : null}
       </View>
 
       {/* Controls bar */}
       <View
-        className="px-8 py-6 flex-row items-center justify-between"
-        style={{ backgroundColor: 'rgba(0,0,0,0.85)', paddingBottom: 40 }}
+        style={{ paddingHorizontal: 32, paddingTop: 24, paddingBottom: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(0,0,0,0.85)' }}
       >
         {/* Close */}
         <TouchableOpacity
           onPress={() => router.back()}
-          className="w-14 h-14 rounded-full bg-red-500/20 border-2 border-red-500/60 items-center justify-center"
+          style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(239,68,68,0.2)', borderWidth: 2, borderColor: 'rgba(239,68,68,0.6)', alignItems: 'center', justifyContent: 'center' }}
           activeOpacity={0.8}
         >
           <X size={22} color="#f87171" />
@@ -317,16 +359,17 @@ export default function CaptureScreen() {
         {/* Shutter */}
         <TouchableOpacity
           onPress={capturePhoto}
-          className="w-20 h-20 rounded-full bg-white items-center justify-center shadow-2xl"
+          disabled={!isCameraReady || !!mountError}
+          style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: isCameraReady && !mountError ? '#fff' : 'rgba(255,255,255,0.3)', alignItems: 'center', justifyContent: 'center' }}
           activeOpacity={0.9}
         >
-          <View className="w-16 h-16 rounded-full border-4 border-black/20 bg-white" />
+          <View style={{ width: 64, height: 64, borderRadius: 32, borderWidth: 4, borderColor: 'rgba(0,0,0,0.2)', backgroundColor: isCameraReady && !mountError ? '#fff' : 'transparent' }} />
         </TouchableOpacity>
 
         {/* Gallery */}
         <TouchableOpacity
           onPress={pickFromGallery}
-          className="w-14 h-14 rounded-full bg-white/10 border border-white/20 items-center justify-center"
+          style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}
           activeOpacity={0.8}
         >
           <ImageIcon size={20} color="#fff" />
