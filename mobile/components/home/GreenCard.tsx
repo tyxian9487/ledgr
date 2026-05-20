@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { Alert, View, Text, TouchableOpacity } from 'react-native';
 import Svg, { Circle, Circle as SvgCircle, Path, Text as SvgText } from 'react-native-svg';
 import { ChevronLeft, ChevronRight, ChevronDown, Share2 } from 'lucide-react-native';
 import { captureRef } from 'react-native-view-shot';
@@ -258,12 +258,20 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
           onPress={async () => {
             try {
               const uri = await captureRef(shareCardRef, { format: 'png', quality: 1.0 });
-              const FileSystem = await import('expo-file-system');
+              const FileSystem = await import('expo-file-system/legacy');
               const Sharing = await import('expo-sharing');
-              const dest = FileSystem.cacheDirectory + 'kachingo_card.png';
+              const available = await Sharing.isAvailableAsync();
+              if (!available) {
+                Alert.alert(t('card.share_dialog'), 'Sharing is not available on this device.');
+                return;
+              }
+              const dest = `${FileSystem.cacheDirectory ?? ''}kachingo_card_${Date.now()}.png`;
               await FileSystem.copyAsync({ from: uri, to: dest });
               await Sharing.shareAsync(dest, { mimeType: 'image/png', dialogTitle: t('card.share_dialog') });
-            } catch (_) {}
+            } catch (error) {
+              console.warn('[GreenCard] Share failed:', error);
+              Alert.alert(t('card.share_dialog'), 'Unable to generate the PNG right now.');
+            }
           }}
           className="w-8 h-8 rounded-full bg-white/20 items-center justify-center ml-1"
         >
@@ -271,34 +279,42 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
         </TouchableOpacity>
       </View>
 
-      {/* Donut — centered, tappable segments */}
-      <View className="items-center pb-1">
-        <DonutRing
-          slices={slices.map((s) => ({ id: s.id, color: s.color, pct: s.pct }))}
-          size={200}
-          centerLabel={t('card.total_expenses')}
-          centerValue={formatCurrency(totalExpenses)}
-          selectedId={selectedSliceId}
-          onSlicePress={handleSlicePress}
-        />
-        {/* Segment detail chip */}
-        {(() => {
-          const sel = slices.find(s => s.id === selectedSliceId);
-          if (sel) {
-            return (
-              <View className="flex-row items-center gap-2 px-4 py-2 rounded-2xl bg-white/15 mb-3 -mt-1">
-                <View className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: sel.color }} />
-                <Text className="text-white/90 text-sm font-semibold flex-1" numberOfLines={1}>{sel.label}</Text>
-                <Text className="text-white font-bold text-sm">{formatCurrency(sel.amount)}</Text>
-                <Text className="text-white/50 text-xs">({sel.pct.toFixed(0)}%)</Text>
-              </View>
-            );
-          }
-          if (slices.length === 0) {
-            return <Text className="text-white/40 text-xs mb-3 -mt-1">{t('card.no_expenses')}</Text>;
-          }
-          return <Text className="text-white/35 text-xs mb-3 -mt-1">{t('card.tap_segment')}</Text>;
-        })()}
+      {/* Donut + legend — aligned with the status and stat windows */}
+      <View className="mx-4 mb-3 rounded-2xl bg-white/10 p-3">
+        <View className="flex-row items-center">
+          <View className="items-center justify-center">
+            <DonutRing
+              slices={slices.map((s) => ({ id: s.id, color: s.color, pct: s.pct }))}
+              size={150}
+              centerLabel={t('card.total_expenses')}
+              centerValue={formatCurrency(totalExpenses)}
+              selectedId={selectedSliceId}
+              onSlicePress={handleSlicePress}
+            />
+          </View>
+
+          <View className="flex-1 ml-3 gap-2">
+            {slices.length > 0 ? (
+              slices.slice(0, 4).map(slice => {
+                const selected = selectedSliceId === slice.id;
+                return (
+                  <TouchableOpacity
+                    key={slice.id}
+                    onPress={() => handleSlicePress(slice.id)}
+                    activeOpacity={0.75}
+                    className={`flex-row items-center rounded-xl px-2.5 py-2 ${selected ? 'bg-white/15' : ''}`}
+                  >
+                    <View className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: slice.color }} />
+                    <Text className="text-white/75 text-xs flex-1" numberOfLines={1}>{slice.label}</Text>
+                    <Text className="text-white font-bold text-xs">{formatCurrency(slice.amount)}</Text>
+                  </TouchableOpacity>
+                );
+              })
+            ) : (
+              <Text className="text-white/40 text-xs text-center">{t('card.no_expenses')}</Text>
+            )}
+          </View>
+        </View>
       </View>
 
       {/* Income / Remaining row */}
@@ -340,6 +356,7 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
         month={month}
         year={year}
         formatCurrency={formatCurrency}
+        slices={slices}
       />
     </View>
     </>

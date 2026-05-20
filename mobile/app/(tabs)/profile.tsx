@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTourTarget } from '../../context/TourContext';
 import {
@@ -803,6 +803,7 @@ function SectionHeader({ label }: { label: string }) {
 export default function ProfileScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const scrollRef = useRef<ScrollView>(null);
   const {
     transactions,
     budget,
@@ -866,8 +867,8 @@ export default function ProfileScreen() {
   const [seenBadgesLoaded, setSeenBadgesLoaded] = useState(false);
 
   // Tour target refs
-  const tourRefStreak     = useTourTarget('profile-streak');
-  const tourRefAssessment = useTourTarget('profile-assessment');
+  const tourRefStreak     = useTourTarget('profile-streak', { scrollRef, scrollY: 120 });
+  const tourRefAssessment = useTourTarget('profile-assessment', { scrollRef, scrollY: 520 });
 
   // ── Financial score ────────────────────────────────────────────────────────
   const currentYear = new Date().getFullYear();
@@ -1048,7 +1049,7 @@ export default function ProfileScreen() {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950">
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} className="flex-1" showsVerticalScrollIndicator={false}>
 
         {/* ── Header ── */}
         <View className="flex-row items-center justify-between px-5 pt-4 pb-3">
@@ -1173,14 +1174,14 @@ export default function ProfileScreen() {
         {/* Achievements link */}
         <TouchableOpacity
           onPress={() => router.push('/achievements' as any)}
-          className="mx-4 mb-5 flex-row items-center justify-between bg-white rounded-2xl px-4 py-3.5 shadow-sm border border-gray-50"
+          className="mx-4 mb-5 flex-row items-center justify-between bg-white dark:bg-gray-900 rounded-2xl px-4 py-3.5 shadow-sm border border-gray-50 dark:border-gray-800"
           activeOpacity={0.7}
         >
           <View className="flex-row items-center gap-2.5">
-            <View className="w-8 h-8 rounded-xl bg-amber-50 items-center justify-center">
+            <View className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-900/20 items-center justify-center">
               <Trophy size={15} color="#d97706" />
             </View>
-            <Text className="text-sm font-semibold text-gray-900">Achievements &amp; Tips</Text>
+            <Text className="text-sm font-semibold text-gray-900 dark:text-white">Achievements &amp; Tips</Text>
           </View>
           <ChevronRight size={14} color="#d1d5db" />
         </TouchableOpacity>

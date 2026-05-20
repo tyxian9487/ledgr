@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { CategoryIconRaw } from './CategoryIcon';
+import { durationMonthsFromDays, goalMonthIndex } from '../../utils/goals';
 
 interface Props {
   year: number;
@@ -29,13 +30,9 @@ function getMonthlyCustomProgress(
   durationDays: number,
   startDate: string,
 ) {
-  const durationMonths = Math.max(1, Math.round(durationDays / 30));
+  const durationMonths = durationMonthsFromDays(durationDays);
   const monthlyTarget = targetAmount / durationMonths;
-  const elapsedDays = (Date.now() - new Date(startDate).getTime()) / 86400000;
-  const currentMonthIdx = Math.min(
-    Math.floor(Math.max(0, elapsedDays) / 30),
-    durationMonths - 1,
-  );
+  const currentMonthIdx = goalMonthIndex(startDate, durationMonths);
   const monthSaved = Math.max(
     0,
     Math.min(monthlyTarget, savedAmount - currentMonthIdx * monthlyTarget),
@@ -100,20 +97,20 @@ export default function GoalTrackerCard({ year, month }: Props) {
     });
   }
 
-  if (allGoals.length === 0) return null;
-
   const safeIdx = Math.min(currentIdx, allGoals.length - 1);
-  const goal = allGoals[safeIdx];
-  const isCompleted = goal.progress >= 100 && goal.goalAmount > 0;
+  const goal = safeIdx >= 0 ? allGoals[safeIdx] : null;
+  const isCompleted = !!goal && goal.progress >= 100 && goal.goalAmount > 0;
 
   useEffect(() => {
-    if (isCompleted) {
+    if (goal && isCompleted) {
       const goalKey = `${year}-${month}-${goal.id}`;
       if (!celebratedGoals.has(goalKey)) {
         setCelebratedGoals((prev) => new Set([...prev, goalKey]));
       }
     }
-  }, [isCompleted, goal.id, year, month]);
+  }, [celebratedGoals, goal, isCompleted, year, month]);
+
+  if (!goal) return null;
 
   return (
     <View className="mx-4 mt-3 rounded-2xl bg-white/10 p-3">

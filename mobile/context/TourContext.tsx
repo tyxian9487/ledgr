@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
-import { View } from 'react-native';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode, RefObject } from 'react';
+import { ScrollView, View } from 'react-native';
 
 export interface HighlightRect { x: number; y: number; width: number; height: number; }
 
@@ -248,22 +248,35 @@ export function useTour() {
   return useContext(TourContext);
 }
 
+interface TourTargetOptions {
+  scrollRef?: RefObject<ScrollView | null>;
+  scrollY?: number;
+}
+
 /** Attach to a View that should be spotlit when the given tour step is active. */
-export function useTourTarget(stepId: string) {
+export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
   const { currentStep, setHighlightRect } = useTour();
   const ref = useRef<View>(null);
 
   useEffect(() => {
     if (currentStep?.id !== stepId) return;
+    if (options.scrollRef && options.scrollY !== undefined) {
+      options.scrollRef.current?.scrollTo({ y: options.scrollY, animated: true });
+    }
     const timer = setTimeout(() => {
       ref.current?.measureInWindow((x, y, w, h) => {
         if (w > 0 && h > 0) {
-          setHighlightRect({ x: x - 4, y: y - 4, width: w + 8, height: h + 8 });
+          setHighlightRect({
+            x: Math.max(0, x - 4),
+            y: Math.max(0, y - 4),
+            width: w + 8,
+            height: h + 8,
+          });
         }
       });
-    }, 350);
+    }, options.scrollRef ? 700 : 350);
     return () => clearTimeout(timer);
-  }, [currentStep?.id, stepId, setHighlightRect]);
+  }, [currentStep?.id, options.scrollRef, options.scrollY, stepId, setHighlightRect]);
 
   return ref;
 }
