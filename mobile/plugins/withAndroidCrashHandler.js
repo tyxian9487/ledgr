@@ -2,6 +2,34 @@ const { withMainApplication, withDangerousMod, withAndroidManifest } = require('
 const fs = require('fs');
 const path = require('path');
 
+// ── Stub interfaces ────────────────────────────────────────────────────────────
+// expo-modules-core removed FilePermissionModuleInterface and
+// AppDirectoriesModuleInterface. The expo-file-system prebuilt AAR still
+// references them, so D8 drops FilePermissionModule from the DEX output,
+// causing a ClassNotFoundException on startup. We write stub interfaces into
+// the app's source tree so D8 can resolve the reference and keep the class.
+const FILE_PERMISSION_MODULE_INTERFACE_KT = [
+  'package expo.modules.interfaces.filesystem',
+  '',
+  'import android.content.Context',
+  'import java.util.EnumSet',
+  '',
+  'interface FilePermissionModuleInterface {',
+  '    fun getPathPermissions(context: Context, path: String): EnumSet<Permission>',
+  '}',
+].join('\n');
+
+const APP_DIRECTORIES_MODULE_INTERFACE_KT = [
+  'package expo.modules.interfaces.filesystem',
+  '',
+  'import java.io.File',
+  '',
+  'interface AppDirectoriesModuleInterface {',
+  '    val cacheDirectory: File',
+  '    val persistentFilesDirectory: File',
+  '}',
+].join('\n');
+
 // Catches uncaught JVM exceptions, saves them, and launches CrashActivity in a
 // separate process so the crash details are shown immediately — no JS needed.
 const CRASH_HANDLER_KT = [
@@ -120,13 +148,31 @@ module.exports = function withAndroidCrashHandler(config) {
   config = withDangerousMod(config, [
     'android',
     async (config) => {
-      const dir = path.join(
-        config.modRequest.platformProjectRoot,
-        'app/src/main/java/com/kachingo/app'
+      const root = config.modRequest.platformProjectRoot;
+
+      // Crash handler + activity
+      const appDir = path.join(root, 'app/src/main/java/com/kachingo/app');
+      fs.mkdirSync(appDir, { recursive: true });
+      fs.writeFileSync(path.join(appDir, 'CrashHandler.kt'), CRASH_HANDLER_KT);
+      fs.writeFileSync(path.join(appDir, 'CrashActivity.kt'), CRASH_ACTIVITY_KT);
+
+      // Stub interfaces so D8 can include FilePermissionModule in the APK DEX.
+      // expo-modules-core removed these interfaces; expo-file-system's prebuilt
+      // AAR still references them, causing the startup ClassNotFoundException.
+      const ifaceDir = path.join(
+        root,
+        'app/src/main/java/expo/modules/interfaces/filesystem'
       );
-      fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(path.join(dir, 'CrashHandler.kt'), CRASH_HANDLER_KT);
-      fs.writeFileSync(path.join(dir, 'CrashActivity.kt'), CRASH_ACTIVITY_KT);
+      fs.mkdirSync(ifaceDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(ifaceDir, 'FilePermissionModuleInterface.kt'),
+        FILE_PERMISSION_MODULE_INTERFACE_KT
+      );
+      fs.writeFileSync(
+        path.join(ifaceDir, 'AppDirectoriesModuleInterface.kt'),
+        APP_DIRECTORIES_MODULE_INTERFACE_KT
+      );
+
       return config;
     },
   ]);
