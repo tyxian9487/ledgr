@@ -648,7 +648,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAnalyticsConsent(true);
     initMixpanel().then(() => {
       identifyUser(userProfile);
-      trackEvent('sign_up_completed', { plan: userProfile.plan, currency: userProfile.currency });
+      trackEvent('sign_up_completed', {
+        plan: userProfile.plan,
+        currency: userProfile.currency || DEFAULT_PROFILE.currency || 'USD',
+      });
     });
   }, [userProfile]);
 
