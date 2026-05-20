@@ -170,6 +170,19 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
         const g = (budget.customGoals ?? []).find(g => g.id === linkedGoalId);
         if (g) updateCustomGoal(linkedGoalId, { savedAmount: g.savedAmount + parseFloat(amount) });
       }
+      // Reset form so the next opening starts clean
+      setType('expense');
+      setAmount('');
+      setDate(todayString());
+      setCategory('');
+      setDescription('');
+      setIsAutoDebit(false);
+      setPeriod('monthly');
+      setLinkedGoalId('');
+      setCustomDateMode(false);
+      setCustomDateInput(todayString());
+      setShowCategoryPicker(false);
+      setShowPeriodPicker(false);
     }
     onClose();
   }
