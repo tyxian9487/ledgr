@@ -4,6 +4,7 @@ import { Trash2, Edit2, RefreshCw, ChevronDown, ChevronRight, ChevronLeft, X } f
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { useColorScheme } from 'nativewind';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Transaction } from '../../types';
 import CategoryIcon from './CategoryIcon';
 
@@ -42,6 +43,7 @@ export function CalendarModal({
   formatCurrency: (n: number) => string; onClose: () => void;
 }) {
   const { colorScheme } = useColorScheme();
+  const { bottom: bottomInset } = useSafeAreaInsets();
   const dark = colorScheme === 'dark';
   const c = {
     surface: dark ? '#1f2937' : '#fff',
@@ -213,7 +215,7 @@ export function CalendarModal({
           )}
 
           {/* Close */}
-          <TouchableOpacity onPress={onClose} style={{ alignItems: 'center', paddingVertical: 14 }}>
+          <TouchableOpacity onPress={onClose} style={{ alignItems: 'center', paddingTop: 14, paddingBottom: 14 + bottomInset }}>
             <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: c.closeBtn, alignItems: 'center', justifyContent: 'center' }}>
               <X size={18} color={c.closeIcon} />
             </View>
