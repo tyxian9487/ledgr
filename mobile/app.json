@@ -38,6 +38,7 @@
       ]
     },
     "plugins": [
+      "./plugins/withAndroidCrashHandler",
       "expo-router",
       "expo-apple-authentication",
       "expo-camera",

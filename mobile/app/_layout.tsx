@@ -3,6 +3,7 @@ import { Slot, useRouter, useSegments } from 'expo-router';
 import React, { useEffect, useState, Component } from 'react';
 import { View, Text, ScrollView, Linking, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
 import { AppProvider, useApp } from '../context/AppContext';
 import { LanguageProvider } from '../context/LanguageContext';
 import { PurchasesProvider, usePurchases } from '../context/PurchasesContext';
@@ -18,6 +19,7 @@ import { supabase, handleOAuthRedirect } from '../utils/supabase';
 // ── Global crash capture ───────────────────────────────────────────────────────
 // Catches JS errors that bypass React's error boundary (async, event handlers)
 const CRASH_STORAGE_KEY = 'kachingo_last_crash';
+const NATIVE_CRASH_PATH = (FileSystem.documentDirectory ?? '') + 'kachingo_native_crash.txt';
 let _globalCrashMsg = '';
 
 function installGlobalErrorHandler() {
@@ -47,11 +49,26 @@ class AppErrorBoundary extends Component<{ children: React.ReactNode }, EBState>
     return { reactError: error };
   }
 
+  private async loadNativeCrash() {
+    try {
+      const info = await FileSystem.getInfoAsync(NATIVE_CRASH_PATH);
+      if (!info.exists) return;
+      const content = await FileSystem.readAsStringAsync(NATIVE_CRASH_PATH);
+      await FileSystem.deleteAsync(NATIVE_CRASH_PATH, { idempotent: true });
+      const msg = '[NATIVE/JVM CRASH]\n' + content;
+      await AsyncStorage.setItem(CRASH_STORAGE_KEY, msg);
+      this.setState({ prevCrash: msg });
+    } catch (_) {}
+  }
+
   componentDidMount() {
     // Load any crash from previous session
     AsyncStorage.getItem(CRASH_STORAGE_KEY).then(v => {
       if (v) this.setState({ prevCrash: v });
     }).catch(() => {});
+
+    // Check for native (JVM) crash written before JS started
+    this.loadNativeCrash();
 
     // Poll for global JS errors caught outside the React tree
     const id = setInterval(() => {
