@@ -47,7 +47,7 @@ export default function GoalDetailScreen() {
   const hasTransactionData = goalTxs.length > 0;
 
   function getMonthSaved(monthIdx: number): number {
-    const { start, end } = goalMonthWindow(goal.startDate, monthIdx);
+    const { start, end } = goalMonthWindow(goal!.startDate, monthIdx);
     const monthStart = start.getTime();
     const monthEnd = end.getTime();
     return goalTxs
