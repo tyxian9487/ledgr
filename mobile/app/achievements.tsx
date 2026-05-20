@@ -52,8 +52,8 @@ export default function AchievementsScreen() {
           <ChevronLeft size={18} color={dark ? '#e5e7eb' : '#374151'} />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-gray-900 dark:text-white flex-1">{t('achieve.title')}</Text>
-        <View className="bg-green-100 rounded-full px-3 py-1">
-          <Text className="text-xs font-bold text-green-700">{t('achieve.earned_count', { n: String(earnedBadges.size), total: String(BADGES.length) })}</Text>
+        <View className="bg-green-100 dark:bg-green-900/30 rounded-full px-3 py-1">
+          <Text className="text-xs font-bold text-green-700 dark:text-green-400">{t('achieve.earned_count', { n: String(earnedBadges.size), total: String(BADGES.length) })}</Text>
         </View>
       </View>
 
@@ -76,7 +76,7 @@ export default function AchievementsScreen() {
               <Text className="text-[10px] text-gray-400">{t('achieve.months')}</Text>
             </View>
           </View>
-          <Text className="text-[11px] text-gray-400 text-center mt-3 leading-relaxed">
+          <Text className="text-[11px] text-gray-400 dark:text-gray-500 text-center mt-3 leading-relaxed">
             Consecutive months where expenses stayed under total income
           </Text>
         </View>
@@ -117,10 +117,10 @@ export default function AchievementsScreen() {
 
         {/* ── All badges earned celebration ── */}
         {earnedBadges.size === BADGES.length && (
-          <View className="bg-green-50 border border-green-200 rounded-3xl p-5 mb-4 items-center">
+          <View className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/40 rounded-3xl p-5 mb-4 items-center">
             <Image source={goalMascotImg} style={{ width: 100, height: 100 }} resizeMode="contain" />
-            <Text className="text-lg font-black text-green-700 mt-2 text-center">{t('achieve.complete_title')}</Text>
-            <Text className="text-xs text-green-600 text-center mt-1 leading-relaxed">
+            <Text className="text-lg font-black text-green-700 dark:text-green-400 mt-2 text-center">{t('achieve.complete_title')}</Text>
+            <Text className="text-xs text-green-600 dark:text-green-300 text-center mt-1 leading-relaxed">
               {t('achieve.complete_msg')}
             </Text>
           </View>

@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { useTourTarget } from '../../context/TourContext';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useTour, useTourTarget } from '../../context/TourContext';
 import { useRouter } from 'expo-router';
 import {
   View,
@@ -37,6 +37,8 @@ import {
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { BudgetAllocation } from '../../types';
+import { CategoryIconRaw } from '../../components/home/CategoryIcon';
+import { durationMonthsFromDays, goalMonthIndex } from '../../utils/goals';
 
 // ─── Budget Groups ────────────────────────────────────────────────────────────
 
@@ -156,6 +158,7 @@ function BudgetDonut({ allocations, netIncome, totalPct, formatCurrency }: {
 export default function BudgetScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const scrollRef = useRef<ScrollView>(null);
   const {
     budget, updateBudget, getMonthTransactions, getMonthIncome,
     formatCurrency, getCurrencySymbol, removeCustomGoal,
@@ -165,10 +168,16 @@ export default function BudgetScreen() {
   const actualIncome = getMonthIncome(now.getFullYear(), now.getMonth());
 
   const [activeTab, setActiveTab] = useState<'goals' | 'budget'>('goals');
+  const { currentStep } = useTour();
+
+  useEffect(() => {
+    if (currentStep?.id === 'budget-income') setActiveTab('budget');
+    if (currentStep?.id === 'budget-goals') setActiveTab('goals');
+  }, [currentStep?.id]);
 
   // Tour target refs
-  const tourRefGoals  = useTourTarget('budget-goals');
-  const tourRefIncome = useTourTarget('budget-income');
+  const tourRefGoals  = useTourTarget('budget-goals', { scrollRef, scrollY: 0 });
+  const tourRefIncome = useTourTarget('budget-income', { scrollRef, scrollY: 260 });
   const [incomeInput, setIncomeInput] = useState(
     budget.expectedIncome > 0 ? String(budget.expectedIncome) : actualIncome > 0 ? String(Math.round(actualIncome)) : '',
   );
@@ -196,7 +205,7 @@ export default function BudgetScreen() {
     ? savingsMode === 'pct' ? income * (parseFloat(savingsValue) / 100) : parseFloat(savingsValue)
     : 0;
   const customGoalMonthly = (budget.customGoals ?? []).reduce((sum, g) => {
-    const months = Math.max(1, Math.round(g.durationDays / 30));
+    const months = durationMonthsFromDays(g.durationDays);
     return sum + g.targetAmount / months;
   }, 0);
   const netIncome = Math.max(0, income - savingsAmt - customGoalMonthly);
@@ -278,7 +287,7 @@ export default function BudgetScreen() {
         ))}
       </View>
 
-      <ScrollView className="flex-1 px-5 pt-5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView ref={scrollRef} className="flex-1 px-5 pt-5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
 
         {/* ── GOALS TAB ── */}
         {activeTab === 'goals' && (
@@ -339,10 +348,9 @@ export default function BudgetScreen() {
 
             {/* Custom goals */}
             {(budget.customGoals ?? []).map((goal) => {
-              const durationMonths = Math.max(1, Math.round(goal.durationDays / 30));
+              const durationMonths = durationMonthsFromDays(goal.durationDays);
               const monthlyTarget = goal.targetAmount / durationMonths;
-              const elapsedDays = (Date.now() - new Date(goal.startDate).getTime()) / 86400000;
-              const currentMonthIdx = Math.min(Math.floor(Math.max(0, elapsedDays) / 30), durationMonths - 1);
+              const currentMonthIdx = goalMonthIndex(goal.startDate, durationMonths);
               const monthSaved = Math.max(0, Math.min(monthlyTarget, goal.savedAmount - currentMonthIdx * monthlyTarget));
               const totalPctGoal = goal.targetAmount > 0 ? Math.min(100, (goal.savedAmount / goal.targetAmount) * 100) : 0;
               const monthPct = monthlyTarget > 0 ? Math.min(100, (monthSaved / monthlyTarget) * 100) : 0;
@@ -354,7 +362,7 @@ export default function BudgetScreen() {
                       className="w-10 h-10 rounded-2xl items-center justify-center flex-shrink-0"
                       style={{ backgroundColor: goal.color + '20' }}
                     >
-                      <Text style={{ fontSize: 20 }}>{goal.icon || '🎯'}</Text>
+                      <CategoryIconRaw icon={goal.icon} color={goal.color} size={20} />
                     </View>
                     <View className="flex-1 min-w-0">
                       <Text className="text-sm font-semibold text-gray-900 dark:text-white" numberOfLines={1}>{goal.name}</Text>
@@ -495,13 +503,13 @@ export default function BudgetScreen() {
                   </View>
                 )}
                 {(budget.customGoals ?? []).map(goal => {
-                  const months = Math.max(1, Math.round(goal.durationDays / 30));
+                  const months = durationMonthsFromDays(goal.durationDays);
                   const monthly = goal.targetAmount / months;
                   return (
                     <View key={goal.id} className="flex-row items-center justify-between py-2.5 border-b border-gray-50 dark:border-gray-800">
                       <View className="flex-row items-center gap-2.5">
                         <View className="w-7 h-7 rounded-xl items-center justify-center" style={{ backgroundColor: goal.color + '20' }}>
-                          <Text style={{ fontSize: 13 }}>{goal.icon || '🎯'}</Text>
+                          <CategoryIconRaw icon={goal.icon} color={goal.color} size={13} />
                         </View>
                         <Text className="text-sm text-gray-600 dark:text-gray-300" numberOfLines={1}>{goal.name}</Text>
                       </View>

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
 } from 'react-native';
@@ -40,6 +40,7 @@ function getGreeting(): 'home.greeting_morning' | 'home.greeting_afternoon' | 'h
 
 export default function HomeScreen() {
   const router = useRouter();
+  const scrollRef = useRef<ScrollView>(null);
   const now = new Date();
   const {
     transactions, budget, formatCurrency,
@@ -48,12 +49,12 @@ export default function HomeScreen() {
   const { t } = useTranslation();
 
   // Tour target refs
-  const tourRefGreenCard = useTourTarget('home-green-card');
-  const tourRefStats     = useTourTarget('home-stats');
-  const tourRefAddTx     = useTourTarget('home-add-tx');
+  const tourRefGreenCard = useTourTarget('home-green-card', { scrollRef, scrollY: 0 });
+  const tourRefStats     = useTourTarget('home-stats', { scrollRef, scrollY: 260 });
+  const tourRefAddTx     = useTourTarget('home-add-tx', { scrollRef, scrollY: 390 });
   const tourRefCapture   = useTourTarget('home-capture');
-  const tourRefBudgetBtn = useTourTarget('home-budget-btn');
-  const tourRefToggle    = useTourTarget('home-view-toggle');
+  const tourRefBudgetBtn = useTourTarget('home-budget-btn', { scrollRef, scrollY: 390 });
+  const tourRefToggle    = useTourTarget('home-view-toggle', { scrollRef, scrollY: 720 });
 
   const [showEntry, setShowEntry] = useState(false);
   const [entryPrefill, setEntryPrefill] = useState<{ type?: 'expense' | 'income'; amount?: number; category?: string; description?: string } | undefined>(undefined);
@@ -142,7 +143,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" edges={['top']}>
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scrollRef} className="flex-1" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
         {/* ── Header ── */}
         <View className="px-5 pt-3 pb-2 flex-row items-center justify-between">

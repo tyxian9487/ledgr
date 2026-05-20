@@ -9,8 +9,7 @@ import { useTranslation } from '../../context/LanguageContext';
 import { CategoryIconRaw } from '../../components/home/CategoryIcon';
 import ManualEntryModal from '../../components/home/ManualEntryModal';
 import GoalCelebration from '../../components/GoalCelebration';
-
-const MS_PER_MONTH = 30 * 86400000;
+import { durationMonthsFromDays, goalMonthIndex, goalMonthWindow } from '../../utils/goals';
 
 interface MonthData {
   adjustedTarget: number;
@@ -41,18 +40,16 @@ export default function GoalDetailScreen() {
     );
   }
 
-  const durationMonths = Math.max(1, Math.round(goal.durationDays / 30));
-  const startDateObj = new Date(goal.startDate);
-  const startTime = new Date(startDateObj.getFullYear(), startDateObj.getMonth(), startDateObj.getDate()).getTime();
-  const elapsedDays = (Date.now() - startTime) / 86400000;
-  const currentMonthIdx = Math.min(Math.floor(Math.max(0, elapsedDays) / 30), durationMonths - 1);
+  const durationMonths = durationMonthsFromDays(goal.durationDays);
+  const currentMonthIdx = goalMonthIndex(goal.startDate, durationMonths);
 
   const goalTxs = transactions.filter(t => t.linkedGoalId === goal.id);
   const hasTransactionData = goalTxs.length > 0;
 
   function getMonthSaved(monthIdx: number): number {
-    const monthStart = startTime + monthIdx * MS_PER_MONTH;
-    const monthEnd = startTime + (monthIdx + 1) * MS_PER_MONTH;
+    const { start, end } = goalMonthWindow(goal.startDate, monthIdx);
+    const monthStart = start.getTime();
+    const monthEnd = end.getTime();
     return goalTxs
       .filter(t => {
         const d = new Date(t.date).getTime();

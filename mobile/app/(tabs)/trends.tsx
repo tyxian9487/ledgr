@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -357,16 +357,17 @@ function CategoryModal({
 // ─── Trends Screen ────────────────────────────────────────────────────────────
 
 export default function TrendsScreen() {
+  const scrollRef = useRef<ScrollView>(null);
   const { transactions, formatCurrency } = useApp();
   const { t } = useTranslation();
   const { colorScheme } = useColorScheme();
   const dark = colorScheme === 'dark';
 
   // Tour target refs
-  const tourRefTop        = useTourTarget('trends-top');
-  const tourRefMonthly    = useTourTarget('trends-monthly');
-  const tourRefCategories = useTourTarget('trends-categories');
-  const tourRefIncomeVs   = useTourTarget('trends-income-vs');
+  const tourRefTop        = useTourTarget('trends-top', { scrollRef, scrollY: 0 });
+  const tourRefMonthly    = useTourTarget('trends-monthly', { scrollRef, scrollY: 230 });
+  const tourRefCategories = useTourTarget('trends-categories', { scrollRef, scrollY: 430 });
+  const tourRefIncomeVs   = useTourTarget('trends-income-vs', { scrollRef, scrollY: 650 });
 
   const [view, setView] = useState<'spending' | 'income'>('spending');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -424,7 +425,7 @@ export default function TrendsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 dark:bg-gray-950" edges={['top']}>
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView ref={scrollRef} className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
 
         {/* ── Header ── */}
         <View className="px-5 pt-4 pb-2 flex-row items-center justify-between">

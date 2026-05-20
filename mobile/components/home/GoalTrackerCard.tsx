@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { CategoryIconRaw } from './CategoryIcon';
+import { durationMonthsFromDays, goalMonthIndex } from '../../utils/goals';
 
 interface Props {
   year: number;
@@ -29,13 +30,9 @@ function getMonthlyCustomProgress(
   durationDays: number,
   startDate: string,
 ) {
-  const durationMonths = Math.max(1, Math.round(durationDays / 30));
+  const durationMonths = durationMonthsFromDays(durationDays);
   const monthlyTarget = targetAmount / durationMonths;
-  const elapsedDays = (Date.now() - new Date(startDate).getTime()) / 86400000;
-  const currentMonthIdx = Math.min(
-    Math.floor(Math.max(0, elapsedDays) / 30),
-    durationMonths - 1,
-  );
+  const currentMonthIdx = goalMonthIndex(startDate, durationMonths);
   const monthSaved = Math.max(
     0,
     Math.min(monthlyTarget, savedAmount - currentMonthIdx * monthlyTarget),

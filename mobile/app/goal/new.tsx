@@ -13,18 +13,15 @@ import { X, ChevronLeft } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { COLOR_OPTIONS, ICON_OPTIONS } from '../../types';
+import CategoryIcon, { CategoryIconRaw } from '../../components/home/CategoryIcon';
+import { durationDaysFromMonths } from '../../utils/goals';
 
 const DURATION_PRESETS = [
-  { label: '1M', days: 30, key: 'gform.dur_1m' },
-  { label: '3M', days: 90, key: 'gform.dur_3m' },
-  { label: '6M', days: 180, key: 'gform.dur_6m' },
-  { label: '1Y', days: 365, key: 'gform.dur_1y' },
+  { label: '1M', months: 1, key: 'gform.dur_1m' },
+  { label: '3M', months: 3, key: 'gform.dur_3m' },
+  { label: '6M', months: 6, key: 'gform.dur_6m' },
+  { label: '1Y', months: 12, key: 'gform.dur_1y' },
 ] as const;
-
-const EMOJI_OPTIONS = [
-  '🎯', '🏠', '✈️', '🚗', '💻', '📱', '🎓', '👶', '💍', '🏋️',
-  '📚', '🎸', '🌴', '⛵', '🎨', '🏕️', '💰', '🐕', '🌿', '🛋️',
-];
 
 export default function NewGoalScreen() {
   const router = useRouter();
@@ -32,22 +29,21 @@ export default function NewGoalScreen() {
   const { addCustomGoal, formatCurrency, darkMode } = useApp();
 
   const [name, setName] = useState('');
-  const [icon, setIcon] = useState(EMOJI_OPTIONS[0]);
+  const [icon, setIcon] = useState('Star');
   const [color, setColor] = useState(COLOR_OPTIONS[0]);
   const [targetAmount, setTargetAmount] = useState('');
-  const [durationDays, setDurationDays] = useState<number | null>(null);
-  const [customDays, setCustomDays] = useState('');
+  const [durationMonths, setDurationMonths] = useState<number | null>(null);
+  const [customMonths, setCustomMonths] = useState('');
   const [showCustomDuration, setShowCustomDuration] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
-  const [useEmoji, setUseEmoji] = useState(true);
 
-  const resolvedDays = showCustomDuration
-    ? parseInt(customDays, 10) || 0
-    : durationDays ?? 0;
+  const resolvedMonths = showCustomDuration
+    ? parseInt(customMonths, 10) || 0
+    : durationMonths ?? 0;
 
   const targetNum = parseFloat(targetAmount) || 0;
-  const monthlyRate = resolvedDays > 0 && targetNum > 0
-    ? targetNum / (resolvedDays / 30)
+  const monthlyRate = resolvedMonths > 0 && targetNum > 0
+    ? targetNum / resolvedMonths
     : 0;
 
   const phColor = darkMode ? '#6b7280' : '#9ca3af';
@@ -55,7 +51,7 @@ export default function NewGoalScreen() {
   function validate(): string | null {
     if (!name.trim()) return t('gform.enter_name');
     if (!targetNum || targetNum <= 0) return t('gform.enter_target');
-    if (resolvedDays <= 0) return t('gform.choose_duration');
+    if (resolvedMonths <= 0) return t('gform.choose_duration');
     return null;
   }
 
@@ -69,7 +65,7 @@ export default function NewGoalScreen() {
       color,
       targetAmount: targetNum,
       savedAmount: 0,
-      durationDays: resolvedDays,
+      durationDays: durationDaysFromMonths(resolvedMonths),
       startDate: new Date().toISOString(),
     });
     router.back();
@@ -116,22 +112,22 @@ export default function NewGoalScreen() {
           onPress={() => setShowIconPicker(v => !v)}
           className="bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3.5 flex-row items-center mb-3"
         >
-          <Text style={{ fontSize: 24 }}>{icon}</Text>
+          <CategoryIcon icon={icon} color={color} size={18} />
           <Text className="flex-1 text-sm text-gray-400 dark:text-gray-500 ml-3">
             {showIconPicker ? t('gform.tap_select') : t('gform.tap_change')}
           </Text>
         </TouchableOpacity>
         {showIconPicker ? (
           <View className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-3 mb-5 flex-row flex-wrap gap-2">
-            {EMOJI_OPTIONS.map(em => (
+            {ICON_OPTIONS.map(ico => (
               <TouchableOpacity
-                key={em}
-                onPress={() => { setIcon(em); setShowIconPicker(false); }}
+                key={ico}
+                onPress={() => { setIcon(ico); setShowIconPicker(false); }}
                 className={`w-12 h-12 rounded-xl items-center justify-center border-2 ${
-                  icon === em ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-transparent'
+                  icon === ico ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-transparent bg-gray-50 dark:bg-gray-800'
                 }`}
               >
-                <Text style={{ fontSize: 22 }}>{em}</Text>
+                <CategoryIconRaw icon={ico} color={icon === ico ? color : '#9ca3af'} size={18} />
               </TouchableOpacity>
             ))}
           </View>
@@ -173,21 +169,21 @@ export default function NewGoalScreen() {
         <View className="flex-row flex-wrap gap-2 mb-3">
           {DURATION_PRESETS.map(p => (
             <TouchableOpacity
-              key={p.days}
+              key={p.months}
               onPress={() => {
-                setDurationDays(p.days);
+                setDurationMonths(p.months);
                 setShowCustomDuration(false);
-                setCustomDays('');
+                setCustomMonths('');
               }}
               className={`px-4 py-2.5 rounded-xl items-center border-2 ${
-                !showCustomDuration && durationDays === p.days
+                !showCustomDuration && durationMonths === p.months
                   ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
                   : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
               }`}
             >
               <Text
                 className={`text-sm font-bold ${
-                  !showCustomDuration && durationDays === p.days ? 'text-green-700 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'
+                  !showCustomDuration && durationMonths === p.months ? 'text-green-700 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'
                 }`}
               >
                 {t(p.key as any)}
@@ -195,7 +191,7 @@ export default function NewGoalScreen() {
             </TouchableOpacity>
           ))}
           <TouchableOpacity
-            onPress={() => { setShowCustomDuration(true); setDurationDays(null); }}
+            onPress={() => { setShowCustomDuration(true); setDurationMonths(null); }}
             className={`flex-1 py-2.5 rounded-xl items-center border-2 ${
               showCustomDuration
                 ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
@@ -212,9 +208,9 @@ export default function NewGoalScreen() {
 
         {showCustomDuration ? (
           <TextInput
-            value={customDays}
-            onChangeText={setCustomDays}
-            placeholder="Number of days (e.g. 120)"
+            value={customMonths}
+            onChangeText={setCustomMonths}
+            placeholder="Number of months (e.g. 12)"
             placeholderTextColor={phColor}
             keyboardType="number-pad"
             className="bg-white dark:bg-gray-900 border-2 border-green-200 dark:border-green-900 rounded-2xl px-4 py-3.5 text-sm text-gray-900 dark:text-white mb-5 focus:border-green-500"

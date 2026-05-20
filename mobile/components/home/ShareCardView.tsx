@@ -1,12 +1,6 @@
 import { forwardRef } from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
-
-const happyImg = require('../../assets/m_expression_happy.png');
-const winkImg  = require('../../assets/m_expression_wink.png');
-// m_expression_sad.png is user-provided; fall back to wink if absent
-let sadImg: number;
-try { sadImg = require('../../assets/m_expression_sad.png'); }
-catch { sadImg = winkImg; }
+import { View, Text, StyleSheet } from 'react-native';
+import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
 
 const MONTH_NAMES = [
   'January','February','March','April','May','June',
@@ -22,51 +16,59 @@ interface Props {
   month: number;
   year: number;
   formatCurrency: (n: number) => string;
+  slices: Array<{ id: string; label: string; color: string; amount: number; pct: number }>;
 }
 
 const ShareCardView = forwardRef<View, Props>(function ShareCardView(
-  { score, statusLabel, totalIncome, totalExpenses, remaining, month, year, formatCurrency },
+  { score, statusLabel, totalIncome, totalExpenses, remaining, month, year, formatCurrency, slices },
   ref,
 ) {
-  const mascot = score >= 80 ? happyImg : score >= 60 ? winkImg : sadImg;
   const dateStr = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   const monthYear = `${MONTH_NAMES[month]} ${year}`;
-  const scoreColor = score >= 80 ? '#86efac' : score >= 60 ? '#fde68a' : '#fca5a5';
+  const scoreText = score >= 80 ? '90+' : score >= 60 ? '60-79' : '<60';
+  const statusColor = score >= 80 ? '#fbbf24' : score >= 60 ? '#cbd5e1' : '#f97316';
+  const legendRows = slices.slice(0, 5);
 
   return (
     <View ref={ref} style={s.card} collapsable={false}>
-      {/* Header row */}
       <View style={s.header}>
         <Text style={s.appName}>Kachingo</Text>
         <Text style={s.monthYear}>{monthYear}</Text>
-        <View style={{ width: 60 }} />
       </View>
 
-      {/* Status + mascot row */}
-      <View style={s.statusRow}>
-        <View style={s.statusChip}>
-          <Text style={s.statusLabel}>{statusLabel}</Text>
+      <View style={s.statusBox}>
+        <View style={s.coin}>
+          <Text style={s.coinText}>$</Text>
+        </View>
+        <View style={s.statusCopy}>
+          <Text style={[s.statusLabel, { color: statusColor }]}>{statusLabel}</Text>
           <Text style={s.statusSub}>Financial Status</Text>
         </View>
-        <Image source={mascot} style={s.mascot} resizeMode="contain" />
         <View style={s.scoreBadge}>
           <Text style={s.scoreLabel}>Score</Text>
-          <Text style={[s.scoreNum, { color: scoreColor }]}>{score}</Text>
+          <Text style={s.scoreNum}>{scoreText}</Text>
         </View>
       </View>
 
-      {/* Expenses display */}
-      <View style={s.expensesBox}>
-        <View style={s.expCircle}>
-          <Text style={s.expCircleLabel}>Expenses</Text>
-          <Text style={s.expCircleValue}>{formatCurrency(totalExpenses)}</Text>
+      <View style={s.middle}>
+        <DonutPreview
+          slices={slices.map(slice => ({ id: slice.id, color: slice.color, pct: slice.pct }))}
+          centerLabel="Expenses"
+          centerValue={formatCurrency(totalExpenses)}
+        />
+        <View style={s.legend}>
+          {legendRows.length > 0 ? legendRows.map(slice => (
+            <View key={slice.id} style={s.legendRow}>
+              <View style={[s.legendDot, { backgroundColor: slice.color }]} />
+              <Text style={s.legendLabel}>{slice.label}</Text>
+              <Text style={s.legendAmount}>{formatCurrency(slice.amount)}</Text>
+            </View>
+          )) : (
+            <Text style={s.noExpenses}>No expenses this month</Text>
+          )}
         </View>
-        {totalExpenses === 0 && (
-          <Text style={s.noExpenses}>No expenses recorded</Text>
-        )}
       </View>
 
-      {/* Income / Remaining row */}
       <View style={s.bottomRow}>
         <View style={s.statBox}>
           <Text style={s.statLabel}>INCOME</Text>
@@ -88,142 +90,203 @@ const ShareCardView = forwardRef<View, Props>(function ShareCardView(
 
 export default ShareCardView;
 
+function DonutPreview({
+  slices,
+  centerLabel,
+  centerValue,
+}: {
+  slices: Array<{ id: string; color: string; pct: number }>;
+  centerLabel: string;
+  centerValue: string;
+}) {
+  const size = 260;
+  const outerR = 100;
+  const innerR = 62;
+  const cx = size / 2;
+  const cy = size / 2;
+
+  function pt(angle: number, r: number) {
+    const rad = (angle - 90) * Math.PI / 180;
+    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+  }
+
+  function arcPath(startAngle: number, endAngle: number): string {
+    const delta = Math.min(endAngle - startAngle, 359.9);
+    const ea = startAngle + delta;
+    const p1 = pt(startAngle, outerR);
+    const p2 = pt(ea, outerR);
+    const p3 = pt(ea, innerR);
+    const p4 = pt(startAngle, innerR);
+    const large = delta > 180 ? 1 : 0;
+    return `M ${p1.x} ${p1.y} A ${outerR} ${outerR} 0 ${large} 1 ${p2.x} ${p2.y} L ${p3.x} ${p3.y} A ${innerR} ${innerR} 0 ${large} 0 ${p4.x} ${p4.y} Z`;
+  }
+
+  let angle = 0;
+  const segments = slices.map(slice => {
+    const start = angle;
+    angle += (slice.pct / 100) * 360;
+    return { ...slice, start, end: angle };
+  });
+
+  return (
+    <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <Circle
+        cx={cx}
+        cy={cy}
+        r={(outerR + innerR) / 2}
+        fill="none"
+        stroke="rgba(255,255,255,0.16)"
+        strokeWidth={outerR - innerR}
+      />
+      {segments.map(segment => (
+        <Path key={segment.id} d={arcPath(segment.start, segment.end)} fill={segment.color} />
+      ))}
+      <SvgText x={cx} y={cy - 12} textAnchor="middle" fontSize={15} fill="rgba(255,255,255,0.62)">
+        {centerLabel}
+      </SvgText>
+      <SvgText x={cx} y={cy + 20} textAnchor="middle" fontSize={28} fontWeight="bold" fill="white">
+        {centerValue}
+      </SvgText>
+    </Svg>
+  );
+}
+
 const s = StyleSheet.create({
   card: {
-    width: 360,
+    width: 1024,
     backgroundColor: '#166534',
-    borderRadius: 20,
-    padding: 20,
-    paddingBottom: 16,
+    borderRadius: 24,
+    padding: 32,
+    paddingBottom: 18,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 18,
   },
   appName: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    width: 60,
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 18,
+    fontWeight: '600',
+    width: 180,
   },
   monthYear: {
     color: '#fff',
-    fontSize: 17,
+    fontSize: 28,
     fontWeight: '800',
     textAlign: 'center',
     flex: 1,
   },
-  statusRow: {
+  statusBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
-    gap: 8,
+    marginBottom: 26,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 18,
+    paddingVertical: 24,
+    paddingHorizontal: 26,
   },
-  statusChip: {
+  coin: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#d97706',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 22,
+  },
+  coinText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  statusCopy: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 14,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
   },
   statusLabel: {
-    color: '#fff',
-    fontSize: 14,
+    fontSize: 28,
     fontWeight: '800',
   },
   statusSub: {
     color: 'rgba(255,255,255,0.6)',
-    fontSize: 10,
-    marginTop: 2,
-  },
-  mascot: {
-    width: 72,
-    height: 72,
-    flexShrink: 0,
+    fontSize: 16,
+    marginTop: 6,
   },
   scoreBadge: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 14,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    minWidth: 56,
+    alignItems: 'flex-end',
   },
   scoreLabel: {
     color: 'rgba(255,255,255,0.6)',
-    fontSize: 10,
+    fontSize: 15,
   },
   scoreNum: {
-    fontSize: 22,
+    color: '#fff',
+    fontSize: 28,
     fontWeight: '900',
-    marginTop: 2,
+    marginTop: 4,
   },
-  expensesBox: {
+  middle: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 16,
-    padding: 12,
-    minHeight: 72,
+    marginBottom: 28,
   },
-  expCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.5)',
+  legend: {
+    flex: 1,
+    paddingLeft: 28,
+    gap: 22,
+  },
+  legendRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
   },
-  expCircleLabel: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 8,
-    textAlign: 'center',
+  legendDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginRight: 16,
   },
-  expCircleValue: {
+  legendLabel: {
+    flex: 1,
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 20,
+  },
+  legendAmount: {
     color: '#fff',
-    fontSize: 11,
+    fontSize: 20,
     fontWeight: '800',
-    textAlign: 'center',
   },
   noExpenses: {
     color: 'rgba(255,255,255,0.5)',
-    fontSize: 13,
-    flex: 1,
-    textAlign: 'center',
+    fontSize: 18,
   },
   bottomRow: {
     flexDirection: 'row',
-    marginBottom: 14,
+    gap: 16,
+    marginBottom: 16,
   },
   statBox: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 14,
-    padding: 12,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 18,
+    padding: 20,
   },
   statLabel: {
     color: 'rgba(255,255,255,0.6)',
-    fontSize: 9,
+    fontSize: 14,
     fontWeight: '700',
     letterSpacing: 0.8,
     textTransform: 'uppercase',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   statValue: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 28,
     fontWeight: '800',
   },
   footer: {
     color: 'rgba(255,255,255,0.4)',
-    fontSize: 9,
+    fontSize: 15,
     textAlign: 'center',
   },
 });

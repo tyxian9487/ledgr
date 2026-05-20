@@ -1,12 +1,15 @@
 import { View, Text, TouchableOpacity, Modal } from 'react-native';
+import { useSegments } from 'expo-router';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../context/LanguageContext';
 
 export default function ConsentBanner() {
   const { t } = useTranslation();
+  const segments = useSegments();
   const { analyticsConsent, isAuthenticated, hasCompletedOnboarding, grantAnalyticsConsent, denyAnalyticsConsent } = useApp();
 
-  const visible = isAuthenticated && hasCompletedOnboarding && analyticsConsent === null;
+  const inAuthGroup = segments[0] === '(auth)' || segments[0] === 'auth';
+  const visible = isAuthenticated && hasCompletedOnboarding && !inAuthGroup && analyticsConsent === null;
 
   return (
     <Modal visible={visible} transparent animationType="fade">
