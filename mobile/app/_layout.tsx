@@ -3,7 +3,7 @@ import { Slot, useRouter, useSegments } from 'expo-router';
 import React, { useEffect, useState, Component } from 'react';
 import { View, Text, ScrollView, Linking, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { AppProvider, useApp } from '../context/AppContext';
 import { LanguageProvider } from '../context/LanguageContext';
 import { PurchasesProvider, usePurchases } from '../context/PurchasesContext';

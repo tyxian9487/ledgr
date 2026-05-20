@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Alert, Modal, ScrollView } from 'react-na
 import { Trash2, Edit2, RefreshCw, ChevronDown, ChevronRight, ChevronLeft, X } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
+import { useColorScheme } from 'nativewind';
 import { Transaction } from '../../types';
 import CategoryIcon from './CategoryIcon';
 
@@ -40,6 +41,21 @@ export function CalendarModal({
   year: number; month: number; transactions: Transaction[];
   formatCurrency: (n: number) => string; onClose: () => void;
 }) {
+  const { colorScheme } = useColorScheme();
+  const dark = colorScheme === 'dark';
+  const c = {
+    surface: dark ? '#1f2937' : '#fff',
+    handle: dark ? '#4b5563' : '#e5e7eb',
+    border: dark ? '#374151' : '#f3f4f6',
+    borderFaint: dark ? '#374151' : '#f9fafb',
+    textPrimary: dark ? '#f9fafb' : '#111827',
+    textSecondary: dark ? '#e5e7eb' : '#374151',
+    textMuted: dark ? '#9ca3af' : '#6b7280',
+    icon: dark ? '#e5e7eb' : '#374151',
+    closeBtn: dark ? '#374151' : '#f3f4f6',
+    closeIcon: dark ? '#9ca3af' : '#6b7280',
+  };
+
   const [calYear, setCalYear] = useState(year);
   const [calMonth, setCalMonth] = useState(month);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -88,20 +104,20 @@ export function CalendarModal({
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
       <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-        <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28 }}>
+        <View style={{ backgroundColor: c.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28 }}>
           {/* Drag handle */}
-          <View style={{ width: 36, height: 4, backgroundColor: '#e5e7eb', borderRadius: 2, alignSelf: 'center', marginTop: 12, marginBottom: 16 }} />
+          <View style={{ width: 36, height: 4, backgroundColor: c.handle, borderRadius: 2, alignSelf: 'center', marginTop: 12, marginBottom: 16 }} />
 
           {/* Month navigation */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 16 }}>
             <TouchableOpacity onPress={prevMonth} style={{ padding: 8 }}>
-              <ChevronLeft size={20} color="#374151" />
+              <ChevronLeft size={20} color={c.icon} />
             </TouchableOpacity>
-            <Text style={{ fontSize: 17, fontWeight: '700', color: '#111827' }}>
+            <Text style={{ fontSize: 17, fontWeight: '700', color: c.textPrimary }}>
               {MONTH_NAMES[calMonth]} {calYear}
             </Text>
             <TouchableOpacity onPress={nextMonth} style={{ padding: 8 }}>
-              <ChevronRight size={20} color="#374151" />
+              <ChevronRight size={20} color={c.icon} />
             </TouchableOpacity>
           </View>
 
@@ -140,7 +156,7 @@ export function CalendarModal({
                       : hasIncome ? 'rgba(34,197,94,0.12)' : 'transparent',
                     borderWidth: isToday && !isSelected ? 1.5 : 0, borderColor: '#16a34a',
                   }}>
-                    <Text style={{ fontSize: 13, fontWeight: isToday ? '700' : '400', color: isSelected ? '#fff' : '#111827' }}>
+                    <Text style={{ fontSize: 13, fontWeight: isToday ? '700' : '400', color: isSelected ? '#fff' : c.textPrimary }}>
                       {day}
                     </Text>
                     {(hasSpend || hasIncome) && !isSelected && (
@@ -161,31 +177,31 @@ export function CalendarModal({
           </View>
 
           {/* Legend */}
-          <View style={{ flexDirection: 'row', gap: 16, paddingHorizontal: 20, paddingVertical: 10, justifyContent: 'center', borderTopWidth: 1, borderTopColor: '#f3f4f6' }}>
+          <View style={{ flexDirection: 'row', gap: 16, paddingHorizontal: 20, paddingVertical: 10, justifyContent: 'center', borderTopWidth: 1, borderTopColor: c.border }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <View style={{ flexDirection: 'row', gap: 2 }}>
                 {[0.2, 0.4, 0.65, 0.9].map((o, i) => (
                   <View key={i} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: `rgba(239,68,68,${o})` }} />
                 ))}
               </View>
-              <Text style={{ fontSize: 11, color: '#6b7280' }}>Low → High spend</Text>
+              <Text style={{ fontSize: 11, color: c.textMuted }}>Low → High spend</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#22c55e' }} />
-              <Text style={{ fontSize: 11, color: '#6b7280' }}>Income</Text>
+              <Text style={{ fontSize: 11, color: c.textMuted }}>Income</Text>
             </View>
           </View>
 
           {/* Selected day transactions */}
           {selectedDay !== null && (
-            <ScrollView style={{ maxHeight: 180, borderTopWidth: 1, borderTopColor: '#f3f4f6' }} nestedScrollEnabled>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: '#6b7280', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <ScrollView style={{ maxHeight: 180, borderTopWidth: 1, borderTopColor: c.border }} nestedScrollEnabled>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: c.textMuted, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                 {MONTH_NAMES[calMonth]} {selectedDay}
                 {selectedDayTxs.length === 0 ? ' — No transactions' : ''}
               </Text>
               {selectedDayTxs.map(tx => (
-                <View key={tx.id} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: '#f9fafb' }}>
-                  <Text style={{ flex: 1, fontSize: 13, color: '#374151' }} numberOfLines={1}>
+                <View key={tx.id} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: c.borderFaint }}>
+                  <Text style={{ flex: 1, fontSize: 13, color: c.textSecondary }} numberOfLines={1}>
                     {tx.description || tx.category}
                   </Text>
                   <Text style={{ fontSize: 13, fontWeight: '600', color: tx.type === 'income' ? '#16a34a' : '#ef4444' }}>
@@ -198,8 +214,8 @@ export function CalendarModal({
 
           {/* Close */}
           <TouchableOpacity onPress={onClose} style={{ alignItems: 'center', paddingVertical: 14 }}>
-            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' }}>
-              <X size={18} color="#6b7280" />
+            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: c.closeBtn, alignItems: 'center', justifyContent: 'center' }}>
+              <X size={18} color={c.closeIcon} />
             </View>
           </TouchableOpacity>
         </View>
@@ -212,6 +228,18 @@ export function CalendarModal({
 export default function Categories({ year, month, view, filterFn, onEdit }: CategoriesProps) {
   const { transactions, expenseCategories, incomeCategories, removeTransaction, formatCurrency } = useApp();
   const { t } = useTranslation();
+  const { colorScheme } = useColorScheme();
+  const dark = colorScheme === 'dark';
+  const c = {
+    surface: dark ? '#1f2937' : '#fff',
+    border: dark ? '#374151' : '#f3f4f6',
+    borderFaint: dark ? '#374151' : '#f9fafb',
+    dateBadge: dark ? '#374151' : '#f3f4f6',
+    textPrimary: dark ? '#f9fafb' : '#111827',
+    textSecondary: dark ? '#e5e7eb' : '#374151',
+    textMuted: '#9ca3af',
+  };
+
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const allCategories = useMemo(() => [...expenseCategories, ...incomeCategories], [expenseCategories, incomeCategories]);
@@ -242,11 +270,11 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
           <CategoryIcon icon={cat?.icon ?? 'MoreHorizontal'} color={cat?.color ?? '#94a3b8'} size={16} />
         </View>
         <View style={{ flex: 1, marginLeft: 10, minWidth: 0 }}>
-          <Text style={{ fontSize: 13, fontWeight: '500', color: '#111827' }} numberOfLines={1}>
+          <Text style={{ fontSize: 13, fontWeight: '500', color: c.textPrimary }} numberOfLines={1}>
             {tx.description || cat?.label}
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 1 }}>
-            <Text style={{ fontSize: 11, color: '#9ca3af' }}>{cat?.label}</Text>
+            <Text style={{ fontSize: 11, color: c.textMuted }}>{cat?.label}</Text>
             {tx.isAutoDebit && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
                 <RefreshCw size={9} color="#9ca3af" />
@@ -302,9 +330,9 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
                 onPress={() => setExpanded(prev => ({ ...prev, [row.id]: !isExp }))}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
-                  backgroundColor: '#fff', borderRadius: 16,
+                  backgroundColor: c.surface, borderRadius: 16,
                   paddingHorizontal: 14, paddingVertical: 11,
-                  borderWidth: 1, borderColor: '#f3f4f6',
+                  borderWidth: 1, borderColor: c.border,
                 }}
                 activeOpacity={0.7}
               >
@@ -312,8 +340,8 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
                   <CategoryIcon icon={row.icon} color={row.color} size={19} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#111827' }}>{row.label}</Text>
-                  <Text style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: c.textPrimary }}>{row.label}</Text>
+                  <Text style={{ fontSize: 11, color: c.textMuted, marginTop: 1 }}>
                     {row.txs.length} transaction{row.txs.length !== 1 ? 's' : ''}
                   </Text>
                 </View>
@@ -324,9 +352,9 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
               </TouchableOpacity>
 
               {isExp && (
-                <View style={{ backgroundColor: '#fff', borderRadius: 12, marginTop: 2, overflow: 'hidden', borderWidth: 1, borderColor: '#f3f4f6' }}>
+                <View style={{ backgroundColor: c.surface, borderRadius: 12, marginTop: 2, overflow: 'hidden', borderWidth: 1, borderColor: c.border }}>
                   {row.txs.map((tx, i) => (
-                    <View key={tx.id} style={i < row.txs.length - 1 ? { borderBottomWidth: 1, borderBottomColor: '#f9fafb' } : {}}>
+                    <View key={tx.id} style={i < row.txs.length - 1 ? { borderBottomWidth: 1, borderBottomColor: c.borderFaint } : {}}>
                       <TxRow tx={tx} />
                     </View>
                   ))}
@@ -372,14 +400,14 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
               activeOpacity={0.7}
             >
               {/* Date badge */}
-              <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center', marginRight: 12, flexShrink: 0 }}>
+              <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: c.dateBadge, alignItems: 'center', justifyContent: 'center', marginRight: 12, flexShrink: 0 }}>
                 <Text style={{ fontSize: 9, fontWeight: '700', color: '#9ca3af', letterSpacing: 0.4 }}>{dayName}</Text>
-                <Text style={{ fontSize: 17, fontWeight: '700', color: '#111827', lineHeight: 20 }}>{dayNum}</Text>
+                <Text style={{ fontSize: 17, fontWeight: '700', color: c.textPrimary, lineHeight: 20 }}>{dayNum}</Text>
               </View>
 
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: '#111827' }}>{label}</Text>
-                <Text style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: c.textPrimary }}>{label}</Text>
+                <Text style={{ fontSize: 11, color: c.textMuted, marginTop: 1 }}>
                   {dayTxs.length} transaction{dayTxs.length !== 1 ? 's' : ''}
                 </Text>
               </View>
@@ -396,9 +424,9 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
             </TouchableOpacity>
 
             {isExp && (
-              <View style={{ backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#f3f4f6' }}>
+              <View style={{ backgroundColor: c.surface, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: c.border }}>
                 {dayTxs.map((tx, i) => (
-                  <View key={tx.id} style={i < dayTxs.length - 1 ? { borderBottomWidth: 1, borderBottomColor: '#f9fafb' } : {}}>
+                  <View key={tx.id} style={i < dayTxs.length - 1 ? { borderBottomWidth: 1, borderBottomColor: c.borderFaint } : {}}>
                     <TxRow tx={tx} />
                   </View>
                 ))}

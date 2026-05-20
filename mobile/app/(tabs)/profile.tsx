@@ -826,7 +826,14 @@ export default function ProfileScreen() {
       quality: 0.8,
     });
     if (!result.canceled && result.assets[0]) {
-      updateUserProfile({ avatar: result.assets[0].uri });
+      try {
+        const FileSystem = await import('expo-file-system/legacy');
+        const dest = (FileSystem.documentDirectory ?? '') + 'kachingo_avatar.jpg';
+        await FileSystem.copyAsync({ from: result.assets[0].uri, to: dest });
+        updateUserProfile({ avatar: dest });
+      } catch {
+        updateUserProfile({ avatar: result.assets[0].uri });
+      }
     }
   }
 
@@ -1028,7 +1035,7 @@ export default function ProfileScreen() {
     });
     const csv = [header, ...rows].join('\n');
     try {
-      const FileSystem = await import('expo-file-system');
+      const FileSystem = await import('expo-file-system/legacy');
       const Sharing = await import('expo-sharing');
       const path = FileSystem.cacheDirectory + 'kachingo_transactions.csv';
       await FileSystem.writeAsStringAsync(path, csv, { encoding: FileSystem.EncodingType.UTF8 });
