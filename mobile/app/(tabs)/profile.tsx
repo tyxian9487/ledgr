@@ -937,7 +937,7 @@ export default function ProfileScreen() {
     if (unseen.length === 0) return;
     const badge = BADGES.find(b => b.id === unseen[unseen.length - 1]);
     if (badge) setCelebrationBadge(badge);
-  }, [earnedBadgeIds, seenBadgesLoaded]);
+  }, [earnedBadgeIds, seenBadgeIds, seenBadgesLoaded]);
 
   const scoreLabel =
     score >= 80
@@ -1141,7 +1141,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Badges */}
-        <View className="mx-4 bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm border border-gray-800 mb-2">
+        <View className="mx-4 bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm border border-gray-50 dark:border-gray-800 mb-2">
           <View className="flex-row flex-wrap gap-2">
             {BADGES.slice(0, 9).map(badge => {
               const earned = earnedBadgeIds.has(badge.id);
@@ -1149,14 +1149,14 @@ export default function ProfileScreen() {
                 <View
                   key={badge.id}
                   className={`items-center rounded-2xl py-3 px-2 ${
-                    earned ? 'bg-green-50' : 'bg-gray-50'
+                    earned ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-800'
                   }`}
                   style={{ width: '30.5%' }}
                 >
                   <Text style={{ fontSize: 22, opacity: earned ? 1 : 0.25 }}>{badge.icon}</Text>
                   <Text
                     className={`text-[10px] font-bold text-center mt-1 ${
-                      earned ? 'text-green-700' : 'text-gray-400'
+                      earned ? 'text-green-700 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'
                     }`}
                     numberOfLines={2}
                   >
@@ -1166,8 +1166,8 @@ export default function ProfileScreen() {
               );
             })}
           </View>
-          <Text className="text-[10px] text-gray-400 text-center mt-3">
-            {earnedBadgeIds.size}/{BADGES.length} unlocked
+          <Text className="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-3">
+            {earnedBadgeIds.size}/{BADGES.length} {t('achieve.unlocked')}
           </Text>
         </View>
 

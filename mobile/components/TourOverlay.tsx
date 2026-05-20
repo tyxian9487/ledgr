@@ -81,7 +81,7 @@ export default function TourOverlay() {
   return (
     <>
       {/* ── Quick Tour Offer ── */}
-      <Modal visible={showOffer} transparent={false} animationType="fade" statusBarTranslucent>
+      <Modal visible={showOffer} transparent={false} animationType="fade">
         <View style={[s.offerRoot, { backgroundColor: bg }]}>
           <Image source={mapMascotImg} style={s.mascot} resizeMode="contain" />
           <Text style={[s.offerTitle, { color: textPrimary }]}>{t('tour.title')}</Text>
@@ -102,7 +102,6 @@ export default function TourOverlay() {
         visible={showTooltip}
         transparent
         animationType="slide"
-        statusBarTranslucent
         onRequestClose={skipTour}
       >
         {/* Backdrop — spotlight if we have a rect, otherwise uniform dark */}

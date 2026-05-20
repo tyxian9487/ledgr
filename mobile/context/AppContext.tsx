@@ -244,6 +244,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [analyticsConsent, setAnalyticsConsent] = useState<boolean | null>(null);
   const [profileOverrides, setProfileOverrides] = useState<ProfileOverrides>({});
   const [hasLoadedStorage, setHasLoadedStorage] = useState(false);
+  const [languageManuallySelected, setLanguageManuallySelected] = useState(false);
 
   const userIdRef = useRef<string | null>(null);
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -282,7 +283,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (!data.langMigratedV1 && (!savedProfile.language || (savedProfile.language === 'en' && deviceLang !== 'en'))) {
             savedProfile.language = deviceLang;
           }
+          const languageWasManual = data.languageManuallySelected ?? false;
+          if (!languageWasManual) {
+            savedProfile.language = detectDeviceLanguage();
+          }
           setUserProfile(savedProfile);
+          setLanguageManuallySelected(languageWasManual);
           const savedOverrides = data.profileOverrides || {};
           profileOverridesRef.current = savedOverrides;
           setProfileOverrides(savedOverrides);
@@ -302,6 +308,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setUserProfile(prev => ({ ...prev, language: detectDeviceLanguage() }));
           profileOverridesRef.current = {};
           setProfileOverrides({});
+          setLanguageManuallySelected(false);
           setDarkMode(systemColorScheme === 'dark');
         }
       } catch {
@@ -390,6 +397,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const blob = {
         transactions, userProfile, darkMode, budget,
         hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent, profileOverrides,
+        languageManuallySelected,
         langMigratedV1: true,
       };
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(blob));
@@ -424,7 +432,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }, 2000);
     };
     save();
-  }, [transactions, userProfile, darkMode, budget, hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent, profileOverrides, hasLoadedStorage]);
+  }, [transactions, userProfile, darkMode, budget, hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent, profileOverrides, languageManuallySelected, hasLoadedStorage]);
+
+  useEffect(() => {
+    if (!hasLoadedStorage) return;
+    setDarkMode(systemColorScheme === 'dark');
+  }, [hasLoadedStorage, systemColorScheme]);
 
   const expenseCategories = useMemo<Category[]>(() => [
     ...EXPENSE_CATEGORIES.filter(c => !disabledCategories.includes(c.id)),
@@ -494,6 +507,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const nextOverrides: ProfileOverrides = {};
     if (Object.prototype.hasOwnProperty.call(p, 'name')) nextOverrides.name = true;
     if (Object.prototype.hasOwnProperty.call(p, 'avatar')) nextOverrides.avatar = true;
+    if (Object.prototype.hasOwnProperty.call(p, 'language')) setLanguageManuallySelected(true);
     if (nextOverrides.name || nextOverrides.avatar) {
       setProfileOverrides(prev => {
         const next = { ...prev, ...nextOverrides };

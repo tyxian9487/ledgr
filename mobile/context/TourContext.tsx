@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode, RefObject } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Dimensions, InteractionManager, ScrollView, View } from 'react-native';
 
 export interface HighlightRect { x: number; y: number; width: number; height: number; }
 
@@ -260,12 +260,28 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
 
   useEffect(() => {
     if (currentStep?.id !== stepId) return;
-    if (options.scrollRef && options.scrollY !== undefined) {
-      options.scrollRef.current?.scrollTo({ y: options.scrollY, animated: true });
+    const initialScrollY = options.scrollY ?? 0;
+    if (options.scrollRef) {
+      options.scrollRef.current?.scrollTo({ y: initialScrollY, animated: true });
     }
-    const timer = setTimeout(() => {
+
+    let cancelled = false;
+    const measure = (extraScroll = 0) => {
+      if (cancelled) return;
       ref.current?.measureInWindow((x, y, w, h) => {
+        if (cancelled) return;
         if (w > 0 && h > 0) {
+          const screenHeight = Dimensions.get('window').height;
+          const tooltipTop = screenHeight - 260;
+          const bottom = y + h + 12;
+
+          if (options.scrollRef && extraScroll === 0 && bottom > tooltipTop) {
+            const nextY = Math.max(0, initialScrollY + (bottom - tooltipTop) + 24);
+            options.scrollRef.current?.scrollTo({ y: nextY, animated: true });
+            setTimeout(() => measure(nextY - initialScrollY), 450);
+            return;
+          }
+
           setHighlightRect({
             x: Math.max(0, x - 4),
             y: Math.max(0, y - 4),
@@ -274,8 +290,16 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
           });
         }
       });
-    }, options.scrollRef ? 700 : 350);
-    return () => clearTimeout(timer);
+    };
+
+    const task = InteractionManager.runAfterInteractions(() => {
+      setTimeout(() => measure(), options.scrollRef ? 650 : 250);
+    });
+
+    return () => {
+      cancelled = true;
+      task.cancel();
+    };
   }, [currentStep?.id, options.scrollRef, options.scrollY, stepId, setHighlightRect]);
 
   return ref;

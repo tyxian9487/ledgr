@@ -56,7 +56,7 @@ export default function LinkedAccountScreen() {
           {userProfile.email ? (
             <Text className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{userProfile.email}</Text>
           ) : (
-            <Text className="text-sm text-gray-400 dark:text-gray-500 mt-0.5 italic">No email</Text>
+            <Text className="text-sm text-gray-400 dark:text-gray-500 mt-0.5 italic">{t('linked.no_email')}</Text>
           )}
         </View>
 

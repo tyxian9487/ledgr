@@ -394,7 +394,7 @@ export default function BudgetScreen() {
                     className="mt-3 pt-3 border-t border-gray-50 dark:border-gray-800 flex-row items-center justify-center"
                     activeOpacity={0.7}
                   >
-                    <Text className="text-xs font-semibold" style={{ color: goal.color }}>See progress →</Text>
+                    <Text className="text-xs font-semibold" style={{ color: goal.color }}>{t('budget.see_progress')}</Text>
                   </TouchableOpacity>
                 </View>
               );

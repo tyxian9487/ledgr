@@ -80,6 +80,118 @@ function formatDateDisplay(dateStr: string) {
   return `${day}/${month}/${year}`;
 }
 
+function CalendarDateModal({
+  visible,
+  value,
+  onSelect,
+  onClose,
+}: {
+  visible: boolean;
+  value: string;
+  onSelect: (date: string) => void;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const initial = new Date(`${value}T12:00:00`);
+  const [viewDate, setViewDate] = useState(
+    new Date(initial.getFullYear(), initial.getMonth(), 1),
+  );
+
+  useEffect(() => {
+    if (!visible) return;
+    const next = new Date(`${value}T12:00:00`);
+    setViewDate(new Date(next.getFullYear(), next.getMonth(), 1));
+  }, [value, visible]);
+
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const selected = new Date(`${value}T12:00:00`);
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells = [
+    ...Array.from({ length: firstDay }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, idx) => idx + 1),
+  ];
+
+  function toIso(day: number) {
+    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View className="flex-1 bg-black/50 justify-end">
+        <View className="bg-white dark:bg-gray-900 rounded-t-3xl px-5 pt-5 pb-8">
+          <View className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700 self-center mb-4" />
+          <View className="flex-row items-center justify-between mb-4">
+            <TouchableOpacity
+              onPress={() => setViewDate(new Date(year, month - 1, 1))}
+              className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
+            >
+              <Text className="text-lg text-gray-600 dark:text-gray-300">‹</Text>
+            </TouchableOpacity>
+            <View className="items-center">
+              <Text className="text-base font-bold text-gray-900 dark:text-white">
+                {viewDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+              </Text>
+              <Text className="text-xs text-gray-400">{t('tx.select_date')}</Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setViewDate(new Date(year, month + 1, 1))}
+              className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
+            >
+              <Text className="text-lg text-gray-600 dark:text-gray-300">›</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View className="flex-row mb-2">
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, idx) => (
+              <Text key={`${d}-${idx}`} className="flex-1 text-center text-[11px] font-bold text-gray-400">
+                {d}
+              </Text>
+            ))}
+          </View>
+
+          <View className="flex-row flex-wrap">
+            {cells.map((day, idx) => {
+              const iso = day ? toIso(day) : '';
+              const isSelected =
+                day &&
+                selected.getFullYear() === year &&
+                selected.getMonth() === month &&
+                selected.getDate() === day;
+              return (
+                <View key={`${idx}-${day ?? 'blank'}`} style={{ width: `${100 / 7}%`, padding: 3 }}>
+                  {day ? (
+                    <TouchableOpacity
+                      onPress={() => {
+                        onSelect(iso);
+                        onClose();
+                      }}
+                      className={`aspect-square rounded-2xl items-center justify-center ${
+                        isSelected ? 'bg-green-600' : 'bg-gray-50 dark:bg-gray-800'
+                      }`}
+                    >
+                      <Text className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-gray-700 dark:text-gray-200'}`}>
+                        {day}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View className="aspect-square" />
+                  )}
+                </View>
+              );
+            })}
+          </View>
+
+          <TouchableOpacity onPress={onClose} className="mt-4 py-3 rounded-2xl bg-gray-100 dark:bg-gray-800 items-center">
+            <Text className="font-semibold text-gray-600 dark:text-gray-300">{t('common.cancel')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 export default function ManualEntryModal({ visible, onClose, transactionId, prefill }: Props) {
   const { addTransaction, updateTransaction, getCurrencySymbol, expenseCategories, incomeCategories, budget, updateCustomGoal } = useApp();
   const { t } = useTranslation();
@@ -106,6 +218,7 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
   const [linkedGoalId, setLinkedGoalId] = useState(prefill?.linkedGoalId ?? '');
   const [customDateMode, setCustomDateMode] = useState(false);
   const [customDateInput, setCustomDateInput] = useState(date);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [showAddTxHint, setShowAddTxHint] = useState(false);
   useEffect(() => {
     AsyncStorage.getItem('ledgr_addtx_hint_seen').then(val => {
@@ -338,7 +451,10 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={() => setCustomDateMode(v => !v)}
+                  onPress={() => {
+                    setCustomDateMode(true);
+                    setShowDatePicker(true);
+                  }}
                   className={`flex-1 py-2.5 rounded-xl items-center border ${
                     customDateMode
                       ? 'bg-blue-500 border-blue-500'
@@ -351,21 +467,16 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
                 </TouchableOpacity>
               </View>
               {customDateMode && (
-                <View className="mt-2 flex-row items-center border-2 border-blue-300 dark:border-blue-700 rounded-2xl px-4 py-3 bg-gray-50 dark:bg-gray-800 gap-2">
+                <TouchableOpacity
+                  onPress={() => setShowDatePicker(true)}
+                  className="mt-2 flex-row items-center border-2 border-blue-300 dark:border-blue-700 rounded-2xl px-4 py-3 bg-gray-50 dark:bg-gray-800 gap-2"
+                >
                   <Calendar size={16} color="#6b7280" />
-                  <TextInput
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor="#9ca3af"
-                    value={customDateInput}
-                    onChangeText={setCustomDateInput}
-                    onSubmitEditing={handleCustomDateConfirm}
-                    returnKeyType="done"
-                    className="flex-1 text-sm font-medium text-gray-900 dark:text-white"
-                  />
-                  <TouchableOpacity onPress={handleCustomDateConfirm}>
-                    <Text className="text-sm font-semibold text-blue-500">{t('common.ok')}</Text>
-                  </TouchableOpacity>
-                </View>
+                  <Text className="flex-1 text-sm font-medium text-gray-900 dark:text-white">
+                    {formatDateDisplay(date)}
+                  </Text>
+                  <Text className="text-sm font-semibold text-blue-500">{t('tx.change_date')}</Text>
+                </TouchableOpacity>
               )}
             </View>
 
@@ -563,6 +674,17 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      <CalendarDateModal
+        visible={showDatePicker}
+        value={date}
+        onSelect={(nextDate) => {
+          setDate(nextDate);
+          setCustomDateInput(nextDate);
+          setCustomDateMode(true);
+        }}
+        onClose={() => setShowDatePicker(false)}
+      />
 
       {/* Receipt full-screen viewer */}
       <Modal

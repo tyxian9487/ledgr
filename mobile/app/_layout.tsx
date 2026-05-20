@@ -15,6 +15,11 @@ import TourOverlay from '../components/TourOverlay';
 import NotificationWatcher from '../components/NotificationWatcher';
 import { useColorScheme } from 'nativewind';
 import { supabase, handleOAuthRedirect } from '../utils/supabase';
+import {
+  loadNotifPrefs,
+  requestInitialNotificationPermission,
+  syncNotificationSettings,
+} from '../utils/notifications';
 
 // ── Global crash capture ───────────────────────────────────────────────────────
 // Catches JS errors that bypass React's error boundary (async, event handlers)
@@ -214,12 +219,17 @@ function NotificationPermissionRequester() {
   useEffect(() => {
     if (!isAuthenticated || !hasCompletedOnboarding) return;
     import('expo-notifications').then(Notifications => {
-      Notifications.getPermissionsAsync().then(({ status }) => {
-        if (status === 'undetermined') {
-          Notifications.requestPermissionsAsync();
-        }
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldPlaySound: true,
+          shouldSetBadge: false,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        }),
       });
     });
+    requestInitialNotificationPermission().catch(() => {});
+    loadNotifPrefs().then(syncNotificationSettings).catch(() => {});
   }, [isAuthenticated, hasCompletedOnboarding]);
 
   return null;

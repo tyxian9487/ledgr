@@ -70,7 +70,7 @@ export default function AchievementsScreen() {
               <Text className="text-[10px] text-gray-400">{t('achieve.months')}</Text>
             </View>
             <View className="flex-1 bg-amber-50 dark:bg-amber-950 rounded-2xl p-4 items-center border border-amber-100 dark:border-amber-900">
-              <Text style={{ fontSize: 34 }}>⭐</Text>
+              <Image source={goalMascotImg} style={{ width: 42, height: 42 }} resizeMode="contain" />
               <Text className="text-3xl font-black text-amber-500 mt-1">{bestStreak}</Text>
               <Text className="text-xs text-amber-500 font-bold mt-0.5">{t('achieve.best')}</Text>
               <Text className="text-[10px] text-gray-400">{t('achieve.months')}</Text>
