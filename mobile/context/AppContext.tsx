@@ -434,6 +434,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     save();
   }, [transactions, userProfile, darkMode, budget, hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent, profileOverrides, languageManuallySelected, hasLoadedStorage]);
 
+  useEffect(() => {
+    if (!hasLoadedStorage) return;
+    setDarkMode(systemColorScheme === 'dark');
+  }, [hasLoadedStorage, systemColorScheme]);
+
   const expenseCategories = useMemo<Category[]>(() => [
     ...EXPENSE_CATEGORIES.filter(c => !disabledCategories.includes(c.id)),
     ...customCategories.filter(c => c.type === 'expense'),

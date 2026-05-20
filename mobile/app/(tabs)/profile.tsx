@@ -937,7 +937,7 @@ export default function ProfileScreen() {
     if (unseen.length === 0) return;
     const badge = BADGES.find(b => b.id === unseen[unseen.length - 1]);
     if (badge) setCelebrationBadge(badge);
-  }, [earnedBadgeIds, seenBadgesLoaded]);
+  }, [earnedBadgeIds, seenBadgeIds, seenBadgesLoaded]);
 
   const scoreLabel =
     score >= 80

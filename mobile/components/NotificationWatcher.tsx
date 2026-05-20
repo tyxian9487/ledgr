@@ -1,37 +1,80 @@
 import { useEffect, useRef, useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, Animated } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../context/LanguageContext';
 import { computeBadges } from '../utils/achievements';
+import { sendBudgetAlertOnce } from '../utils/notifications';
 
 interface BadgeRef {
   id: string;
   icon: string;
 }
 
+const SEEN_BADGES_KEY = 'kachingo_seen_badges';
+
 export default function NotificationWatcher() {
   const { transactions, budget, isAuthenticated } = useApp();
   const { t } = useTranslation();
   const [pendingBadge, setPendingBadge] = useState<BadgeRef | null>(null);
+  const [seenLoaded, setSeenLoaded] = useState(false);
   const seenRef = useRef<Set<string>>(new Set());
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated) {
+      setSeenLoaded(false);
+      seenRef.current = new Set();
+      return;
+    }
+    AsyncStorage.getItem(SEEN_BADGES_KEY)
+      .then(raw => {
+        if (raw) seenRef.current = new Set(JSON.parse(raw));
+      })
+      .finally(() => setSeenLoaded(true));
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !seenLoaded) return;
     const earned = computeBadges(transactions, budget);
-    earned.forEach(badge => {
-      if (!seenRef.current.has(badge.id)) {
-        seenRef.current.add(badge.id);
-        if (seenRef.current.size > 1) {
-          // Only trigger notification for badges earned after initial load
-          setPendingBadge({ id: badge.id, icon: badge.icon });
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        }
-      }
-    });
-  }, [transactions, budget, isAuthenticated]);
+    const newlyEarned = earned.filter(badge => !seenRef.current.has(badge.id));
+    if (newlyEarned.length === 0) return;
+
+    newlyEarned.forEach(badge => seenRef.current.add(badge.id));
+    AsyncStorage.setItem(SEEN_BADGES_KEY, JSON.stringify([...seenRef.current])).catch(() => {});
+
+    const shouldCelebrate = seenRef.current.size > newlyEarned.length;
+    if (shouldCelebrate) {
+      const badge = newlyEarned[newlyEarned.length - 1];
+      setPendingBadge({ id: badge.id, icon: badge.icon });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  }, [transactions, budget, isAuthenticated, seenLoaded]);
+
+  useEffect(() => {
+    if (!isAuthenticated || budget.expectedIncome <= 0 || budget.allocations.length === 0) return;
+    const now = new Date();
+    const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
+    const monthExpenses = transactions
+      .filter(tx => {
+        const d = new Date(tx.date);
+        return tx.type === 'expense' && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+      })
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    const totalBudget = budget.allocations.reduce(
+      (sum, allocation) => sum + (budget.expectedIncome * allocation.percentage) / 100,
+      0,
+    );
+    if (totalBudget <= 0) return;
+
+    if (monthExpenses > totalBudget) {
+      sendBudgetAlertOnce(`${monthKey}-over`, t('notif.budget_alerts'), t('notif.budget_over_body')).catch(() => {});
+    } else if (monthExpenses >= totalBudget * 0.9) {
+      sendBudgetAlertOnce(`${monthKey}-near`, t('notif.budget_alerts'), t('notif.budget_near_body')).catch(() => {});
+    }
+  }, [transactions, budget, isAuthenticated, t]);
 
   useEffect(() => {
     if (pendingBadge) {
