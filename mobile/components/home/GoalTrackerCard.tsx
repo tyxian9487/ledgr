@@ -97,20 +97,20 @@ export default function GoalTrackerCard({ year, month }: Props) {
     });
   }
 
-  if (allGoals.length === 0) return null;
-
   const safeIdx = Math.min(currentIdx, allGoals.length - 1);
-  const goal = allGoals[safeIdx];
-  const isCompleted = goal.progress >= 100 && goal.goalAmount > 0;
+  const goal = safeIdx >= 0 ? allGoals[safeIdx] : null;
+  const isCompleted = !!goal && goal.progress >= 100 && goal.goalAmount > 0;
 
   useEffect(() => {
-    if (isCompleted) {
+    if (goal && isCompleted) {
       const goalKey = `${year}-${month}-${goal.id}`;
       if (!celebratedGoals.has(goalKey)) {
         setCelebratedGoals((prev) => new Set([...prev, goalKey]));
       }
     }
-  }, [isCompleted, goal.id, year, month]);
+  }, [celebratedGoals, goal, isCompleted, year, month]);
+
+  if (!goal) return null;
 
   return (
     <View className="mx-4 mt-3 rounded-2xl bg-white/10 p-3">
