@@ -2,106 +2,6 @@ const { withMainApplication, withDangerousMod, withAndroidManifest } = require('
 const fs = require('fs');
 const path = require('path');
 
-// ── AsyncFunctionComponent patch ───────────────────────────────────────────────
-// expo-modules-core changed AsyncFunctionComponent from a concrete class to an
-// abstract class. All prebuilt expo module AARs have bytecode that calls
-// `new AsyncFunctionComponent(name, argsTypes, body)` (inlined from the old
-// createAsyncFunctionComponent factory), which fails at runtime with
-// InstantiationError. Fix: restore it as an open class with the 3-arg
-// constructor the prebuilt bytecode expects, keeping the existing subclass
-// overrides fully intact.
-const ASYNC_FUNCTION_COMPONENT_KT = `package expo.modules.kotlin.functions
-
-import android.view.View
-import expo.modules.BuildConfig
-import expo.modules.kotlin.AppContext
-import expo.modules.kotlin.Promise
-import expo.modules.kotlin.exception.FunctionCallException
-import expo.modules.kotlin.exception.exceptionDecorator
-import expo.modules.kotlin.exception.toCodedException
-import expo.modules.kotlin.jni.decorators.JSDecoratorsBridgingObject
-import expo.modules.kotlin.types.AnyType
-import expo.modules.kotlin.types.inheritFrom
-import expo.modules.kotlin.weak
-import kotlinx.coroutines.launch
-
-/**
- * Base class of async function components that require a promise to be called.
- * The optional legacyBody parameter exists for binary compatibility with prebuilt
- * module AARs that were compiled when this class was concrete and accepted a body
- * lambda directly in its constructor.
- */
-open class AsyncFunctionComponent(
-  name: String,
-  desiredArgsTypes: Array<AnyType>,
-  private val legacyBody: ((Array<out Any?>) -> Any?)? = null
-) : BaseAsyncFunctionComponent(name, desiredArgsTypes) {
-  internal open fun callUserImplementation(args: Array<Any?>, promise: Promise, appContext: AppContext) {
-    promise.resolve(legacyBody?.invoke(args))
-  }
-
-  override fun attachToJSObject(appContext: AppContext, jsObject: JSDecoratorsBridgingObject, moduleName: String) {
-    val appContextHolder = appContext.weak()
-    jsObject.registerAsyncFunction(
-      name,
-      takesOwner,
-      isEnumerable,
-      desiredArgsTypes.map { it.getCppRequiredTypes() }.toTypedArray()
-    ) { args, promiseImpl ->
-      if (BuildConfig.DEBUG) {
-        promiseImpl.decorateWithDebugInformation(
-          appContextHolder,
-          moduleName,
-          name
-        )
-      }
-
-      val functionBody = {
-        try {
-          exceptionDecorator({
-            FunctionCallException(name, moduleName, it)
-          }) {
-            callUserImplementation(args, promiseImpl, appContext)
-          }
-        } catch (e: Throwable) {
-          if (promiseImpl.wasSettled) {
-            throw e
-          }
-          promiseImpl.reject(e.toCodedException())
-        }
-      }
-
-      dispatchOnQueue(appContext, functionBody)
-    }
-  }
-
-  private fun dispatchOnQueue(appContext: AppContext, block: () -> Unit) {
-    when (val queue = queue) {
-      Queues.DEFAULT -> {
-        appContext.modulesQueue.launch {
-          block()
-        }
-      }
-
-      Queues.MAIN -> {
-        if (!BuildConfig.IS_NEW_ARCHITECTURE_ENABLED && desiredArgsTypes.any { it.inheritFrom<View>() }) {
-          appContext.dispatchOnMainUsingUIManager(block)
-          return
-        }
-
-        appContext.mainQueue.launch {
-          block()
-        }
-      }
-
-      is CustomQueue ->
-        queue.scope.launch {
-          block()
-        }
-    }
-  }
-}`;
-
 // Catches uncaught JVM exceptions, saves them, and launches CrashActivity in a
 // separate process so the crash details are shown immediately — no JS needed.
 const CRASH_HANDLER_KT = [
@@ -221,58 +121,10 @@ module.exports = function withAndroidCrashHandler(config) {
     'android',
     async (config) => {
       const root = config.modRequest.platformProjectRoot;
-
-      // Crash handler + activity
       const appDir = path.join(root, 'app/src/main/java/com/kachingo/app');
       fs.mkdirSync(appDir, { recursive: true });
       fs.writeFileSync(path.join(appDir, 'CrashHandler.kt'), CRASH_HANDLER_KT);
       fs.writeFileSync(path.join(appDir, 'CrashActivity.kt'), CRASH_ACTIVITY_KT);
-
-      // Patch AsyncFunctionComponent in expo-modules-core source.
-      // expo-modules-core always compiles from source (no prebuilt AAR), so
-      // this patch is in effect for every build. Prebuilt AARs from other
-      // expo modules (expo-notifications, expo-camera, etc.) have inlined
-      // bytecode that calls `new AsyncFunctionComponent(name, argsTypes, body)`.
-      // With the class abstract those calls fail at runtime; making it open
-      // with the 3-arg constructor restores compatibility.
-      const asyncFnDir = path.join(
-        config.modRequest.projectRoot,
-        'node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/functions'
-      );
-      fs.writeFileSync(path.join(asyncFnDir, 'AsyncFunctionComponent.kt'), ASYNC_FUNCTION_COMPONENT_KT);
-
-      // Stub interfaces for expo-file-system's prebuilt AAR.
-      // expo-modules-core removed FilePermissionModuleInterface and
-      // AppDirectoriesModuleInterface. Without these stubs, D8 drops
-      // FilePermissionModule from the APK DEX and the app crashes on startup.
-      const ifaceDir = path.join(
-        root,
-        'app/src/main/java/expo/modules/interfaces/filesystem'
-      );
-      fs.mkdirSync(ifaceDir, { recursive: true });
-      const FILE_PERMISSION_STUB = [
-        'package expo.modules.interfaces.filesystem',
-        '',
-        'import android.content.Context',
-        'import java.util.EnumSet',
-        '',
-        'interface FilePermissionModuleInterface {',
-        '    fun getPathPermissions(context: Context, path: String): EnumSet<Permission>',
-        '}',
-      ].join('\n');
-      const APP_DIRS_STUB = [
-        'package expo.modules.interfaces.filesystem',
-        '',
-        'import java.io.File',
-        '',
-        'interface AppDirectoriesModuleInterface {',
-        '    val cacheDirectory: File',
-        '    val persistentFilesDirectory: File',
-        '}',
-      ].join('\n');
-      fs.writeFileSync(path.join(ifaceDir, 'FilePermissionModuleInterface.kt'), FILE_PERMISSION_STUB);
-      fs.writeFileSync(path.join(ifaceDir, 'AppDirectoriesModuleInterface.kt'), APP_DIRS_STUB);
-
       return config;
     },
   ]);
