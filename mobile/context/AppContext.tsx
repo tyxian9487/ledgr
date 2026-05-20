@@ -86,6 +86,26 @@ const AppContext = createContext<AppContextType | null>(null);
 
 const STORAGE_KEY = 'expensewise_data';
 
+type ProfileOverrides = {
+  name?: boolean;
+  avatar?: boolean;
+};
+
+type AuthUser = {
+  id: string;
+  email?: string | null;
+  user_metadata?: Record<string, unknown>;
+};
+
+type RemoteProfile = Partial<UserProfile> & {
+  name?: string | null;
+  email?: string | null;
+  avatar?: string | null;
+  plan?: string | null;
+  currency?: string | null;
+  language?: string | null;
+};
+
 const DEFAULT_PROFILE: UserProfile = {
   name: 'User',
   email: 'user@example.com',
@@ -94,6 +114,72 @@ const DEFAULT_PROFILE: UserProfile = {
   currency: 'USD',
   language: 'en',
 };
+
+function metadataString(meta: Record<string, unknown>, ...keys: string[]): string {
+  for (const key of keys) {
+    const value = meta[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return '';
+}
+
+function authProfileFromUser(user: AuthUser): Pick<UserProfile, 'name' | 'email' | 'avatar'> {
+  const meta = user.user_metadata ?? {};
+  return {
+    name: metadataString(meta, 'full_name', 'name') || DEFAULT_PROFILE.name,
+    email: user.email || DEFAULT_PROFILE.email,
+    avatar: metadataString(meta, 'avatar_url', 'picture') || null,
+  };
+}
+
+function validPlan(plan: unknown): UserProfile['plan'] | undefined {
+  return plan === 'free' || plan === 'premium' ? plan : undefined;
+}
+
+function mergeAuthenticatedProfile(
+  current: UserProfile,
+  authProfile: Pick<UserProfile, 'name' | 'email' | 'avatar'>,
+  remoteProfile: RemoteProfile | null | undefined,
+  overrides: ProfileOverrides,
+): UserProfile {
+  const remoteName = typeof remoteProfile?.name === 'string' && remoteProfile.name.trim()
+    ? remoteProfile.name.trim()
+    : '';
+  const remoteAvatar = typeof remoteProfile?.avatar === 'string' && remoteProfile.avatar.trim()
+    ? remoteProfile.avatar.trim()
+    : null;
+  const remoteCurrency = typeof remoteProfile?.currency === 'string' && remoteProfile.currency.trim()
+    ? remoteProfile.currency.trim()
+    : undefined;
+  const remoteLanguage = typeof remoteProfile?.language === 'string' && remoteProfile.language.trim()
+    ? remoteProfile.language.trim()
+    : undefined;
+
+  const hasLocalNameOverride =
+    overrides.name ||
+    Boolean(current.name && current.name !== DEFAULT_PROFILE.name && current.name !== authProfile.name);
+  const hasLocalAvatarOverride =
+    overrides.avatar ||
+    Boolean(current.avatar && current.avatar !== authProfile.avatar);
+
+  return {
+    ...current,
+    name: hasLocalNameOverride
+      ? current.name
+      : remoteName || authProfile.name || current.name || DEFAULT_PROFILE.name,
+    email: authProfile.email || remoteProfile?.email || current.email || DEFAULT_PROFILE.email,
+    avatar: hasLocalAvatarOverride
+      ? current.avatar
+      : remoteAvatar ?? authProfile.avatar ?? current.avatar ?? DEFAULT_PROFILE.avatar,
+    plan: validPlan(remoteProfile?.plan) ?? current.plan,
+    currency: current.currency && current.currency !== DEFAULT_PROFILE.currency
+      ? current.currency
+      : remoteCurrency || current.currency || DEFAULT_PROFILE.currency,
+    language: current.language && current.language !== DEFAULT_PROFILE.language
+      ? current.language
+      : remoteLanguage || current.language || DEFAULT_PROFILE.language,
+  };
+}
 
 const SUPPORTED_LANGUAGES = ['en', 'zh', 'ja', 'ko', 'ms'] as const;
 
@@ -156,9 +242,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
   const [disabledCategories, setDisabledCategories] = useState<string[]>([]);
   const [analyticsConsent, setAnalyticsConsent] = useState<boolean | null>(null);
+  const [profileOverrides, setProfileOverrides] = useState<ProfileOverrides>({});
+  const [hasLoadedStorage, setHasLoadedStorage] = useState(false);
 
   const userIdRef = useRef<string | null>(null);
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const profileOverridesRef = useRef<ProfileOverrides>({});
+
+  const loadRemoteProfile = useCallback(async (
+    uid: string,
+    authProfile: Pick<UserProfile, 'name' | 'email' | 'avatar'>,
+  ) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('name,email,avatar,plan,currency,language')
+      .eq('id', uid)
+      .maybeSingle();
+    if (error) {
+      console.warn('[Profile] Failed to load remote profile:', error.message);
+      return;
+    }
+    if (data) {
+      setUserProfile(prev => mergeAuthenticatedProfile(prev, authProfile, data, profileOverridesRef.current));
+    }
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -176,6 +283,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             savedProfile.language = deviceLang;
           }
           setUserProfile(savedProfile);
+          const savedOverrides = data.profileOverrides || {};
+          profileOverridesRef.current = savedOverrides;
+          setProfileOverrides(savedOverrides);
           setDarkMode(data.dark_mode ?? systemColorScheme === 'dark');
           setBudget(data.budget || DEFAULT_BUDGET);
           setHasCompletedOnboarding(data.hasCompletedOnboarding ?? true);
@@ -190,10 +300,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           // Fresh install — seed language and dark mode from device settings
           setTransactions([]);
           setUserProfile(prev => ({ ...prev, language: detectDeviceLanguage() }));
+          profileOverridesRef.current = {};
+          setProfileOverrides({});
           setDarkMode(systemColorScheme === 'dark');
         }
       } catch {
         setTransactions([]);
+      } finally {
+        setHasLoadedStorage(true);
       }
     };
     load();
@@ -203,13 +317,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         setIsAuthenticated(true);
         userIdRef.current = session.user.id;
-        const meta = session.user.user_metadata ?? {};
-        setUserProfile(prev => ({
-          ...prev,
-          name: meta.full_name || meta.name || prev.name,
-          email: session.user.email || prev.email,
-          avatar: meta.avatar_url || meta.picture || prev.avatar,
-        }));
+        const authProfile = authProfileFromUser(session.user);
+        setUserProfile(prev => mergeAuthenticatedProfile(prev, authProfile, null, profileOverridesRef.current));
+        loadRemoteProfile(session.user.id, authProfile);
       }
       // Fallback: mark auth ready if INITIAL_SESSION hasn't fired yet
       setIsAuthInitialized(true);
@@ -221,19 +331,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         setIsAuthenticated(true);
         userIdRef.current = session.user.id;
-        const meta = session.user.user_metadata ?? {};
-        const name = meta.full_name || meta.name || '';
-        const email = session.user.email || '';
-        const avatar = meta.avatar_url || meta.picture || null;
-        setUserProfile(prev => ({ ...prev, name: name || prev.name, email, avatar }));
+        const authProfile = authProfileFromUser(session.user);
+        setUserProfile(prev => mergeAuthenticatedProfile(prev, authProfile, null, profileOverridesRef.current));
 
         // Upsert profile row on first sign-in (replaces the DB trigger)
         if (event === 'SIGNED_IN') {
           supabase.from('profiles').upsert({
             id: session.user.id,
-            email,
-            name,
-            avatar,
+            email: authProfile.email,
+            name: authProfile.name,
+            avatar: authProfile.avatar,
           }, { onConflict: 'id', ignoreDuplicates: true });
         }
 
@@ -241,6 +348,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
           const uid = session.user.id;
           (async () => {
+            await loadRemoteProfile(uid, authProfile);
             const lastSynced = await AsyncStorage.getItem('kachingo_last_synced');
             const { data } = await supabase.from('user_data')
               .select('*').eq('user_id', uid).maybeSingle();
@@ -264,6 +372,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setTransactions([]);
         setBudget(DEFAULT_BUDGET);
         setUserProfile(DEFAULT_PROFILE);
+        profileOverridesRef.current = {};
+        setProfileOverrides({});
         setCustomCategories([]);
         setDisabledCategories([]);
         userIdRef.current = null;
@@ -276,9 +386,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const save = async () => {
+      if (!hasLoadedStorage) return;
       const blob = {
         transactions, userProfile, darkMode, budget,
-        hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent,
+        hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent, profileOverrides,
         langMigratedV1: true,
       };
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(blob));
@@ -289,6 +400,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // Debounce cloud sync so rapid state changes don't fire many requests
       syncTimerRef.current = setTimeout(async () => {
         if (userIdRef.current !== uid) return;
+        await supabase.from('profiles').upsert({
+          id: uid,
+          email: blob.userProfile.email,
+          name: blob.userProfile.name,
+          avatar: blob.userProfile.avatar,
+          plan: blob.userProfile.plan,
+          currency: blob.userProfile.currency ?? DEFAULT_PROFILE.currency,
+          language: blob.userProfile.language ?? DEFAULT_PROFILE.language,
+        }, { onConflict: 'id' });
         await supabase.from('user_data').upsert({
           user_id: uid,
           transactions: blob.transactions,
@@ -304,7 +424,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }, 2000);
     };
     save();
-  }, [transactions, userProfile, darkMode, budget, hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent]);
+  }, [transactions, userProfile, darkMode, budget, hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent, profileOverrides, hasLoadedStorage]);
 
   const expenseCategories = useMemo<Category[]>(() => [
     ...EXPENSE_CATEGORIES.filter(c => !disabledCategories.includes(c.id)),
@@ -371,6 +491,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateUserProfile = useCallback((p: Partial<UserProfile>) => {
+    const nextOverrides: ProfileOverrides = {};
+    if (Object.prototype.hasOwnProperty.call(p, 'name')) nextOverrides.name = true;
+    if (Object.prototype.hasOwnProperty.call(p, 'avatar')) nextOverrides.avatar = true;
+    if (nextOverrides.name || nextOverrides.avatar) {
+      setProfileOverrides(prev => {
+        const next = { ...prev, ...nextOverrides };
+        profileOverridesRef.current = next;
+        return next;
+      });
+    }
     setUserProfile(prev => ({ ...prev, ...p }));
   }, []);
 
