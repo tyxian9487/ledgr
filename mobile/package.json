@@ -59,7 +59,7 @@
   "expo": {
     "autolinking": {
       "android": {
-        "buildFromSource": [".*"]
+        "buildFromSource": ["expo-(?!file-system$).*"]
       }
     }
   }
