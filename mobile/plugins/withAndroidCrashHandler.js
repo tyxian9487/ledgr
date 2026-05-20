@@ -2,31 +2,21 @@ const { withMainApplication, withDangerousMod, withAndroidManifest } = require('
 const fs = require('fs');
 const path = require('path');
 
-// ── Stub interfaces ────────────────────────────────────────────────────────────
+// ── expo-file-system source patch ─────────────────────────────────────────────
 // expo-modules-core removed FilePermissionModuleInterface and
-// AppDirectoriesModuleInterface. The expo-file-system prebuilt AAR still
-// references them, so D8 drops FilePermissionModule from the DEX output,
-// causing a ClassNotFoundException on startup. We write stub interfaces into
-// the app's source tree so D8 can resolve the reference and keep the class.
-const FILE_PERMISSION_MODULE_INTERFACE_KT = [
-  'package expo.modules.interfaces.filesystem',
+// AppDirectoriesModuleInterface. When building from source, FilePermissionModule.kt
+// and AppDirectoriesModule.kt fail to compile because those interfaces are gone.
+// Fix: replace FileSystemPackage.kt with a no-op version and delete the two
+// broken source files so the compiler never sees them.
+const EMPTY_FILE_SYSTEM_PACKAGE_KT = [
+  'package expo.modules.filesystem',
   '',
   'import android.content.Context',
-  'import java.util.EnumSet',
+  'import expo.modules.core.interfaces.InternalModule',
+  'import expo.modules.core.BasePackage',
   '',
-  'interface FilePermissionModuleInterface {',
-  '    fun getPathPermissions(context: Context, path: String): EnumSet<Permission>',
-  '}',
-].join('\n');
-
-const APP_DIRECTORIES_MODULE_INTERFACE_KT = [
-  'package expo.modules.interfaces.filesystem',
-  '',
-  'import java.io.File',
-  '',
-  'interface AppDirectoriesModuleInterface {',
-  '    val cacheDirectory: File',
-  '    val persistentFilesDirectory: File',
+  'class FileSystemPackage : BasePackage() {',
+  '  override fun createInternalModules(context: Context): List<InternalModule> = emptyList()',
   '}',
 ].join('\n');
 
@@ -156,22 +146,18 @@ module.exports = function withAndroidCrashHandler(config) {
       fs.writeFileSync(path.join(appDir, 'CrashHandler.kt'), CRASH_HANDLER_KT);
       fs.writeFileSync(path.join(appDir, 'CrashActivity.kt'), CRASH_ACTIVITY_KT);
 
-      // Stub interfaces so D8 can include FilePermissionModule in the APK DEX.
-      // expo-modules-core removed these interfaces; expo-file-system's prebuilt
-      // AAR still references them, causing the startup ClassNotFoundException.
-      const ifaceDir = path.join(
-        root,
-        'app/src/main/java/expo/modules/interfaces/filesystem'
+      // Patch expo-file-system source so it compiles cleanly when buildFromSource
+      // forces source compilation. FilePermissionModule.kt and AppDirectoriesModule.kt
+      // import interfaces that were removed from expo-modules-core; replace
+      // FileSystemPackage.kt with a no-op and delete the two broken files.
+      const fsRoot = path.join(
+        config.modRequest.projectRoot,
+        'node_modules/expo-file-system/android/src/main/java/expo/modules/filesystem'
       );
-      fs.mkdirSync(ifaceDir, { recursive: true });
-      fs.writeFileSync(
-        path.join(ifaceDir, 'FilePermissionModuleInterface.kt'),
-        FILE_PERMISSION_MODULE_INTERFACE_KT
-      );
-      fs.writeFileSync(
-        path.join(ifaceDir, 'AppDirectoriesModuleInterface.kt'),
-        APP_DIRECTORIES_MODULE_INTERFACE_KT
-      );
+      fs.writeFileSync(path.join(fsRoot, 'FileSystemPackage.kt'), EMPTY_FILE_SYSTEM_PACKAGE_KT);
+      for (const f of ['FilePermissionModule.kt', 'AppDirectoriesModule.kt']) {
+        try { fs.unlinkSync(path.join(fsRoot, f)); } catch (_) {}
+      }
 
       return config;
     },
