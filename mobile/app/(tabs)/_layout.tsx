@@ -2,8 +2,10 @@ import { Tabs } from 'expo-router';
 import { Home, PieChart, TrendingUp, User } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from '../../context/LanguageContext';
 
 export default function TabLayout() {
+  const { t } = useTranslation();
   const { colorScheme } = useColorScheme();
   const dark = colorScheme === 'dark';
   const insets = useSafeAreaInsets();
@@ -25,28 +27,28 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('nav.home'),
           tabBarIcon: ({ color }) => <Home size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="budget"
         options={{
-          title: 'Budget',
+          title: t('nav.budget'),
           tabBarIcon: ({ color }) => <PieChart size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="trends"
         options={{
-          title: 'Trends',
+          title: t('nav.trends'),
           tabBarIcon: ({ color }) => <TrendingUp size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t('nav.profile'),
           tabBarIcon: ({ color }) => <User size={22} color={color} />,
         }}
       />

@@ -78,7 +78,7 @@ export default function AchievementsScreen() {
             </View>
           </View>
           <Text className="text-[11px] text-gray-400 dark:text-gray-500 text-center mt-3 leading-relaxed">
-            Consecutive months where expenses stayed under total income
+            {t('achieve.streak_desc')}
           </Text>
         </View>
 

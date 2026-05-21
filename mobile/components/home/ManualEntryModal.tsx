@@ -41,27 +41,33 @@ interface Props {
 }
 
 const DESCRIPTION_SUGGESTIONS: Record<string, string[]> = {
-  food:          ['Breakfast', 'Lunch', 'Dinner', 'Coffee', 'Brunch', 'Snack', 'Takeaway', 'Groceries', 'Meal prep'],
-  transport:     ['Fuel', 'Bus', 'Train', 'Taxi', 'Rideshare', 'Parking', 'Toll', 'Airplane', 'Ferry'],
-  shopping:      ['Clothing', 'Electronics', 'Home goods', 'Online order', 'Gift purchase'],
-  entertainment: ['Movie', 'Concert', 'Gaming', 'Streaming', 'Books', 'Night out', 'Studio'],
-  health:        ['Gym', 'Doctor visit', 'Pharmacy', 'Dentist', 'Vitamins', 'Therapy', 'Optician', 'Lab test'],
-  housing:       ['Rent', 'Mortgage', 'Repairs', 'Furniture', 'Cleaning', 'Renovation'],
-  utilities:     ['Electricity', 'Water', 'Gas', 'Internet', 'Phone bill'],
-  education:     ['Tuition', 'Course', 'Books', 'Workshop', 'Online class', 'Exam fee'],
-  travel:        ['Flight', 'Hotel', 'Car rental', 'Visa fee', 'Activities'],
-  personal:      ['Haircut', 'Salon', 'Skincare', 'Spa', 'Personal care'],
-  subscriptions: ['Netflix', 'Spotify', 'Software', 'Cloud storage', 'App subscription'],
-  insurance:     ['Health insurance', 'Car insurance', 'Life insurance', 'Home insurance'],
-  savings:       ['Emergency fund', 'Retirement', 'Holiday fund', 'House deposit'],
-  investment:    ['Stocks', 'ETF', 'Crypto', 'Bonds', 'Index fund'],
-  others:        ['Miscellaneous', 'Gift', 'Charity', 'Fees'],
-  salary:        ['Monthly salary', 'Base pay', 'Paycheck', 'Wages'],
-  freelance:     ['Design project', 'Consulting', 'Writing', 'Development'],
-  business:      ['Revenue', 'Sales', 'Invoice payment', 'Client payment'],
-  gift:          ['Birthday gift', 'Holiday gift', 'Cash gift'],
-  other_income:  ['Bonus', 'Refund', 'Cashback', 'Side hustle', 'Rental income', 'Dividend'],
+  food:          ['tx.suggest.food.breakfast', 'tx.suggest.food.lunch', 'tx.suggest.food.dinner', 'tx.suggest.food.coffee', 'tx.suggest.food.brunch', 'tx.suggest.food.snack', 'tx.suggest.food.takeaway', 'tx.suggest.food.groceries', 'tx.suggest.food.meal_prep'],
+  transport:     ['tx.suggest.transport.fuel', 'tx.suggest.transport.bus', 'tx.suggest.transport.train', 'tx.suggest.transport.taxi', 'tx.suggest.transport.rideshare', 'tx.suggest.transport.parking', 'tx.suggest.transport.toll', 'tx.suggest.transport.airplane', 'tx.suggest.transport.ferry'],
+  shopping:      ['tx.suggest.shopping.clothing', 'tx.suggest.shopping.electronics', 'tx.suggest.shopping.home_goods', 'tx.suggest.shopping.online_order', 'tx.suggest.shopping.gift_purchase'],
+  entertainment: ['tx.suggest.entertainment.movie', 'tx.suggest.entertainment.concert', 'tx.suggest.entertainment.gaming', 'tx.suggest.entertainment.streaming', 'tx.suggest.entertainment.books', 'tx.suggest.entertainment.night_out', 'tx.suggest.entertainment.studio'],
+  health:        ['tx.suggest.health.gym', 'tx.suggest.health.doctor_visit', 'tx.suggest.health.pharmacy', 'tx.suggest.health.dentist', 'tx.suggest.health.vitamins', 'tx.suggest.health.therapy', 'tx.suggest.health.optician', 'tx.suggest.health.lab_test'],
+  housing:       ['tx.suggest.housing.rent', 'tx.suggest.housing.mortgage', 'tx.suggest.housing.repairs', 'tx.suggest.housing.furniture', 'tx.suggest.housing.cleaning', 'tx.suggest.housing.renovation'],
+  utilities:     ['tx.suggest.utilities.electricity', 'tx.suggest.utilities.water', 'tx.suggest.utilities.gas', 'tx.suggest.utilities.internet', 'tx.suggest.utilities.phone_bill'],
+  education:     ['tx.suggest.education.tuition', 'tx.suggest.education.course', 'tx.suggest.education.books', 'tx.suggest.education.workshop', 'tx.suggest.education.online_class', 'tx.suggest.education.exam_fee'],
+  travel:        ['tx.suggest.travel.flight', 'tx.suggest.travel.hotel', 'tx.suggest.travel.car_rental', 'tx.suggest.travel.visa_fee', 'tx.suggest.travel.activities'],
+  personal:      ['tx.suggest.personal.haircut', 'tx.suggest.personal.salon', 'tx.suggest.personal.skincare', 'tx.suggest.personal.spa', 'tx.suggest.personal.personal_care'],
+  subscriptions: ['tx.suggest.subscriptions.netflix', 'tx.suggest.subscriptions.spotify', 'tx.suggest.subscriptions.software', 'tx.suggest.subscriptions.cloud_storage', 'tx.suggest.subscriptions.app_subscription'],
+  insurance:     ['tx.suggest.insurance.health', 'tx.suggest.insurance.car', 'tx.suggest.insurance.life', 'tx.suggest.insurance.home'],
+  savings:       ['tx.suggest.savings.emergency_fund', 'tx.suggest.savings.retirement', 'tx.suggest.savings.holiday_fund', 'tx.suggest.savings.house_deposit'],
+  investment:    ['tx.suggest.investment.stocks', 'tx.suggest.investment.etf', 'tx.suggest.investment.crypto', 'tx.suggest.investment.bonds', 'tx.suggest.investment.index_fund'],
+  others:        ['tx.suggest.others.miscellaneous', 'tx.suggest.others.gift', 'tx.suggest.others.charity', 'tx.suggest.others.fees'],
+  salary:        ['tx.suggest.income.salary', 'tx.suggest.income.base_pay', 'tx.suggest.income.paycheck', 'tx.suggest.income.wages'],
+  freelance:     ['tx.suggest.income.design_project', 'tx.suggest.income.consulting', 'tx.suggest.income.writing', 'tx.suggest.income.development'],
+  business:      ['tx.suggest.income.revenue', 'tx.suggest.income.sales', 'tx.suggest.income.invoice_payment', 'tx.suggest.income.client_payment'],
+  gift:          ['tx.suggest.income.birthday_gift', 'tx.suggest.income.holiday_gift', 'tx.suggest.income.cash_gift'],
+  other_income:  ['tx.suggest.income.bonus', 'tx.suggest.income.refund', 'tx.suggest.income.cashback', 'tx.suggest.income.side_hustle', 'tx.suggest.income.rental_income', 'tx.suggest.income.dividend'],
 };
+
+function getCategoryLabel(t: (key: any, params?: Record<string, string | number>) => string, cat: { id: string; label: string }) {
+  const key = `cat.${cat.id}` as any;
+  const translation = t(key);
+  return translation !== key ? translation : cat.label;
+}
 
 function todayString() {
   const d = new Date();
@@ -305,7 +311,7 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
     setCategory(cat.id);
   }
 
-  const suggestions = DESCRIPTION_SUGGESTIONS[category] ?? [];
+  const suggestions = (DESCRIPTION_SUGGESTIONS[category] ?? []).map(suggestion => t(suggestion));
 
   const buttonLabel = !amount || !category
     ? t('tx.fill')
@@ -490,7 +496,7 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
                 {selectedCategory ? (
                   <View className="flex-row items-center gap-2">
                     <CategoryIcon icon={selectedCategory.icon} color={selectedCategory.color} size={16} />
-                    <Text className="text-sm font-medium text-gray-900 dark:text-white ml-1">{selectedCategory.label}</Text>
+                    <Text className="text-sm font-medium text-gray-900 dark:text-white ml-1">{getCategoryLabel(t, selectedCategory)}</Text>
                   </View>
                 ) : (
                   <Text className="text-sm text-gray-400">{t('tx.select_category')}</Text>
@@ -515,7 +521,7 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
                         className="flex-row items-center gap-3 px-4 py-3 border-b border-gray-50 dark:border-gray-700"
                       >
                         <CategoryIcon icon={cat.icon} color={cat.color} size={16} />
-                        <Text className="flex-1 text-sm text-gray-800 dark:text-white ml-1">{cat.label}</Text>
+                        <Text className="flex-1 text-sm text-gray-800 dark:text-white ml-1">{getCategoryLabel(t, cat)}</Text>
                         {category === cat.id && (
                           <Text className="text-green-600 font-bold">✓</Text>
                         )}

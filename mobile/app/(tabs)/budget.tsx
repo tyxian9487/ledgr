@@ -64,6 +64,12 @@ const BUDGET_GROUPS: BudgetGroup[] = [
 
 const INITIAL_VISIBLE = 5;
 
+function categoryLabel(t: (key: any, params?: Record<string, string | number>) => string, categoryId: string, fallback = '') {
+  const key = `cat.${categoryId}` as any;
+  const translation = t(key);
+  return translation !== key ? translation : fallback;
+}
+
 function analyzeAllocations(income: number): BudgetAllocation[] {
   let plan: { id: string; pct: number }[];
   if (income >= 8000) {
@@ -102,11 +108,12 @@ function analyzeAllocations(income: number): BudgetAllocation[] {
 
 // ─── Budget Donut Chart ───────────────────────────────────────────────────────
 
-function BudgetDonut({ allocations, netIncome, totalPct, formatCurrency }: {
+function BudgetDonut({ allocations, netIncome, totalPct, formatCurrency, title }: {
   allocations: BudgetAllocation[];
   netIncome: number;
   totalPct: number;
   formatCurrency: (n: number) => string;
+  title: string;
 }) {
   const size = 180;
   const radius = size * 0.36;
@@ -144,7 +151,7 @@ function BudgetDonut({ allocations, netIncome, totalPct, formatCurrency }: {
         );
       })}
       <SvgText x={cx} y={cy - 7} textAnchor="middle" fontSize={11} fill="rgba(255,255,255,0.65)">
-        Spendable
+        {title}
       </SvgText>
       <SvgText x={cx} y={cy + 12} textAnchor="middle" fontSize={15} fontWeight="bold" fill="white">
         {formatCurrency(netIncome)}
@@ -442,14 +449,14 @@ export default function BudgetScreen() {
                   <Text className="text-[10px] text-gray-500 dark:text-gray-400">{t('budget.variable')}</Text>
                 </View>
               </View>
-              {actualIncome > 0 && !budget.expectedIncome && (
+                      {actualIncome > 0 && !budget.expectedIncome && (
                 <Text className="text-xs text-green-600 mb-2 font-medium">
                   {t('budget.auto_filled', { month: now.toLocaleString('default', { month: 'long' }) })}
                 </Text>
               )}
               {actualIncome > 0 && budget.expectedIncome > 0 && (
                 <Text className="text-xs text-green-600 mb-2 font-medium">
-                  Auto-filled from your {now.toLocaleString('default', { month: 'long' })} income
+                  {t('budget.auto_filled', { month: now.toLocaleString('default', { month: 'long' }) })}
                 </Text>
               )}
               <View className="flex-row items-center border-2 border-gray-100 dark:border-gray-700 rounded-2xl px-4 py-3 bg-gray-50 dark:bg-gray-800 gap-2 mb-4">
@@ -550,6 +557,7 @@ export default function BudgetScreen() {
                     netIncome={netIncome}
                     totalPct={totalPct}
                     formatCurrency={formatCurrency}
+                    title={t('budget.spendable')}
                   />
                 </View>
                 <Text style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.5)', paddingBottom: 16 }}>
@@ -595,7 +603,7 @@ export default function BudgetScreen() {
                           <Icon size={15} color={alloc.color} />
                         </View>
                         <View className="flex-1 min-w-0">
-                          <Text className="text-sm font-medium text-gray-800 dark:text-gray-200">{alloc.label}</Text>
+                          <Text className="text-sm font-medium text-gray-800 dark:text-gray-200">{categoryLabel(t, alloc.categoryId, alloc.label)}</Text>
                           {actual > 0 && budgetAmt > 0 && (
                             <View className="h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mt-1.5">
                               <View
