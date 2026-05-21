@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 
 const goalMascotImg = require('../assets/m_goal.png');
+const streakImg = require('../assets/m_streak.png');
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
@@ -64,7 +65,7 @@ export default function AchievementsScreen() {
         <View className="bg-white dark:bg-gray-800 rounded-3xl p-5 mb-4 border border-gray-100 dark:border-gray-700">
           <View className="flex-row gap-3">
             <View className="flex-1 bg-orange-50 dark:bg-orange-950 rounded-2xl p-4 items-center border border-orange-100 dark:border-orange-900">
-              <Text style={{ fontSize: 34 }}>🔥</Text>
+              <Image source={streakImg} style={{ width: 36, height: 36 }} resizeMode="contain" />
               <Text className="text-3xl font-black text-orange-500 mt-1">{currentStreak}</Text>
               <Text className="text-xs text-orange-500 font-bold mt-0.5">{t('achieve.current')}</Text>
               <Text className="text-[10px] text-gray-400">{t('achieve.months')}</Text>

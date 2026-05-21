@@ -400,14 +400,18 @@ export default function BudgetScreen() {
               );
             })}
 
-            {/* Empty state when no goals */}
-            {!savingsEnabled && (budget.customGoals ?? []).length === 0 && (
+            {/* Savings jar illustration */}
+            {((budget.customGoals ?? []).length > 0 || !savingsEnabled) && (
               <View className="items-center py-6 mb-2">
                 <Image source={savingsJarImg} style={{ width: 110, height: 110 }} resizeMode="contain" />
-                <Text className="text-sm font-bold text-gray-700 mt-3 text-center">{t('budget.start_saving')}</Text>
-                <Text className="text-xs text-gray-400 mt-1 text-center leading-relaxed">
-                  {t('budget.empty_goals_desc')}
-                </Text>
+                {(budget.customGoals ?? []).length === 0 && (
+                  <>
+                    <Text className="text-sm font-bold text-gray-700 mt-3 text-center">{t('budget.start_saving')}</Text>
+                    <Text className="text-xs text-gray-400 mt-1 text-center leading-relaxed">
+                      {t('budget.empty_goals_desc')}
+                    </Text>
+                  </>
+                )}
               </View>
             )}
 
