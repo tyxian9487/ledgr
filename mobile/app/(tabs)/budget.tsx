@@ -63,6 +63,7 @@ const BUDGET_GROUPS: BudgetGroup[] = [
 ];
 
 const INITIAL_VISIBLE = 5;
+const MONTH_KEYS = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
 
 function categoryLabel(t: (key: any, params?: Record<string, string | number>) => string, categoryId: string, fallback = '') {
   const key = `cat.${categoryId}` as any;
@@ -172,6 +173,7 @@ export default function BudgetScreen() {
   } = useApp();
 
   const now = new Date();
+  const autoFilledMonth = t(`month.${MONTH_KEYS[now.getMonth()]}` as any);
   const actualIncome = getMonthIncome(now.getFullYear(), now.getMonth());
 
   const [activeTab, setActiveTab] = useState<'goals' | 'budget'>('goals');
@@ -451,12 +453,12 @@ export default function BudgetScreen() {
               </View>
                       {actualIncome > 0 && !budget.expectedIncome && (
                 <Text className="text-xs text-green-600 mb-2 font-medium">
-                  {t('budget.auto_filled', { month: now.toLocaleString('default', { month: 'long' }) })}
+                  {t('budget.auto_filled', { month: autoFilledMonth })}
                 </Text>
               )}
               {actualIncome > 0 && budget.expectedIncome > 0 && (
                 <Text className="text-xs text-green-600 mb-2 font-medium">
-                  {t('budget.auto_filled', { month: now.toLocaleString('default', { month: 'long' }) })}
+                  {t('budget.auto_filled', { month: autoFilledMonth })}
                 </Text>
               )}
               <View className="flex-row items-center border-2 border-gray-100 dark:border-gray-700 rounded-2xl px-4 py-3 bg-gray-50 dark:bg-gray-800 gap-2 mb-4">
@@ -486,7 +488,7 @@ export default function BudgetScreen() {
               )}
               {analyzed && income > 0 && (
                 <Text className="text-xs text-green-600 font-medium mt-2">
-                  ✓ {t('budget.allocation_generated')} · Savings locked at {savingsEnabled && savingsAmt > 0 ? Math.round((savingsAmt / income) * 100) : 0}%
+                  ✓ {t('budget.allocation_generated')} · {t('budget.savings_locked', { pct: savingsEnabled && savingsAmt > 0 ? Math.round((savingsAmt / income) * 100) : 0 })}
                 </Text>
               )}
             </View>

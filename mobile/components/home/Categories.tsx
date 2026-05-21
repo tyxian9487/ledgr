@@ -8,11 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Transaction } from '../../types';
 import CategoryIcon from './CategoryIcon';
 
-const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
+const MONTH_KEYS = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
 
 export interface CategoriesProps {
   year: number;
@@ -22,17 +18,17 @@ export interface CategoriesProps {
   onEdit?: (tx: Transaction) => void;
 }
 
-function formatDayLabel(dateStr: string): string {
+function formatDayLabel(dateStr: string, t: (key: any, params?: Record<string, string | number>) => string): string {
   const d = new Date(dateStr + 'T12:00:00');
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
   const toStr = (dt: Date) => dt.toISOString().slice(0, 10);
-  if (dateStr === toStr(today)) return 'Today';
-  if (dateStr === toStr(yesterday)) return 'Yesterday';
+  if (dateStr === toStr(today)) return t('common.today');
+  if (dateStr === toStr(yesterday)) return t('common.yesterday');
   const diffDays = Math.floor((today.getTime() - d.getTime()) / 86400000);
-  if (diffDays < 7) return d.toLocaleDateString('en-US', { weekday: 'long' });
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  if (diffDays < 7) return d.toLocaleDateString(undefined, { weekday: 'long' });
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 // ── Calendar Overlay (exported for use in parent) ─────────────────────────────
@@ -42,6 +38,7 @@ export function CalendarModal({
   year: number; month: number; transactions: Transaction[];
   formatCurrency: (n: number) => string; onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const { colorScheme } = useColorScheme();
   const { bottom: bottomInset } = useSafeAreaInsets();
   const dark = colorScheme === 'dark';
@@ -61,6 +58,12 @@ export function CalendarModal({
   const [calYear, setCalYear] = useState(year);
   const [calMonth, setCalMonth] = useState(month);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const dayHeaders = useMemo(
+    () => Array.from({ length: 7 }, (_, i) =>
+      new Date(1970, 0, 4 + i).toLocaleDateString(undefined, { weekday: 'short' }),
+    ),
+    [],
+  );
 
   // Sync when parent month changes
   useEffect(() => { setCalYear(year); setCalMonth(month); }, [year, month]);
@@ -116,7 +119,7 @@ export function CalendarModal({
               <ChevronLeft size={20} color={c.icon} />
             </TouchableOpacity>
             <Text style={{ fontSize: 17, fontWeight: '700', color: c.textPrimary }}>
-              {MONTH_NAMES[calMonth]} {calYear}
+              {t(`month.${MONTH_KEYS[calMonth]}` as any)} {calYear}
             </Text>
             <TouchableOpacity onPress={nextMonth} style={{ padding: 8 }}>
               <ChevronRight size={20} color={c.icon} />
@@ -125,7 +128,7 @@ export function CalendarModal({
 
           {/* Day headers */}
           <View style={{ flexDirection: 'row', paddingHorizontal: 10, marginBottom: 4 }}>
-            {DAYS_SHORT.map(d => (
+            {dayHeaders.map(d => (
               <Text key={d} style={{ width: cellWidth, textAlign: 'center', fontSize: 11, fontWeight: '600', color: '#9ca3af', letterSpacing: 0.5 }}>
                 {d}
               </Text>
@@ -186,11 +189,11 @@ export function CalendarModal({
                   <View key={i} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: `rgba(239,68,68,${o})` }} />
                 ))}
               </View>
-              <Text style={{ fontSize: 11, color: c.textMuted }}>Low → High spend</Text>
+              <Text style={{ fontSize: 11, color: c.textMuted }}>{t('calendar.legend_spend')}</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#22c55e' }} />
-              <Text style={{ fontSize: 11, color: c.textMuted }}>Income</Text>
+              <Text style={{ fontSize: 11, color: c.textMuted }}>{t('common.income')}</Text>
             </View>
           </View>
 
@@ -198,8 +201,8 @@ export function CalendarModal({
           {selectedDay !== null && (
             <ScrollView style={{ maxHeight: 180, borderTopWidth: 1, borderTopColor: c.border }} nestedScrollEnabled>
               <Text style={{ fontSize: 11, fontWeight: '700', color: c.textMuted, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                {MONTH_NAMES[calMonth]} {selectedDay}
-                {selectedDayTxs.length === 0 ? ' — No transactions' : ''}
+                {t(`month.${MONTH_KEYS[calMonth]}` as any)} {selectedDay}
+                {selectedDayTxs.length === 0 ? ` — ${t('home.no_transactions')}` : ''}
               </Text>
               {selectedDayTxs.map(tx => (
                 <View key={tx.id} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: c.borderFaint }}>
@@ -389,9 +392,9 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
     <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
       {dateRows.map(({ dateStr, dayTxs, expenses, income }) => {
         const isExp = expanded[dateStr] === true;
-        const label = formatDayLabel(dateStr);
+        const label = formatDayLabel(dateStr, t);
         const d = new Date(dateStr + 'T12:00:00');
-        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+        const dayName = d.toLocaleDateString(undefined, { weekday: 'short' });
         const dayNum = String(d.getDate());
 
         return (

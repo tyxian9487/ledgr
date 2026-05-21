@@ -24,6 +24,8 @@ interface GoalEntry {
   isCustom: boolean;
 }
 
+const MONTH_KEYS = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+
 function getMonthlyCustomProgress(
   savedAmount: number,
   targetAmount: number,
@@ -61,7 +63,7 @@ export default function GoalTrackerCard({ year, month }: Props) {
       )
       .reduce((sum, tx) => sum + tx.amount, 0);
     const goalAmount = savingsGoal.amount || 0;
-    const monthName = new Date(year, month).toLocaleDateString('en-US', { month: 'long' });
+    const monthName = t(`month.${MONTH_KEYS[month]}` as any);
     allGoals.push({
       id: 'savings',
       title: t('gtc.monthly'),

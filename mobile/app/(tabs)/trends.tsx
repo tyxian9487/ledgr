@@ -19,7 +19,7 @@ import { useTranslation } from '../../context/LanguageContext';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_KEYS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 
 const CATEGORY_COLORS: Record<string, string> = {
   food: '#f97316',
@@ -213,7 +213,7 @@ function CategoryModal({
           const td = new Date(tx.date);
           return td.getMonth() === m && td.getFullYear() === y;
         }).reduce((s, tx) => s + tx.amount, 0);
-        return { label: MONTH_NAMES[m], value: val };
+        return { label: t(`month.${MONTH_KEYS[m]}.short` as any), value: val };
       });
     }
     if (period === 'quarterly') {
@@ -338,7 +338,7 @@ function CategoryModal({
                         {tx.description || label}
                       </Text>
                       <Text className="text-[11px] text-gray-400 mt-0.5">
-                        {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        {new Date(tx.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                       </Text>
                     </View>
                     <Text className="text-sm font-bold text-red-500 flex-shrink-0">
@@ -396,7 +396,7 @@ export default function TrendsScreen() {
         year,
         income: txs.filter((tx) => tx.type === 'income').reduce((s, tx) => s + tx.amount, 0),
         expenses: txs.filter((tx) => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0),
-        label: MONTH_NAMES[month],
+        label: t(`month.${MONTH_KEYS[month]}.short` as any),
       };
     });
   }, [transactions]);

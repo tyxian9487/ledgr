@@ -1160,7 +1160,7 @@ export default function ProfileScreen() {
                     }`}
                     numberOfLines={2}
                   >
-                    {badge.label}
+                    {t(`badge.${badge.id}.label` as any)}
                   </Text>
                 </View>
               );
@@ -1181,7 +1181,7 @@ export default function ProfileScreen() {
             <View className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-900/20 items-center justify-center">
               <Trophy size={15} color="#d97706" />
             </View>
-            <Text className="text-sm font-semibold text-gray-900 dark:text-white">Achievements &amp; Tips</Text>
+            <Text className="text-sm font-semibold text-gray-900 dark:text-white">{t('profile.see_achievements')}</Text>
           </View>
           <ChevronRight size={14} color="#d1d5db" />
         </TouchableOpacity>
