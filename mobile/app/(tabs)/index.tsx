@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput,
+  View, Text, ScrollView, TouchableOpacity, TextInput, Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -159,11 +159,18 @@ export default function HomeScreen() {
           <TouchableOpacity
             onPress={() => router.push('/(tabs)/profile')}
             activeOpacity={0.8}
-            className="w-9 h-9 rounded-full bg-green-600 items-center justify-center"
+            className="w-9 h-9 rounded-full bg-green-600 items-center justify-center overflow-hidden"
           >
-            <Text className="text-white font-bold text-sm">
-              {(userProfile.name || 'U').charAt(0).toUpperCase()}
-            </Text>
+            {userProfile.avatar ? (
+              <Image
+                source={{ uri: userProfile.avatar }}
+                style={{ width: 36, height: 36, borderRadius: 18 }}
+              />
+            ) : (
+              <Text className="text-white font-bold text-sm">
+                {(userProfile.name || 'U').charAt(0).toUpperCase()}
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -409,7 +416,7 @@ export default function HomeScreen() {
                         className={`text-xs font-semibold ${filterCategory === cat.id ? '' : 'text-gray-500 dark:text-gray-400'}`}
                         style={filterCategory === cat.id ? { color: cat.color } : {}}
                       >
-                        {cat.label}
+                        {t(`cat.${cat.id}` as any)}
                       </Text>
                     </TouchableOpacity>
                   ))}

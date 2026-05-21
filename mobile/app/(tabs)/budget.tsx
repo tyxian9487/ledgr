@@ -691,7 +691,7 @@ export default function BudgetScreen() {
                       return (
                         <View key={a.categoryId} className="mb-3">
                           <View className="flex-row items-center justify-between mb-1">
-                            <Text className="text-xs font-medium text-gray-800 dark:text-gray-200">{a.label}</Text>
+                            <Text className="text-xs font-medium text-gray-800 dark:text-gray-200">{categoryLabel(t, a.categoryId, a.label)}</Text>
                             <Text className={`text-xs font-bold ${over ? 'text-red-500' : 'text-green-600'}`}>
                               {formatCurrency(actual)} / {formatCurrency(budgetAmt)}
                             </Text>
