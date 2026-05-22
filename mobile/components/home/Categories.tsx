@@ -10,6 +10,16 @@ import CategoryIcon from './CategoryIcon';
 
 const MONTH_KEYS = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
 
+function translateCategoryLabel(
+  t: (key: any, params?: Record<string, string | number>) => string,
+  cat?: { id: string; label: string },
+): string {
+  if (!cat) return '';
+  const key = `cat.${cat.id}` as any;
+  const translated = t(key);
+  return translated !== key ? translated : cat.label;
+}
+
 export interface CategoriesProps {
   year: number;
   month: number;
@@ -276,10 +286,10 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
         </View>
         <View style={{ flex: 1, marginLeft: 10, minWidth: 0 }}>
           <Text style={{ fontSize: 13, fontWeight: '500', color: c.textPrimary }} numberOfLines={1}>
-            {tx.description || cat?.label}
+            {tx.description || translateCategoryLabel(t, cat)}
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 1 }}>
-            <Text style={{ fontSize: 11, color: c.textMuted }}>{cat?.label}</Text>
+            <Text style={{ fontSize: 11, color: c.textMuted }}>{translateCategoryLabel(t, cat)}</Text>
             {tx.isAutoDebit && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
                 <RefreshCw size={9} color="#9ca3af" />
@@ -345,7 +355,7 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
                   <CategoryIcon icon={row.icon} color={row.color} size={19} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: c.textPrimary }}>{row.label}</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: c.textPrimary }}>{translateCategoryLabel(t, row)}</Text>
                   <Text style={{ fontSize: 11, color: c.textMuted, marginTop: 1 }}>
                     {row.txs.length} transaction{row.txs.length !== 1 ? 's' : ''}
                   </Text>

@@ -36,6 +36,16 @@ function getGreeting(): 'home.greeting_morning' | 'home.greeting_afternoon' | 'h
   return 'home.greeting_night';
 }
 
+function translateCategoryLabel(
+  t: (key: any, params?: Record<string, string | number>) => string,
+  cat?: { id: string; label: string },
+): string {
+  if (!cat) return '';
+  const key = `cat.${cat.id}` as any;
+  const translated = t(key);
+  return translated !== key ? translated : cat.label;
+}
+
 // ─── Home Screen ──────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
@@ -110,14 +120,15 @@ export default function HomeScreen() {
   const searchResults: Transaction[] = useMemo(() => {
     if (!q) return [];
     return transactions.filter(tx => {
-      const catLabel = ALL_CATEGORIES.find(c => c.id === tx.category)?.label.toLowerCase() ?? '';
+      const cat = ALL_CATEGORIES.find(c => c.id === tx.category);
+      const catLabel = translateCategoryLabel(t, cat).toLowerCase();
       return (
         tx.description.toLowerCase().includes(q) ||
         catLabel.includes(q) ||
         String(tx.amount).includes(q)
       );
     });
-  }, [transactions, q]);
+  }, [transactions, q, t]);
 
   const activeFilterCount =
     (filterType !== 'all' ? 1 : 0) +
@@ -334,9 +345,9 @@ export default function HomeScreen() {
                         <View className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: cat?.color ?? '#9ca3af' }} />
                         <View className="flex-1 min-w-0">
                           <Text className="text-xs font-medium text-gray-900 dark:text-white" numberOfLines={1}>
-                            {tx.description || cat?.label}
+                            {tx.description || translateCategoryLabel(t, cat)}
                           </Text>
-                          <Text className="text-[10px] text-gray-400">{cat?.label} · {formatDate(tx.date)}</Text>
+                          <Text className="text-[10px] text-gray-400">{translateCategoryLabel(t, cat)} · {formatDate(tx.date)}</Text>
                         </View>
                         <Text className={`text-xs font-bold flex-shrink-0 ${tx.type === 'income' ? 'text-green-600' : 'text-gray-700 dark:text-gray-300'}`}>
                           {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
