@@ -226,6 +226,27 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
   const [customDateInput, setCustomDateInput] = useState(date);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showAddTxHint, setShowAddTxHint] = useState(false);
+
+  useEffect(() => {
+    if (!visible) return;
+    const nextDate = prefill?.date ?? todayString();
+    setType(prefill?.type ?? 'expense');
+    setAmount(prefill?.amount ? String(prefill.amount) : '');
+    setDate(nextDate);
+    setCustomDateInput(nextDate);
+    setCategory(prefill?.category ?? '');
+    setDescription(prefill?.description ?? '');
+    setIsAutoDebit(prefill?.isAutoDebit ?? false);
+    setPeriod(prefill?.autoDebitPeriod ?? 'monthly');
+    setLinkedGoalId(prefill?.linkedGoalId ?? '');
+    setShowCategoryPicker(false);
+    setShowPeriodPicker(false);
+    setShowAddCategory(false);
+    setViewReceipt(false);
+    setCustomDateMode(false);
+    setShowDatePicker(false);
+  }, [visible, prefill]);
+
   useEffect(() => {
     AsyncStorage.getItem('ledgr_addtx_hint_seen').then(val => {
       if (!val) setShowAddTxHint(true);
