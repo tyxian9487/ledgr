@@ -32,6 +32,8 @@ export const en = {
   'common.all': 'All',
   'common.type': 'Type',
   'common.total': 'Total',
+  'common.transaction': 'transaction',
+  'common.transactions': 'transactions',
 
   // Home
   'home.my_finances': 'My Finances',

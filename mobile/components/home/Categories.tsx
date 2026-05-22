@@ -357,7 +357,7 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={{ fontSize: 14, fontWeight: '600', color: c.textPrimary }}>{translateCategoryLabel(t, row)}</Text>
                   <Text style={{ fontSize: 11, color: c.textMuted, marginTop: 1 }}>
-                    {row.txs.length} transaction{row.txs.length !== 1 ? 's' : ''}
+                    {row.txs.length} {t(row.txs.length === 1 ? 'common.transaction' : 'common.transactions')}
                   </Text>
                 </View>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: isIncome ? '#16a34a' : '#ef4444', marginRight: 8 }}>
