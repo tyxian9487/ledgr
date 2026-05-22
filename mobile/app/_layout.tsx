@@ -19,6 +19,7 @@ import {
   loadNotifPrefs,
   requestInitialNotificationPermission,
   syncNotificationSettings,
+  getTranslationFunction,
 } from '../utils/notifications';
 
 // ── Global crash capture ───────────────────────────────────────────────────────
@@ -229,7 +230,11 @@ function NotificationPermissionRequester() {
       });
     });
     requestInitialNotificationPermission().catch(() => {});
-    loadNotifPrefs().then(syncNotificationSettings).catch(() => {});
+    (async () => {
+      const prefs = await loadNotifPrefs();
+      const t = await getTranslationFunction();
+      await syncNotificationSettings(prefs, t);
+    })().catch(() => {});
   }, [isAuthenticated, hasCompletedOnboarding]);
 
   return null;

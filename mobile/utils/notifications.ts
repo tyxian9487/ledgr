@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import { translations } from '../i18n/translations';
+import type { TKey } from '../i18n/translations';
 
 export interface NotifPrefs {
   weeklySummary: boolean;
@@ -30,7 +32,26 @@ export async function loadNotifPrefs(): Promise<NotifPrefs> {
 
 export async function saveNotifPrefs(prefs: NotifPrefs): Promise<void> {
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
-  await syncNotificationSettings(prefs);
+  const t = await getTranslationFunction();
+  await syncNotificationSettings(prefs, t);
+}
+
+export async function getTranslationFunction(): Promise<(key: TKey) => string> {
+  try {
+    // Try to get user profile with language preference
+    const raw = await AsyncStorage.getItem('kachingo_userProfile');
+    const profile = raw ? JSON.parse(raw) : {};
+    const language = profile.language || 'en';
+    const dict = translations[language as keyof typeof translations] ?? translations.en;
+    
+    return (key: TKey) => {
+      return (dict[key] ?? (translations.en as Record<TKey, string>)[key] ?? key) as string;
+    };
+  } catch {
+    // Fallback to English if anything goes wrong
+    const dict = translations.en;
+    return (key: TKey) => (dict[key] ?? key) as string;
+  }
 }
 
 async function getNotifications() {
@@ -88,29 +109,41 @@ async function scheduleManagedNotification(
   });
 }
 
-export async function syncNotificationSettings(prefs: NotifPrefs): Promise<void> {
+export async function syncNotificationSettings(prefs: NotifPrefs, t?: (key: string) => string): Promise<void> {
   await cancelManagedNotifications();
   if (!Object.values(prefs).some(Boolean)) return;
 
   const granted = await requestNotificationPermissionIfNeeded();
   if (!granted) return;
 
+  // Fallback translation function if not provided
+  const translate = t || ((key: string) => key);
+
   const ids: string[] = [];
   if (prefs.weeklySummary) {
     ids.push(await scheduleManagedNotification(
-      { title: 'Weekly summary', body: 'Review your spending and progress for the week.' },
+      { 
+        title: translate('notif.weekly_summary'),
+        body: translate('notif.weekly_summary_body'),
+      },
       { weekday: 1, hour: 9, minute: 0, repeats: true },
     ));
   }
   if (prefs.streakReminders) {
     ids.push(await scheduleManagedNotification(
-      { title: 'Keep your streak going', body: 'Log your spending and stay under budget this month.' },
+      { 
+        title: translate('notif.streak_reminders'),
+        body: translate('notif.streak_reminders_body'),
+      },
       { hour: 20, minute: 0, repeats: true },
     ));
   }
   if (prefs.tips) {
     ids.push(await scheduleManagedNotification(
-      { title: 'Money tip', body: 'Small consistent habits make the biggest difference.' },
+      { 
+        title: translate('notif.tips'),
+        body: translate('notif.tips_body'),
+      },
       { weekday: 3, hour: 12, minute: 0, repeats: true },
     ));
   }
