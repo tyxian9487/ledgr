@@ -131,7 +131,7 @@ function SettingsRow({ icon, label, value, onPress, danger, right }: SettingsRow
     >
       <View
         className={`w-9 h-9 rounded-2xl items-center justify-center ${
-          danger ? 'bg-red-50' : 'bg-gray-100'
+          danger ? 'bg-red-50' : 'bg-gray-100 dark:bg-gray-800'
         }`}
       >
         {icon}
@@ -139,7 +139,7 @@ function SettingsRow({ icon, label, value, onPress, danger, right }: SettingsRow
       <Text className={`flex-1 text-sm font-medium ${danger ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}>
         {label}
       </Text>
-      {value ? <Text className="text-xs text-gray-400 mr-1">{value}</Text> : null}
+      {value ? <Text className="text-xs text-gray-400 dark:text-gray-500 mr-1">{value}</Text> : null}
       {right ?? (!danger ? <ChevronRight size={14} color="#d1d5db" /> : null)}
     </TouchableOpacity>
   );
@@ -1414,13 +1414,14 @@ export default function ProfileScreen() {
                 <X size={16} color="#6b7280" />
               </TouchableOpacity>
             </View>
-            <View className="flex-row items-center gap-2 bg-gray-50 rounded-xl mx-4 my-3 px-3 py-2.5">
+            <View className="flex-row items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-xl mx-4 my-3 px-3 py-2.5">
               <Text className="text-gray-400 text-sm">🔍</Text>
               <TextInput
                 placeholder={t('profile.search_currency')}
                 value={currencySearch}
                 onChangeText={setCurrencySearch}
                 className="flex-1 text-sm text-gray-900 dark:text-white"
+                placeholderTextColor="#9ca3af"
                 autoFocus
               />
               {currencySearch ? (
@@ -1450,10 +1451,10 @@ export default function ProfileScreen() {
                     }`}
                     activeOpacity={0.7}
                   >
-                    <Text className="w-12 text-xs font-bold text-gray-500">{c.code}</Text>
+                    <Text className={`w-12 text-xs font-bold ${selected ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'}`}>{c.code}</Text>
                     <Text
                       className={`flex-1 text-sm ${
-                        selected ? 'font-semibold text-green-700' : 'text-gray-900'
+                        selected ? 'font-semibold text-green-700' : 'text-gray-900 dark:text-white'
                       }`}
                     >
                       {c.name}
