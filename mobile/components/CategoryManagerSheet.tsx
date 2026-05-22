@@ -12,6 +12,7 @@ import {
 import { X, Plus, Trash2, Edit2, Check } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../context/LanguageContext';
+import type { TKey } from '../i18n/translations';
 import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
@@ -305,8 +306,12 @@ export default function CategoryManagerSheet({ visible, onClose }: Props) {
                       size={16}
                     />
                     <Text className={`flex-1 text-sm font-medium ${enabled ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-600'}`}>
-                      {cat.label}
-                    </Text>
+                            {(() => {
+                              const key = (`cat.${cat.id}` as unknown) as TKey;
+                              const translated = t(key);
+                              return translated === key ? cat.label : translated;
+                            })()}
+                          </Text>
                     <Switch
                       value={enabled}
                       onValueChange={() => toggleCategoryEnabled(cat.id)}
