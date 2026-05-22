@@ -1365,7 +1365,7 @@ export default function ProfileScreen() {
         {showFAQ ? (
           <View className="mx-4 bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm border border-gray-50 mb-5">
             <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-sm font-bold text-gray-900">{t('faq.title')}</Text>
+              <Text className="text-sm font-bold text-gray-900 dark:text-white">{t('faq.title')}</Text>
               <TouchableOpacity onPress={() => setShowFAQ(false)}>
                 <X size={16} color="#9ca3af" />
               </TouchableOpacity>
