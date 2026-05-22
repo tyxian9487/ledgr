@@ -347,7 +347,7 @@ export default function BudgetScreen() {
                     </View>
                     {savingsAmt > 0 && (
                       <Text className="text-sm text-green-600 font-semibold mt-2 text-right">
-                        = {formatCurrency(savingsAmt)} / mo
+                        = {formatCurrency(savingsAmt)}{t('common.per_month')}
                       </Text>
                     )}
                   </>
@@ -512,7 +512,7 @@ export default function BudgetScreen() {
                       </View>
                       <Text className="text-sm text-gray-600 dark:text-gray-300">{t('budget.monthly_savings')}</Text>
                     </View>
-                    <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">−{formatCurrency(savingsAmt)}/mo</Text>
+                    <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">−{formatCurrency(savingsAmt)}{t('common.per_month')}</Text>
                   </View>
                 )}
                 {(budget.customGoals ?? []).map(goal => {
@@ -526,7 +526,7 @@ export default function BudgetScreen() {
                         </View>
                         <Text className="text-sm text-gray-600 dark:text-gray-300" numberOfLines={1}>{goal.name}</Text>
                       </View>
-                      <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">−{formatCurrency(monthly)}/mo</Text>
+                      <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">−{formatCurrency(monthly)}{t('common.per_month')}</Text>
                     </View>
                   );
                 })}
