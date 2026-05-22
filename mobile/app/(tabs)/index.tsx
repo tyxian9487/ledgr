@@ -499,7 +499,7 @@ export default function HomeScreen() {
       <ManualEntryModal
         visible={showEntry}
         onClose={() => { setShowEntry(false); setEntryPrefill(undefined); setEditTx(null); }}
-        prefill={editTx ? undefined : entryPrefill}
+        prefill={editTx ?? entryPrefill}
         transactionId={editTx?.id}
       />
 
