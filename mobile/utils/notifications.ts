@@ -15,10 +15,10 @@ const FIRST_PROMPT_KEY = 'kachingo_notif_first_prompted';
 const SCHEDULED_IDS_KEY = 'kachingo_notif_scheduled_ids';
 
 export const DEFAULT_PREFS: NotifPrefs = {
-  weeklySummary: false,
-  budgetAlerts: false,
-  streakReminders: false,
-  tips: false,
+  weeklySummary: true,
+  budgetAlerts: true,
+  streakReminders: true,
+  tips: true,
 };
 
 export async function loadNotifPrefs(): Promise<NotifPrefs> {

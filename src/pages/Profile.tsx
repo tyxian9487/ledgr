@@ -116,7 +116,7 @@ export default function Profile() {
   const [notifTransactions, setNotifTransactions] = useState(true);
   const [notifMonthlySummary, setNotifMonthlySummary] = useState(true);
   const [notifAutoDebit, setNotifAutoDebit] = useState(true);
-  const [notifBudgetAlerts, setNotifBudgetAlerts] = useState(false);
+  const [notifBudgetAlerts, setNotifBudgetAlerts] = useState(true);
 
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
