@@ -423,7 +423,7 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={{ fontSize: 13, fontWeight: '600', color: c.textPrimary }}>{label}</Text>
                 <Text style={{ fontSize: 11, color: c.textMuted, marginTop: 1 }}>
-                  {dayTxs.length} transaction{dayTxs.length !== 1 ? 's' : ''}
+                  {dayTxs.length} {t(dayTxs.length === 1 ? 'common.transaction' : 'common.transactions')}
                 </Text>
               </View>
 
