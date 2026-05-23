@@ -355,6 +355,9 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
           noExpenses: t('card.no_expenses'),
           income: t('common.income').toUpperCase(),
           remaining: t('card.remaining').toUpperCase(),
+          monthLabel: t(MONTH_KEYS[month] as any),
+          expensesLabel: t('card.total_expenses'),
+          generatedWith: t('card.share_generated_with'),
         }}
       />
     </View>

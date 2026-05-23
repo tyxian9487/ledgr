@@ -479,7 +479,7 @@ export const en = {
   'notif.streak_reminders_desc': 'Keep your budget streak going',
   'notif.streak_reminders_body': 'Log your spending and stay under budget this month.',
   'notif.tips': 'Money Tips',
-  'notif.tips_desc': 'Weekly financial tips & advice',
+  'notif.tips_desc': 'Daily financial tips & advice',
   'notif.tips_body': 'Small consistent habits make the biggest difference.',
   'notif.save': 'Save Settings',
   'notif.saved': 'Notification preferences saved!',
@@ -700,6 +700,27 @@ export const en = {
   // Login
   'login.sign_in_failed': 'Sign in failed',
   'login.languages': '5 languages supported',
+
+  // Share card PNG
+  'card.share_generated_with': 'Generated with Kachingo',
+
+  // PDF report
+  'profile.report_title': 'Financial Report',
+  'profile.financial_health_score': 'Financial Health Score',
+  'profile.net_balance': 'Net Balance',
+  'profile.savings_rate': 'Savings Rate',
+  'profile.current_streak': 'Current streak',
+  'profile.best_streak': 'Best streak',
+  'profile.generated_with': 'Generated with Kachingo',
+
+  // Daily rotating financial tips
+  'notif.tips_body_1': 'Track every expense, no matter how small. Small leaks sink big ships.',
+  'notif.tips_body_2': 'Pay yourself first — set aside savings before spending.',
+  'notif.tips_body_3': 'Build an emergency fund covering 3–6 months of expenses.',
+  'notif.tips_body_4': 'Review subscriptions monthly and cancel ones you no longer use.',
+  'notif.tips_body_5': 'The 50/30/20 rule: 50% needs, 30% wants, 20% savings.',
+  'notif.tips_body_6': 'Automate your savings to make it effortless and consistent.',
+  'notif.tips_body_7': 'Avoid lifestyle inflation — save or invest your salary increases.',
 } as const;
 
 export type TKey = keyof typeof en;
@@ -946,7 +967,7 @@ const zh: Record<TKey, string> = {
   'notif.budget_over_body': '您已超出本月预算。',
   'notif.streak_reminders': '连击提醒', 'notif.streak_reminders_desc': '保持您的预算连击',
   'notif.streak_reminders_body': '记录您的支出并保持在本月预算内。',
-  'notif.tips': '理财技巧', 'notif.tips_desc': '每周财务技巧与建议',
+  'notif.tips': '理财技巧', 'notif.tips_desc': '每日财务技巧与建议',
   'notif.tips_body': '小的一致性习惯会产生最大的差异。',
   'notif.save': '保存设置', 'notif.saved': '通知偏好已保存！',
   'streak.current': '当前连击', 'streak.best': '最佳', 'streak.months': '个月', 'streak.keep_going': '继续加油！',
@@ -1038,6 +1059,18 @@ const zh: Record<TKey, string> = {
   'goal.delete_title': '删除目标', 'goal.delete_confirm': '删除"{name}"？此操作无法撤销。',
   'catmgr.delete_title': '删除类别', 'catmgr.delete_confirm': '删除此自定义类别？',
   'login.sign_in_failed': '登录失败', 'login.languages': '支持 5 种语言',
+  'card.share_generated_with': '由 Kachingo 生成',
+  'profile.report_title': '财务报告', 'profile.financial_health_score': '财务健康评分',
+  'profile.net_balance': '净余额', 'profile.savings_rate': '储蓄率',
+  'profile.current_streak': '当前连击', 'profile.best_streak': '最佳连击',
+  'profile.generated_with': '由 Kachingo 生成',
+  'notif.tips_body_1': '记录每一笔支出，无论多小。小漏洞会沉大船。',
+  'notif.tips_body_2': '先存钱后消费，先支付给自己。',
+  'notif.tips_body_3': '建立可覆盖3至6个月支出的应急基金。',
+  'notif.tips_body_4': '每月检查订阅，取消不再使用的服务。',
+  'notif.tips_body_5': '50/30/20法则：50%必需品、30%想要、20%储蓄。',
+  'notif.tips_body_6': '自动化您的储蓄，轻松保持一致。',
+  'notif.tips_body_7': '避免生活方式通胀——将加薪收入存起来或投资。',
 };
 
 const ja: Record<TKey, string> = {
@@ -1282,7 +1315,7 @@ const ja: Record<TKey, string> = {
   'notif.budget_over_body': '今月の予算を超えました。',
   'notif.streak_reminders': 'ストリークリマインダー', 'notif.streak_reminders_desc': '予算ストリークを維持する',
   'notif.streak_reminders_body': '支出を記録して、今月の予算内に留まる。',
-  'notif.tips': 'マネーヒント', 'notif.tips_desc': '週次の財務ヒント',
+  'notif.tips': 'マネーヒント', 'notif.tips_desc': '毎日の財務ヒント',
   'notif.tips_body': '小さな一貫した習慣が最大の違いをもたらします。',
   'notif.save': '設定を保存', 'notif.saved': '通知設定が保存されました！',
   'streak.current': '現在のストリーク', 'streak.best': 'ベスト', 'streak.months': 'ヶ月', 'streak.keep_going': '頑張って！',
@@ -1374,6 +1407,18 @@ const ja: Record<TKey, string> = {
   'goal.delete_title': '目標を削除', 'goal.delete_confirm': '「{name}」を削除しますか？この操作は元に戻せません。',
   'catmgr.delete_title': 'カテゴリを削除', 'catmgr.delete_confirm': 'このカスタムカテゴリを削除しますか？',
   'login.sign_in_failed': 'サインインに失敗しました', 'login.languages': '5言語対応',
+  'card.share_generated_with': 'Kachingo で生成',
+  'profile.report_title': '財務レポート', 'profile.financial_health_score': '財務健康スコア',
+  'profile.net_balance': '純残高', 'profile.savings_rate': '貯蓄率',
+  'profile.current_streak': '現在のストリーク', 'profile.best_streak': 'ベストストリーク',
+  'profile.generated_with': 'Kachingo で生成',
+  'notif.tips_body_1': '小さな支出も記録しましょう。小さな穴が大きな船を沈めます。',
+  'notif.tips_body_2': '消費前に貯蓄を確保する、自分への先払いを実践しましょう。',
+  'notif.tips_body_3': '3〜6ヶ月分の生活費をカバーする緊急資金を作りましょう。',
+  'notif.tips_body_4': '毎月サブスクを見直し、使っていないものは解約しましょう。',
+  'notif.tips_body_5': '50/30/20ルール：50%必需品、30%娯楽、20%貯蓄。',
+  'notif.tips_body_6': '貯蓄を自動化して、手間なく継続しましょう。',
+  'notif.tips_body_7': '生活水準インフレを避け、昇給分は貯蓄や投資へ回しましょう。',
 };
 
 const ko: Record<TKey, string> = {
@@ -1619,7 +1664,7 @@ const ko: Record<TKey, string> = {
   'notif.budget_over_body': '이번 달 예산을 초과했습니다.',
   'notif.streak_reminders': '스트릭 리마인더', 'notif.streak_reminders_desc': '예산 스트릭 유지하기',
   'notif.streak_reminders_body': '지출을 기록하고 이번 달 예산 범위 내에 머물러 있으세요.',
-  'notif.tips': '재정 팁', 'notif.tips_desc': '주간 재정 팁 및 조언',
+  'notif.tips': '재정 팁', 'notif.tips_desc': '매일 재정 팁 및 조언',
   'notif.tips_body': '작은 일관된 습관이 가장 큰 차이를 만듭니다.',
   'notif.save': '설정 저장', 'notif.saved': '알림 설정이 저장되었습니다!',
   'streak.current': '현재 스트릭', 'streak.best': '최고', 'streak.months': '개월', 'streak.keep_going': '계속하세요!',
@@ -1711,6 +1756,18 @@ const ko: Record<TKey, string> = {
   'goal.delete_title': '목표 삭제', 'goal.delete_confirm': '"{name}"을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.',
   'catmgr.delete_title': '카테고리 삭제', 'catmgr.delete_confirm': '이 사용자 지정 카테고리를 삭제하시겠습니까?',
   'login.sign_in_failed': '로그인 실패', 'login.languages': '5개 언어 지원',
+  'card.share_generated_with': 'Kachingo로 생성',
+  'profile.report_title': '재무 보고서', 'profile.financial_health_score': '재무 건강 점수',
+  'profile.net_balance': '순잔액', 'profile.savings_rate': '저축률',
+  'profile.current_streak': '현재 스트릭', 'profile.best_streak': '최고 스트릭',
+  'profile.generated_with': 'Kachingo로 생성',
+  'notif.tips_body_1': '아무리 작은 지출도 기록하세요. 작은 구멍이 큰 배를 침몰시킵니다.',
+  'notif.tips_body_2': '먼저 저축하고 나서 소비하세요. 자신에게 먼저 지불하세요.',
+  'notif.tips_body_3': '3~6개월치 생활비를 커버하는 비상 자금을 만드세요.',
+  'notif.tips_body_4': '매달 구독을 점검하고 더 이상 사용하지 않는 것은 해지하세요.',
+  'notif.tips_body_5': '50/30/20 규칙: 필수 50%, 원하는 것 30%, 저축 20%.',
+  'notif.tips_body_6': '저축을 자동화하여 꾸준히 실천하세요.',
+  'notif.tips_body_7': '생활 수준 인플레이션을 피하고, 급여 인상분은 저축하거나 투자하세요.',
 };
 
 const ms: Record<TKey, string> = {
@@ -1958,7 +2015,7 @@ const ms: Record<TKey, string> = {
   'notif.budget_over_body': 'Anda telah melebihi belanjawan bulanan.',
   'notif.streak_reminders': 'Peringatan Pencapaian', 'notif.streak_reminders_desc': 'Kekal pencapaian belanjawan anda',
   'notif.streak_reminders_body': 'Catat perbelanjaan anda dan kekal dalam belanjawan bulan ini.',
-  'notif.tips': 'Tips Kewangan', 'notif.tips_desc': 'Tips & nasihat kewangan mingguan',
+  'notif.tips': 'Tips Kewangan', 'notif.tips_desc': 'Tips & nasihat kewangan harian',
   'notif.tips_body': 'Kebiasaan kecil yang konsisten membuat perbezaan yang paling besar.',
   'notif.save': 'Simpan Tetapan', 'notif.saved': 'Tetapan pemberitahuan disimpan!',
   'streak.current': 'Pencapaian Semasa', 'streak.best': 'Terbaik', 'streak.months': 'bulan', 'streak.keep_going': 'Teruskan!',
@@ -2050,6 +2107,18 @@ const ms: Record<TKey, string> = {
   'goal.delete_title': 'Padam Matlamat', 'goal.delete_confirm': 'Padam "{name}"? Tindakan ini tidak boleh dibatalkan.',
   'catmgr.delete_title': 'Padam Kategori', 'catmgr.delete_confirm': 'Buang kategori tersuai ini?',
   'login.sign_in_failed': 'Log masuk gagal', 'login.languages': '5 bahasa disokong',
+  'card.share_generated_with': 'Dijana dengan Kachingo',
+  'profile.report_title': 'Laporan Kewangan', 'profile.financial_health_score': 'Skor Kesihatan Kewangan',
+  'profile.net_balance': 'Baki Bersih', 'profile.savings_rate': 'Kadar Simpanan',
+  'profile.current_streak': 'Pencapaian Semasa', 'profile.best_streak': 'Pencapaian Terbaik',
+  'profile.generated_with': 'Dijana dengan Kachingo',
+  'notif.tips_body_1': 'Rekod setiap perbelanjaan, tidak kira betapa kecilnya. Lubang kecil menenggelamkan kapal besar.',
+  'notif.tips_body_2': 'Bayar diri anda dahulu — sisihkan simpanan sebelum berbelanja.',
+  'notif.tips_body_3': 'Bina dana kecemasan yang merangkumi 3–6 bulan perbelanjaan.',
+  'notif.tips_body_4': 'Semak langganan setiap bulan dan batalkan yang tidak lagi digunakan.',
+  'notif.tips_body_5': 'Peraturan 50/30/20: 50% keperluan, 30% kehendak, 20% simpanan.',
+  'notif.tips_body_6': 'Automatikkan simpanan anda untuk menjadikannya mudah dan konsisten.',
+  'notif.tips_body_7': 'Elakkan inflasi gaya hidup — simpan atau laburkan kenaikan gaji anda.',
 };
 
 export const translations: Record<string, Record<TKey, string>> = { en, zh, ja, ko, ms };

@@ -978,6 +978,19 @@ export default function ProfileScreen() {
     const now = new Date();
     const dateStr = now.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
 
+    const rTitle = t('profile.report_title');
+    const rHealthScore = t('profile.financial_health_score');
+    const rThisYear = t('profile.this_year');
+    const rIncome = t('common.income');
+    const rExpenses = t('common.expenses');
+    const rNetBalance = t('profile.net_balance');
+    const rSavingsRate = t('profile.savings_rate');
+    const rBudgetStreak = t('profile.budget_streak');
+    const rCurrentStreak = t('profile.current_streak');
+    const rBestStreak = t('profile.best_streak');
+    const rGeneratedWith = t('profile.generated_with');
+    const rMonths = t('common.months');
+
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
 <style>
   body{font-family:-apple-system,Arial,sans-serif;margin:0;padding:40px;color:#111827;background:#fff}
@@ -998,25 +1011,25 @@ export default function ProfileScreen() {
   footer{margin-top:40px;color:#9ca3af;font-size:11px;text-align:center;border-top:1px solid #f3f4f6;padding-top:16px}
 </style></head><body>
 <div class="header">
-  <div><h1>📊 Financial Report</h1><div class="date">${dateStr}</div></div>
+  <div><h1>📊 ${rTitle}</h1><div class="date">${dateStr}</div></div>
 </div>
 <div class="score-row">
   <div class="score-circle"><span class="score-num">${score}</span><span class="score-denom">/100</span></div>
-  <div><div class="score-label">${scoreLabel2}</div><div class="score-sub">Financial Health Score</div></div>
+  <div><div class="score-label">${scoreLabel2}</div><div class="score-sub">${rHealthScore}</div></div>
 </div>
-<h2>This Year</h2>
+<h2>${rThisYear}</h2>
 <table>
-  <tr><td class="label">Income</td><td class="value positive">${formatCurrency(yearIncome)}</td></tr>
-  <tr><td class="label">Expenses</td><td class="value">${formatCurrency(yearExpenses)}</td></tr>
-  <tr><td class="label">Net Balance</td><td class="value ${yearIncome - yearExpenses >= 0 ? 'positive' : 'negative'}">${formatCurrency(yearIncome - yearExpenses)}</td></tr>
-  <tr><td class="label">Savings Rate</td><td class="value">${yearIncome > 0 ? Math.round((1 - yearExpenses / yearIncome) * 100) : 0}%</td></tr>
+  <tr><td class="label">${rIncome}</td><td class="value positive">${formatCurrency(yearIncome)}</td></tr>
+  <tr><td class="label">${rExpenses}</td><td class="value">${formatCurrency(yearExpenses)}</td></tr>
+  <tr><td class="label">${rNetBalance}</td><td class="value ${yearIncome - yearExpenses >= 0 ? 'positive' : 'negative'}">${formatCurrency(yearIncome - yearExpenses)}</td></tr>
+  <tr><td class="label">${rSavingsRate}</td><td class="value">${yearIncome > 0 ? Math.round((1 - yearExpenses / yearIncome) * 100) : 0}%</td></tr>
 </table>
-<h2>Budget Streak</h2>
+<h2>${rBudgetStreak}</h2>
 <table>
-  <tr><td class="label">Current streak</td><td class="value">${current} month${current !== 1 ? 's' : ''}</td></tr>
-  <tr><td class="label">Best streak</td><td class="value">${best} month${best !== 1 ? 's' : ''}</td></tr>
+  <tr><td class="label">${rCurrentStreak}</td><td class="value">${current} ${rMonths}</td></tr>
+  <tr><td class="label">${rBestStreak}</td><td class="value">${best} ${rMonths}</td></tr>
 </table>
-<footer>Generated with Kachingo · ${dateStr}</footer>
+<footer>${rGeneratedWith} · ${dateStr}</footer>
 </body></html>`;
 
     try {
@@ -1025,7 +1038,7 @@ export default function ProfileScreen() {
       const { uri } = await Print.printToFileAsync({ html, base64: false });
       await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: t('profile.generate_report') });
     } catch {
-      Alert.alert('📊 Financial Report', `Score: ${score}/100 (${scoreLabel2})\nIncome: ${formatCurrency(yearIncome)}\nExpenses: ${formatCurrency(yearExpenses)}`);
+      Alert.alert(`📊 ${rTitle}`, `Score: ${score}/100 (${scoreLabel2})\n${rIncome}: ${formatCurrency(yearIncome)}\n${rExpenses}: ${formatCurrency(yearExpenses)}`);
     }
   }
 
