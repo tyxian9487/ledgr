@@ -784,7 +784,7 @@ const zh: Record<TKey, string> = {
   'budget.see_progress': '查看进度 →',
   'budget.add_goal': '添加目标', 'budget.monthly_savings': '月储蓄目标',
   'budget.allocation_generated': '已生成分配方案', 'budget.savings_locked': '储蓄已锁定 {pct}%', 'budget.no_expense': '暂无支出记录',
-  'budget.analyze': 'Analyze Budget',
+  'budget.analyze': '分析预算',
   'calendar.legend_spend': '支出从低到高',
   'faq.title': '帮助与常见问题',
   'faq.q1': '如何添加记录？', 'faq.a1': '点击首页的"添加记录"，或使用相机按钮扫描收据。',
