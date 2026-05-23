@@ -13,6 +13,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { Camera, X, ImageIcon } from 'lucide-react-native';
+import { useTranslation } from '../context/LanguageContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Stage = 'preview' | 'processing' | 'review';
@@ -45,6 +46,7 @@ async function parseReceiptWithClaude(base64: string, mediaType: string): Promis
 
 export default function CaptureScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const cameraRef = useRef<CameraView>(null);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
 
@@ -84,22 +86,22 @@ export default function CaptureScreen() {
     try {
       const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.7 });
       if (!photo?.base64) {
-        setScanError('Failed to capture photo. Please try again.');
+        setScanError(t('camera.capture_failed'));
         return;
       }
       await processImage(photo.base64, 'image/jpeg', photo.uri);
     } catch {
-      setScanError('Failed to capture photo. Please try again.');
+      setScanError(t('camera.capture_failed'));
       setStage('preview');
     }
-  }, [processImage, isCameraReady]);
+  }, [processImage, isCameraReady, t]);
 
   // ── Gallery picker ─────────────────────────────────────────────────────────
   const pickFromGallery = useCallback(async () => {
     // Explicitly request media library permission first
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      setScanError('Gallery access is required to upload a photo.');
+      setScanError(t('camera.gallery_required'));
       return;
     }
 
@@ -112,12 +114,12 @@ export default function CaptureScreen() {
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
     if (!asset.base64) {
-      setScanError('Could not read image data. Please try another photo.');
+      setScanError(t('camera.read_image_failed'));
       return;
     }
     const mediaType = (asset.mimeType || 'image/jpeg') as string;
     await processImage(asset.base64, mediaType, asset.uri);
-  }, [processImage]);
+  }, [processImage, t]);
 
   // ── Reset ──────────────────────────────────────────────────────────────────
   const reset = useCallback(() => {
@@ -135,9 +137,9 @@ export default function CaptureScreen() {
       await AsyncStorage.setItem(PENDING_RECEIPT_KEY, JSON.stringify(parsed));
       router.replace('/(tabs)');
     } catch {
-      Alert.alert('Error', 'Could not save receipt data. Please try again.');
+      Alert.alert(t('camera.error_title'), t('camera.save_failed_msg'));
     }
-  }, [parsed, router]);
+  }, [parsed, router, t]);
 
   // ── Permission not yet determined ──────────────────────────────────────────
   if (!cameraPermission) {
@@ -154,10 +156,10 @@ export default function CaptureScreen() {
       <SafeAreaView className="flex-1 bg-black items-center justify-center px-8">
         <Camera size={48} color="rgba(255,255,255,0.6)" />
         <Text className="text-white font-semibold text-lg text-center mt-4 mb-2">
-          Camera Access Required
+          {t('camera.permission_title')}
         </Text>
         <Text className="text-white/60 text-sm text-center leading-relaxed mb-8">
-          Allow camera access to scan receipts and automatically extract transaction details.
+          {t('camera.permission_desc')}
         </Text>
         {cameraPermission.canAskAgain ? (
           <TouchableOpacity
@@ -165,11 +167,11 @@ export default function CaptureScreen() {
             className="w-full py-4 rounded-2xl bg-green-600 items-center mb-3"
             activeOpacity={0.8}
           >
-            <Text className="text-white font-bold">Allow Camera</Text>
+            <Text className="text-white font-bold">{t('camera.allow_camera')}</Text>
           </TouchableOpacity>
         ) : (
           <Text className="text-white/60 text-sm text-center mb-8">
-            Camera access was denied. Please enable it in your device Settings.
+            {t('camera.permission_denied_desc')}
           </Text>
         )}
         <TouchableOpacity
@@ -177,10 +179,10 @@ export default function CaptureScreen() {
           className="w-full py-4 rounded-2xl bg-white/15 border border-white/20 items-center mb-3"
           activeOpacity={0.8}
         >
-          <Text className="text-white font-semibold">Use Gallery Instead</Text>
+          <Text className="text-white font-semibold">{t('camera.gallery_button')}</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.back()} className="py-3">
-          <Text className="text-white/50 text-sm">Cancel</Text>
+          <Text className="text-white/50 text-sm">{t('common.cancel')}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -198,7 +200,7 @@ export default function CaptureScreen() {
           >
             <X size={20} color="#fff" />
           </TouchableOpacity>
-          <Text className="text-white font-bold text-base">Receipt Scanned</Text>
+          <Text className="text-white font-bold text-base">{t('camera.receipt_scanned')}</Text>
           <View style={{ width: 40 }} />
         </View>
 
@@ -213,30 +215,30 @@ export default function CaptureScreen() {
         {/* Parsed fields */}
         <View className="mx-5 bg-white/10 rounded-2xl p-5 gap-4">
           <Text className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-1">
-            Review Details
+            {t('camera.review_details')}
           </Text>
 
           <View className="flex-row items-center justify-between">
-            <Text className="text-white/70 text-sm">Type</Text>
+            <Text className="text-white/70 text-sm">{t('common.type')}</Text>
             <View className={`px-3 py-1 rounded-full ${parsed.type === 'expense' ? 'bg-red-500/30' : 'bg-green-500/30'}`}>
               <Text className={`text-sm font-semibold capitalize ${parsed.type === 'expense' ? 'text-red-300' : 'text-green-300'}`}>
-                {parsed.type}
+                {parsed.type === 'expense' ? t('common.expense') : t('common.income')}
               </Text>
             </View>
           </View>
 
           <View className="flex-row items-center justify-between">
-            <Text className="text-white/70 text-sm">Amount</Text>
+            <Text className="text-white/70 text-sm">{t('common.amount')}</Text>
             <Text className="text-white font-bold text-lg">{parsed.amount.toFixed(2)}</Text>
           </View>
 
           <View className="flex-row items-center justify-between">
-            <Text className="text-white/70 text-sm">Category</Text>
+            <Text className="text-white/70 text-sm">{t('tx.category_label')}</Text>
             <Text className="text-white font-semibold capitalize">{parsed.category}</Text>
           </View>
 
           <View>
-            <Text className="text-white/70 text-sm mb-1">Description</Text>
+            <Text className="text-white/70 text-sm mb-1">{t('common.description')}</Text>
             <Text className="text-white font-medium">{parsed.description}</Text>
           </View>
         </View>
@@ -248,14 +250,14 @@ export default function CaptureScreen() {
             className="w-full py-4 rounded-2xl bg-green-600 items-center shadow-lg"
             activeOpacity={0.85}
           >
-            <Text className="text-white font-bold text-base">Save Transaction</Text>
+            <Text className="text-white font-bold text-base">{t('camera.save_transaction')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={reset}
             className="w-full py-3.5 rounded-2xl bg-white/15 border border-white/20 items-center"
             activeOpacity={0.8}
           >
-            <Text className="text-white font-semibold">Scan Again</Text>
+            <Text className="text-white font-semibold">{t('camera.scan_again')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -275,8 +277,8 @@ export default function CaptureScreen() {
           />
         ) : null}
         <ActivityIndicator size="large" color="#fff" />
-        <Text className="text-white font-medium text-sm">Analyzing receipt...</Text>
-        <Text className="text-white/60 text-xs">AI is reading your receipt</Text>
+        <Text className="text-white font-medium text-sm">{t('camera.analyzing_receipt')}</Text>
+        <Text className="text-white/60 text-xs">{t('camera.ai_reading_receipt')}</Text>
       </SafeAreaView>
     );
   }
@@ -291,7 +293,7 @@ export default function CaptureScreen() {
           style={{ flex: 1 }}
           facing="back"
           onCameraReady={() => setIsCameraReady(true)}
-          onMountError={(e) => setMountError(e.message ?? 'Camera failed to start')}
+          onMountError={(e) => setMountError(e.message ?? t('camera.camera_failed'))}
         />
 
         {/* Camera mount error overlay */}
@@ -299,13 +301,13 @@ export default function CaptureScreen() {
           <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center', padding: 32 }]}>
             <Camera size={40} color="rgba(255,255,255,0.5)" />
             <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600', textAlign: 'center', marginTop: 16, marginBottom: 8 }}>
-              Camera unavailable
+              {t('camera.unavailable')}
             </Text>
             <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, textAlign: 'center', marginBottom: 24 }}>
               {mountError}
             </Text>
             <TouchableOpacity onPress={pickFromGallery} style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 28 }}>
-              <Text style={{ color: '#fff', fontWeight: '600' }}>Use Gallery Instead</Text>
+              <Text style={{ color: '#fff', fontWeight: '600' }}>{t('camera.gallery_button')}</Text>
             </TouchableOpacity>
           </View>
         ) : null}
@@ -331,7 +333,7 @@ export default function CaptureScreen() {
         {/* Align hint */}
         {!mountError && (
           <View style={{ position: 'absolute', bottom: 144, left: 0, right: 0, alignItems: 'center' }} pointerEvents="none">
-            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>Align receipt within frame</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>{t('camera.align_receipt')}</Text>
           </View>
         )}
 
