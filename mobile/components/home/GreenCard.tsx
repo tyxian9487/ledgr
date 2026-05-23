@@ -1,11 +1,11 @@
 import { useState, useRef } from 'react';
 import { Alert, View, Text, TouchableOpacity } from 'react-native';
 import Svg, { Circle, Circle as SvgCircle, Path, Text as SvgText } from 'react-native-svg';
-import { ChevronLeft, ChevronRight, ChevronDown, Share2 } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, ChevronDown, Share2, ArrowLeftRight } from 'lucide-react-native';
 import { captureRef } from 'react-native-view-shot';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
-import { EXPENSE_CATEGORIES, FinancialStatus } from '../../types';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, FinancialStatus } from '../../types';
 import ShareCardView from './ShareCardView';
 
 interface Props {
@@ -166,6 +166,7 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
   const yearOptions = Array.from({ length: 6 }, (_, idx) => currentYear - idx);
   const [showYearPicker, setShowYearPicker] = useState(false);
   const [selectedSliceId, setSelectedSliceId] = useState<string | null>(null);
+  const [showIncome, setShowIncome] = useState(false);
 
   function handleSlicePress(id: string) {
     setSelectedSliceId(prev => prev === id ? null : id);
@@ -186,11 +187,27 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
 
   const slices = EXPENSE_CATEGORIES.filter((c) => categoryTotals[c.id]).map((c) => ({
     id: c.id,
-    label: c.label,
+    label: (() => { const k = `cat.${c.id}` as any; const v = t(k); return v !== k ? v : c.label; })(),
     color: c.color,
     amount: categoryTotals[c.id],
     pct: totalExpenses > 0 ? (categoryTotals[c.id] / totalExpenses) * 100 : 0,
   }));
+
+  const incomeCategoryTotals: Record<string, number> = {};
+  txs.filter((tx) => tx.type === 'income').forEach((tx) => {
+    incomeCategoryTotals[tx.category] = (incomeCategoryTotals[tx.category] || 0) + tx.amount;
+  });
+  const incomeSlices = INCOME_CATEGORIES.filter((c) => incomeCategoryTotals[c.id]).map((c) => ({
+    id: c.id,
+    label: (() => { const k = `cat.${c.id}` as any; const v = t(k); return v !== k ? v : c.label; })(),
+    color: c.color,
+    amount: incomeCategoryTotals[c.id],
+    pct: totalIncome > 0 ? (incomeCategoryTotals[c.id] / totalIncome) * 100 : 0,
+  }));
+
+  const activeSlices = showIncome ? incomeSlices : slices;
+  const activeCenterLabel = showIncome ? t('card.total_income') : t('card.total_expenses');
+  const activeCenterValue = showIncome ? totalIncome : totalExpenses;
 
   return (
     <>
@@ -282,16 +299,16 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
       {/* Donut — centered, tappable segments */}
       <View className="items-center pb-1">
         <DonutRing
-          slices={slices.map((s) => ({ id: s.id, color: s.color, pct: s.pct }))}
+          slices={activeSlices.map((s) => ({ id: s.id, color: s.color, pct: s.pct }))}
           size={200}
-          centerLabel={t('card.total_expenses')}
-          centerValue={formatCurrency(totalExpenses)}
+          centerLabel={activeCenterLabel}
+          centerValue={formatCurrency(activeCenterValue)}
           selectedId={selectedSliceId}
           onSlicePress={handleSlicePress}
         />
         {/* Segment detail chip */}
         {(() => {
-          const sel = slices.find(s => s.id === selectedSliceId);
+          const sel = activeSlices.find(s => s.id === selectedSliceId);
           if (sel) {
             return (
               <View className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-white/15 mb-3 -mt-1 max-w-[88%]">
@@ -302,8 +319,8 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
               </View>
             );
           }
-          if (slices.length === 0) {
-            return <Text className="text-white/40 text-xs mb-3 -mt-1">{t('card.no_expenses')}</Text>;
+          if (activeSlices.length === 0) {
+            return <Text className="text-white/40 text-xs mb-3 -mt-1">{showIncome ? t('card.no_income') : t('card.no_expenses')}</Text>;
           }
           return <Text className="text-white/35 text-xs mb-3 -mt-1">{t('card.tap_segment')}</Text>;
         })()}
@@ -311,12 +328,21 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
 
       {/* Income / Remaining row */}
       <View className="mx-4 mb-4 flex-row gap-3">
-        <View className="flex-1 bg-white/15 rounded-2xl p-3">
-          <Text className="text-white/60 text-[10px] uppercase tracking-wider mb-1">
-            {t('common.income')}
+        <TouchableOpacity
+          className="flex-1 bg-white/15 rounded-2xl p-3"
+          onPress={() => { setShowIncome(v => !v); setSelectedSliceId(null); }}
+          activeOpacity={0.75}
+        >
+          <View className="flex-row items-center justify-between mb-1">
+            <Text className="text-white/60 text-[10px] uppercase tracking-wider">
+              {showIncome ? t('card.total_expenses') : t('common.income')}
+            </Text>
+            <ArrowLeftRight size={10} color="rgba(255,255,255,0.45)" />
+          </View>
+          <Text className="text-white font-bold text-base">
+            {showIncome ? formatCurrency(totalExpenses) : formatCurrency(totalIncome)}
           </Text>
-          <Text className="text-white font-bold text-base">{formatCurrency(totalIncome)}</Text>
-        </View>
+        </TouchableOpacity>
         <View className="flex-1 bg-white/15 rounded-2xl p-3">
           <Text className="text-white/60 text-[10px] uppercase tracking-wider mb-1">
             {t('card.remaining')}
@@ -355,6 +381,9 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
           noExpenses: t('card.no_expenses'),
           income: t('common.income').toUpperCase(),
           remaining: t('card.remaining').toUpperCase(),
+          monthLabel: t(MONTH_KEYS[month] as any),
+          expensesLabel: t('card.total_expenses'),
+          generatedWith: t('card.share_generated_with'),
         }}
       />
     </View>

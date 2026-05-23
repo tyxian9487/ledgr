@@ -124,17 +124,19 @@ export async function syncNotificationSettings(prefs: NotifPrefs, t?: (key: stri
 
   const ids: string[] = [];
   if (prefs.weeklySummary) {
+    // Sunday night (weekday 1 = Sunday in Expo Calendar trigger)
     ids.push(await scheduleManagedNotification(
-      { 
+      {
         title: translate('notif.weekly_summary'),
         body: translate('notif.weekly_summary_body'),
       },
-      { weekday: 1, hour: 9, minute: 0, repeats: true },
+      { weekday: 1, hour: 21, minute: 0, repeats: true },
     ));
   }
   if (prefs.streakReminders) {
+    // Daily at 20:00
     ids.push(await scheduleManagedNotification(
-      { 
+      {
         title: translate('notif.streak_reminders'),
         body: translate('notif.streak_reminders_body'),
       },
@@ -142,13 +144,23 @@ export async function syncNotificationSettings(prefs: NotifPrefs, t?: (key: stri
     ));
   }
   if (prefs.tips) {
-    ids.push(await scheduleManagedNotification(
-      { 
-        title: translate('notif.tips'),
-        body: translate('notif.tips_body'),
-      },
-      { weekday: 3, hour: 12, minute: 0, repeats: true },
-    ));
+    // One tip per day of week (7 tips rotating), each at 09:00
+    const tipTitle = translate('notif.tips');
+    const tipBodies = [
+      translate('notif.tips_body_1'),
+      translate('notif.tips_body_2'),
+      translate('notif.tips_body_3'),
+      translate('notif.tips_body_4'),
+      translate('notif.tips_body_5'),
+      translate('notif.tips_body_6'),
+      translate('notif.tips_body_7'),
+    ];
+    for (let i = 0; i < 7; i++) {
+      ids.push(await scheduleManagedNotification(
+        { title: tipTitle, body: tipBodies[i] },
+        { weekday: i + 1, hour: 9, minute: 0, repeats: true },
+      ));
+    }
   }
   await AsyncStorage.setItem(SCHEDULED_IDS_KEY, JSON.stringify(ids));
 }

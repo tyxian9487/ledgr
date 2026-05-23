@@ -2,11 +2,6 @@ import { forwardRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
 
-const MONTH_NAMES = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December',
-];
-
 interface Props {
   score: number;
   statusLabel: string;
@@ -23,6 +18,9 @@ interface Props {
     noExpenses: string;
     income: string;
     remaining: string;
+    monthLabel: string;
+    expensesLabel: string;
+    generatedWith: string;
   };
 }
 
@@ -31,7 +29,7 @@ const ShareCardView = forwardRef<View, Props>(function ShareCardView(
   ref,
 ) {
   const dateStr = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-  const monthYear = `${MONTH_NAMES[month]} ${year}`;
+  const monthYear = `${labels.monthLabel} ${year}`;
   const scoreText = score >= 80 ? '90+' : score >= 60 ? '60-79' : '<60';
   const statusColor = score >= 80 ? '#fbbf24' : score >= 60 ? '#cbd5e1' : '#f97316';
   const legendRows = slices.slice(0, 5);
@@ -60,7 +58,7 @@ const ShareCardView = forwardRef<View, Props>(function ShareCardView(
       <View style={s.middle}>
         <DonutPreview
           slices={slices.map(slice => ({ id: slice.id, color: slice.color, pct: slice.pct }))}
-          centerLabel="Expenses"
+          centerLabel={labels.expensesLabel}
           centerValue={formatCurrency(totalExpenses)}
         />
         <View style={s.legend}>
@@ -90,7 +88,7 @@ const ShareCardView = forwardRef<View, Props>(function ShareCardView(
       </View>
 
       {/* Footer */}
-      <Text style={s.footer}>Generated with Kachingo · {dateStr}</Text>
+      <Text style={s.footer}>{labels.generatedWith} · {dateStr}</Text>
     </View>
   );
 });

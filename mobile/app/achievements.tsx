@@ -62,24 +62,28 @@ export default function AchievementsScreen() {
 
         {/* ── Streak Card ── */}
         <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">{t('achieve.streak_section')}</Text>
-        <View className="bg-white dark:bg-gray-800 rounded-3xl p-5 mb-4 border border-gray-100 dark:border-gray-700">
-          <View className="flex-row gap-3">
-            <View className="flex-1 bg-orange-50 dark:bg-orange-950 rounded-2xl p-4 items-center border border-orange-100 dark:border-orange-900">
-              <Image source={streakImg} style={{ width: 36, height: 36 }} resizeMode="contain" />
-              <Text className="text-3xl font-black text-orange-500 mt-1">{currentStreak}</Text>
-              <Text className="text-xs text-orange-500 font-bold mt-0.5">{t('achieve.current')}</Text>
-              <Text className="text-[10px] text-gray-400">{t('achieve.months')}</Text>
+        <View className="rounded-3xl overflow-hidden mb-4 border border-gray-100 dark:border-gray-700">
+          <View className="flex-row">
+            {/* Current streak */}
+            <View className="flex-1 bg-orange-50 dark:bg-orange-950 items-center pt-6 pb-5 px-4 border-r border-orange-100 dark:border-orange-900">
+              <Image source={streakImg} style={{ width: 88, height: 88 }} resizeMode="contain" />
+              <Text className="text-5xl font-black text-orange-500 mt-3">{currentStreak}</Text>
+              <Text className="text-sm font-bold text-orange-500 mt-1">{t('achieve.current')}</Text>
+              <Text className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{t('achieve.months')}</Text>
             </View>
-            <View className="flex-1 bg-amber-50 dark:bg-amber-950 rounded-2xl p-4 items-center border border-amber-100 dark:border-amber-900">
-              <Image source={goalMascotImg} style={{ width: 42, height: 42 }} resizeMode="contain" />
-              <Text className="text-3xl font-black text-amber-500 mt-1">{bestStreak}</Text>
-              <Text className="text-xs text-amber-500 font-bold mt-0.5">{t('achieve.best')}</Text>
-              <Text className="text-[10px] text-gray-400">{t('achieve.months')}</Text>
+            {/* Best streak */}
+            <View className="flex-1 bg-amber-50 dark:bg-amber-950 items-center pt-6 pb-5 px-4">
+              <Image source={goalMascotImg} style={{ width: 88, height: 88 }} resizeMode="contain" />
+              <Text className="text-5xl font-black text-amber-500 mt-3">{bestStreak}</Text>
+              <Text className="text-sm font-bold text-amber-500 mt-1">{t('achieve.best')}</Text>
+              <Text className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{t('achieve.months')}</Text>
             </View>
           </View>
-          <Text className="text-[11px] text-gray-400 dark:text-gray-500 text-center mt-3 leading-relaxed">
-            {t('achieve.streak_desc')}
-          </Text>
+          <View className="bg-white dark:bg-gray-800 px-5 py-3 border-t border-gray-100 dark:border-gray-800">
+            <Text className="text-[11px] text-gray-400 dark:text-gray-500 text-center leading-relaxed">
+              {t('achieve.streak_desc')}
+            </Text>
+          </View>
         </View>
 
         {/* ── Badges ── */}

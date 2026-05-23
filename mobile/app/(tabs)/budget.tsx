@@ -242,9 +242,13 @@ export default function BudgetScreen() {
   }
 
   function adjustPct(idx: number, delta: number) {
-    setAllocations((prev) =>
-      prev.map((a, i) => i === idx ? { ...a, percentage: Math.max(0, Math.min(100, a.percentage + delta)) } : a),
-    );
+    setAllocations((prev) => {
+      const currentTotal = prev.reduce((s, a) => s + a.percentage, 0);
+      if (delta > 0 && currentTotal >= 100) return prev;
+      return prev.map((a, i) =>
+        i === idx ? { ...a, percentage: Math.max(0, Math.min(100, a.percentage + delta)) } : a,
+      );
+    });
   }
 
   const handleSave = useCallback(() => {
@@ -662,14 +666,22 @@ export default function BudgetScreen() {
 
             {/* Save button */}
             {analyzed && (
-              <TouchableOpacity
-                onPress={handleSave}
-                className="bg-green-600 rounded-2xl py-4 items-center mb-6"
-              >
-                <Text className="text-white font-bold text-base">
-                  {saved ? '✓ ' : ''}{t('budget.save_plan')}
-                </Text>
-              </TouchableOpacity>
+              <>
+                {totalPct !== 100 && (
+                  <Text className="text-xs text-red-500 dark:text-red-400 text-center mb-2">
+                    {t('budget.pct_not_100', { pct: String(totalPct) })}
+                  </Text>
+                )}
+                <TouchableOpacity
+                  onPress={handleSave}
+                  disabled={totalPct !== 100}
+                  className={`rounded-2xl py-4 items-center mb-6 ${totalPct === 100 ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-700'}`}
+                >
+                  <Text className={`font-bold text-base ${totalPct === 100 ? 'text-white' : 'text-gray-400 dark:text-gray-500'}`}>
+                    {saved ? '✓ ' : ''}{t('budget.save_plan')}
+                  </Text>
+                </TouchableOpacity>
+              </>
             )}
 
             {/* This month summary */}

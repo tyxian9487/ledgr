@@ -57,7 +57,7 @@ const DESCRIPTION_SUGGESTIONS: Record<string, string[]> = {
   savings:       ['tx.suggest.savings.emergency_fund', 'tx.suggest.savings.retirement', 'tx.suggest.savings.holiday_fund', 'tx.suggest.savings.house_deposit'],
   investment:    ['tx.suggest.investment.stocks', 'tx.suggest.investment.etf', 'tx.suggest.investment.crypto', 'tx.suggest.investment.bonds', 'tx.suggest.investment.index_fund'],
   others:        ['tx.suggest.others.miscellaneous', 'tx.suggest.others.gift', 'tx.suggest.others.charity', 'tx.suggest.others.fees'],
-  salary:        ['tx.suggest.income.salary', 'tx.suggest.income.base_pay', 'tx.suggest.income.paycheck', 'tx.suggest.income.wages'],
+  salary:        ['tx.suggest.income.monthly_salary', 'tx.suggest.income.base_pay', 'tx.suggest.income.paycheck', 'tx.suggest.income.wages'],
   freelance:     ['tx.suggest.income.design_project', 'tx.suggest.income.consulting', 'tx.suggest.income.writing', 'tx.suggest.income.development'],
   business:      ['tx.suggest.income.revenue', 'tx.suggest.income.sales', 'tx.suggest.income.invoice_payment', 'tx.suggest.income.client_payment'],
   gift:          ['tx.suggest.income.birthday_gift', 'tx.suggest.income.holiday_gift', 'tx.suggest.income.cash_gift'],
@@ -99,6 +99,7 @@ function CalendarDateModal({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const calInsets = useSafeAreaInsets();
   const initial = new Date(`${value}T12:00:00`);
   const [viewDate, setViewDate] = useState(
     new Date(initial.getFullYear(), initial.getMonth(), 1),
@@ -127,7 +128,7 @@ function CalendarDateModal({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View className="flex-1 bg-black/50 justify-end">
-        <View className="bg-white dark:bg-gray-900 rounded-t-3xl px-5 pt-5 pb-8">
+        <View className="bg-white dark:bg-gray-900 rounded-t-3xl px-5 pt-5" style={{ paddingBottom: calInsets.bottom + 16 }}>
           <View className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700 self-center mb-4" />
           <View className="flex-row items-center justify-between mb-4">
             <TouchableOpacity
@@ -364,7 +365,7 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
           {/* Header */}
           <View className="flex-row items-center justify-between px-5 py-3">
             <View className="flex-row items-center gap-2">
-              <Image source={paymentMascotImg} style={{ width: 36, height: 36 }} resizeMode="contain" />
+              <Image source={paymentMascotImg} style={{ width: 52, height: 52 }} resizeMode="contain" />
               <Text className="text-lg font-bold text-gray-900 dark:text-white">
                 {transactionId ? t('tx.edit') : t('tx.new')}
               </Text>
@@ -692,9 +693,9 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
           </ScrollView>
 
           {/* Footer save button */}
-          <View 
+          <View
             className="px-5 pt-3 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
-            style={{ paddingBottom: 32 + Math.max(insets.bottom, 60) }}
+            style={{ paddingBottom: insets.bottom + 12 }}
           >
             <TouchableOpacity
               onPress={handleSubmit}
