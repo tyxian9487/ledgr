@@ -38,7 +38,7 @@ function Spotlight({ rect, onSkip }: { rect: HighlightRect; onSkip: () => void }
       <View style={{ position: 'absolute', top: rect.y, left: 0, width: rect.x, height: rect.height, backgroundColor: DIM }} />
       <View style={{ position: 'absolute', top: rect.y, left: rect.x + rect.width, right: 0, height: rect.height, backgroundColor: DIM }} />
       <View style={{ position: 'absolute', top: rect.y + rect.height, left: 0, right: 0, bottom: 0, backgroundColor: DIM }} />
-      <View style={{ position: 'absolute', top: rect.y, left: rect.x, width: rect.width, height: rect.height, borderRadius: 12, borderWidth: 2, borderColor: '#16a34a' }} pointerEvents="none" />
+      <View style={{ position: 'absolute', top: rect.y, left: rect.x, width: rect.width, height: rect.height, borderRadius: 16, borderWidth: 2, borderColor: '#16a34a' }} pointerEvents="none" />
       <TouchableOpacity style={StyleSheet.absoluteFillObject} onPress={onSkip} activeOpacity={0} />
     </>
   );

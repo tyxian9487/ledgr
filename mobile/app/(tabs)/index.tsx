@@ -186,7 +186,7 @@ export default function HomeScreen() {
         </View>
 
         {/* ── Green Summary Card ── */}
-        <View ref={tourRefGreenCard} collapsable={false}>
+        <View ref={tourRefGreenCard} collapsable={false} style={{ marginHorizontal: 16 }}>
           <GreenCard
             year={viewYear}
             month={viewMonth}
@@ -197,7 +197,7 @@ export default function HomeScreen() {
         </View>
 
         {/* ── Goal Tracker Card ── */}
-        <View ref={tourRefStats} collapsable={false}>
+        <View ref={tourRefStats} collapsable={false} style={{ marginHorizontal: 16 }}>
           <GoalTrackerCard year={viewYear} month={viewMonth} />
         </View>
 

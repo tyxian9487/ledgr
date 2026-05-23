@@ -437,7 +437,7 @@ export default function TrendsScreen() {
         </View>
 
         {/* ── Summary Cards ── */}
-        <View ref={tourRefTop} collapsable={false} className="px-4 mt-1 flex-row gap-3">
+        <View ref={tourRefTop} collapsable={false} className="mx-4 mt-1 flex-row gap-3">
           {/* Spending card */}
           <View className="flex-1 bg-red-500 rounded-2xl p-4">
             <Text className="text-[10px] text-red-100 font-bold uppercase tracking-widest mb-1">

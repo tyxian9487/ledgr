@@ -211,7 +211,7 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
 
   return (
     <>
-    <View className="bg-green-700 rounded-3xl mx-4 overflow-hidden">
+    <View className="bg-green-700 rounded-3xl overflow-hidden">
       {/* Header row: month navigation */}
       <View className="flex-row items-center px-5 pt-4 pb-2 gap-2">
         {/* Left: today's date pill */}

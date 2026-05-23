@@ -749,7 +749,7 @@ function BudgetStreakCard({ transactions }: { transactions: Transaction[] }) {
   });
 
   return (
-    <View className="mx-4 mb-2 rounded-2xl p-4" style={{ backgroundColor: '#052e16' }}>
+    <View className="mb-2 rounded-2xl p-4" style={{ backgroundColor: '#052e16' }}>
       <Text className="text-xs font-bold text-green-400 uppercase tracking-wider mb-3">
         {t('profile.budget_streak')}
       </Text>
@@ -1156,7 +1156,7 @@ export default function ProfileScreen() {
         <SectionHeader label={t('profile.achievements')} />
 
         {/* Budget Streak */}
-        <View ref={tourRefStreak} collapsable={false}>
+        <View ref={tourRefStreak} collapsable={false} style={{ marginHorizontal: 16 }}>
           <BudgetStreakCard transactions={transactions} />
         </View>
 

@@ -134,7 +134,7 @@ export default function GoalTrackerCard({ year, month }: Props) {
 
   return (
     <>
-    <View className="mx-4 mt-3 rounded-2xl bg-white/10 p-3">
+    <View className="mt-3 rounded-2xl bg-white/10 p-3">
       {/* Goal selector dropdown — only when multiple goals */}
       {allGoals.length > 1 && (
         <View className="mb-2">
