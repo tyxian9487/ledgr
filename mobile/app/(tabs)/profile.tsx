@@ -318,7 +318,7 @@ function CategoryManagerSheet({ onClose }: { onClose: () => void }) {
                       formType === tp ? 'text-green-700' : 'text-gray-500'
                     }`}
                   >
-                    {tp.charAt(0).toUpperCase() + tp.slice(1)}
+                    {tp === 'expense' ? t('common.expense') : t('common.income')}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -399,7 +399,7 @@ function CategoryManagerSheet({ onClose }: { onClose: () => void }) {
                       disabled ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'
                     }`}
                   >
-                    {cat.label}
+                    {(() => { const k = `cat.${cat.id}` as any; const v = t(k); return v !== k ? v : cat.label; })()}
                   </Text>
                   <Switch
                     value={!disabled}
