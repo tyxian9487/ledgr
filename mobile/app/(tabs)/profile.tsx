@@ -1050,8 +1050,13 @@ export default function ProfileScreen() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950">
-      <ScrollView ref={scrollRef} className="flex-1" showsVerticalScrollIndicator={false}>
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" edges={['top']}>
+      <ScrollView
+        ref={scrollRef}
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
 
         {/* ── Header ── */}
         <View className="flex-row items-center justify-between px-5 pt-4 pb-3">
