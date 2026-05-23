@@ -181,7 +181,7 @@ export default function CaptureScreen() {
         >
           <Text className="text-white font-semibold">{t('camera.gallery_button')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.replace('/(tabs)')} className="py-3">
+        <TouchableOpacity onPress={() => router.back()} className="py-3">
           <Text className="text-white/50 text-sm">{t('common.cancel')}</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -260,7 +260,7 @@ export default function CaptureScreen() {
             <Text className="text-white font-semibold">{t('camera.scan_again')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => router.replace('/(tabs)')}
+            onPress={() => router.back()}
             className="w-full py-3.5 rounded-2xl bg-white/10 border border-white/20 items-center"
             activeOpacity={0.8}
           >
@@ -358,7 +358,7 @@ export default function CaptureScreen() {
       >
         {/* Close */}
         <TouchableOpacity
-          onPress={() => router.replace('/(tabs)')}
+          onPress={() => router.back()}
           style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(239,68,68,0.2)', borderWidth: 2, borderColor: 'rgba(239,68,68,0.6)', alignItems: 'center', justifyContent: 'center' }}
           activeOpacity={0.8}
         >
