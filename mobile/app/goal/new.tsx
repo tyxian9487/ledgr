@@ -221,9 +221,7 @@ export default function NewGoalScreen() {
         {monthlyRate > 0 ? (
           <View className="bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-900 rounded-2xl px-4 py-3.5 mb-6">
             <Text className="text-sm text-green-700 dark:text-green-400 font-medium text-center">
-              Save{' '}
-              <Text className="font-black">{formatCurrency(monthlyRate)}</Text>
-              /month to reach your goal
+              {t('gform.monthly_rate', { amount: formatCurrency(monthlyRate) })}
             </Text>
           </View>
         ) : <View className="mb-4" />}
