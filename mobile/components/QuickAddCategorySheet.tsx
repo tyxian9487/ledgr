@@ -6,7 +6,6 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Pressable,
 } from 'react-native';
 import { X, Check } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
@@ -25,13 +24,14 @@ export default function QuickAddCategorySheet({ visible, defaultType, onSave, on
   const { addCustomCategory } = useApp();
   const { t } = useTranslation();
 
+  const [type, setType] = useState<'expense' | 'income'>(defaultType);
   const [label, setLabel] = useState('');
   const [icon, setIcon] = useState('Star');
   const [color, setColor] = useState('#f97316');
 
   function handleSave() {
     if (!label.trim()) return;
-    const newCat = addCustomCategory({ label: label.trim(), icon, color, type: defaultType });
+    const newCat = addCustomCategory({ label: label.trim(), icon, color, type });
     onSave(newCat);
   }
 
@@ -65,6 +65,28 @@ export default function QuickAddCategorySheet({ visible, defaultType, onSave, on
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          {/* Type selector */}
+          <View>
+            <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('catmgr.type')}</Text>
+            <View className="flex-row rounded-xl border border-gray-100 dark:border-gray-800 p-0.5 bg-gray-50 dark:bg-gray-800 gap-0.5">
+              {(['expense', 'income'] as const).map(tabType => (
+                <TouchableOpacity
+                  key={tabType}
+                  onPress={() => setType(tabType)}
+                  className={`flex-1 py-2 rounded-[10px] items-center ${
+                    type === tabType
+                      ? tabType === 'expense' ? 'bg-red-500' : 'bg-green-600'
+                      : ''
+                  }`}
+                >
+                  <Text className={`text-sm font-semibold capitalize ${type === tabType ? 'text-white' : 'text-gray-400'}`}>
+                    {tabType === 'expense' ? t('common.expense') : t('common.income')}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
           {/* Name */}
           <View>
             <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('catmgr.name')}</Text>

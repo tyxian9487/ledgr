@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 const savingsJarImg = require('../../assets/m_savingsjar.png');
+const budgetImg = require('../../assets/m_budget.png');
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -413,20 +414,18 @@ export default function BudgetScreen() {
               );
             })}
 
-            {/* Savings jar illustration */}
-            {((budget.customGoals ?? []).length > 0 || !savingsEnabled) && (
-              <View className="items-center py-6 mb-2">
-                <Image source={savingsJarImg} style={{ width: 110, height: 110 }} resizeMode="contain" />
-                {(budget.customGoals ?? []).length === 0 && (
-                  <>
-                    <Text className="text-sm font-bold text-gray-700 mt-3 text-center">{t('budget.start_saving')}</Text>
-                    <Text className="text-xs text-gray-400 mt-1 text-center leading-relaxed">
-                      {t('budget.empty_goals_desc')}
-                    </Text>
-                  </>
-                )}
-              </View>
-            )}
+            {/* Savings jar illustration — always visible so the mascot is always present */}
+            <View className="items-center py-6 mb-2">
+              <Image source={savingsJarImg} style={{ width: 110, height: 110 }} resizeMode="contain" />
+              {(budget.customGoals ?? []).length === 0 && (
+                <>
+                  <Text className="text-sm font-bold text-gray-700 dark:text-white mt-3 text-center">{t('budget.start_saving')}</Text>
+                  <Text className="text-xs text-gray-400 mt-1 text-center leading-relaxed px-6">
+                    {t('budget.empty_goals_desc')}
+                  </Text>
+                </>
+              )}
+            </View>
 
             {/* Add Goal */}
             <TouchableOpacity
@@ -496,6 +495,16 @@ export default function BudgetScreen() {
                 </Text>
               )}
             </View>
+
+            {/* Budget mascot — shown before the user has analyzed their budget */}
+            {!analyzed && (
+              <View className="items-center py-8">
+                <Image source={budgetImg} style={{ width: 120, height: 120 }} resizeMode="contain" />
+                <Text className="text-xs text-gray-400 dark:text-gray-500 mt-3 text-center leading-relaxed px-6">
+                  {t('budget.mascot_desc')}
+                </Text>
+              </View>
+            )}
 
             {/* Active Goals summary */}
             {(savingsEnabled && savingsAmt > 0 || customGoalMonthly > 0) && income > 0 && (
@@ -682,6 +691,16 @@ export default function BudgetScreen() {
                   </Text>
                 </TouchableOpacity>
               </>
+            )}
+
+            {/* Budget mascot reminder — shown above "This Month" once budget is set */}
+            {analyzed && income > 0 && (
+              <View className="flex-row items-center gap-3 bg-green-50 dark:bg-green-900/20 rounded-2xl px-4 py-3 mb-4">
+                <Image source={budgetImg} style={{ width: 52, height: 52 }} resizeMode="contain" />
+                <Text className="text-sm font-semibold text-green-700 dark:text-green-400 flex-1">
+                  {t('budget.stick_to_budget')}
+                </Text>
+              </View>
             )}
 
             {/* This month summary */}
