@@ -6,6 +6,7 @@ import {
   Modal,
   Image,
   StyleSheet,
+  Dimensions,
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useTour, TOUR_STEPS } from '../context/TourContext';
@@ -44,6 +45,23 @@ function Spotlight({ rect, onSkip }: { rect: HighlightRect; onSkip: () => void }
   );
 }
 
+const CARD_GAP = 12;
+const CARD_EST_H = 210;
+
+function getFloatingPos(rect: HighlightRect): { top?: number; bottom?: number; left: number; right: number } | null {
+  const { height: screenH } = Dimensions.get('window');
+  const spaceAbove = rect.y - CARD_GAP;
+  const spaceBelow = screenH - (rect.y + rect.height) - CARD_GAP;
+
+  if (spaceAbove >= CARD_EST_H) {
+    return { bottom: screenH - rect.y + CARD_GAP, left: 12, right: 12 };
+  }
+  if (spaceBelow >= CARD_EST_H) {
+    return { top: rect.y + rect.height + CARD_GAP, left: 12, right: 12 };
+  }
+  return null;
+}
+
 export default function TourOverlay() {
   const { tourActive, tourStepIndex, currentStep, showOffer, highlightRect, acceptTour, declineTour, nextStep, skipTour } =
     useTour();
@@ -65,7 +83,6 @@ export default function TourOverlay() {
     nextStep(navigateToTab);
   }, [nextStep, navigateToTab]);
 
-  // Never show tour until the user is fully signed in and past onboarding
   if (!isAuthenticated || !hasCompletedOnboarding) return null;
 
   const isLastStep = tourStepIndex === TOUR_STEPS.length - 1;
@@ -77,6 +94,10 @@ export default function TourOverlay() {
   const textSecondary = darkMode ? '#9ca3af' : '#6b7280';
   const border = darkMode ? '#1f2937' : '#e5e7eb';
   const skipColor = darkMode ? '#6b7280' : '#9ca3af';
+
+  // Compute floating position; fall back to bottom sheet when no rect or not enough space
+  const floatingPos = highlightRect ? getFloatingPos(highlightRect) : null;
+  const isFloating = floatingPos !== null;
 
   return (
     <>
@@ -101,17 +122,22 @@ export default function TourOverlay() {
       <Modal
         visible={showTooltip}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={skipTour}
       >
-        {/* Backdrop — spotlight if we have a rect, otherwise uniform dark */}
+        {/* Backdrop */}
         {highlightRect
           ? <Spotlight rect={highlightRect} onSkip={skipTour} />
           : <TouchableOpacity style={s.backdrop} onPress={skipTour} activeOpacity={1} />
         }
 
-        {/* Card */}
-        <View style={[s.card, { backgroundColor: bg }]}>
+        {/* Card — floats near the highlighted element when possible */}
+        <View style={[
+          s.card,
+          isFloating ? s.cardFloating : s.cardBottom,
+          isFloating ? floatingPos! : undefined,
+          { backgroundColor: bg },
+        ]}>
           {/* Green gradient bar */}
           <View style={s.progressBar} />
 
@@ -209,25 +235,34 @@ const s = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // ── Tooltip ──
+  // ── Tooltip base ──
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.55)',
   },
   card: {
     position: 'absolute',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  // Bottom sheet variant (no highlight rect or fallback)
+  cardBottom: {
     bottom: 0,
     left: 0,
     right: 0,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    overflow: 'hidden',
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
-    elevation: 12,
     paddingBottom: 32,
+  },
+  // Floating tooltip variant (positioned near element)
+  cardFloating: {
+    borderRadius: 20,
+    shadowOffset: { width: 0, height: 4 },
+    paddingBottom: 16,
   },
   progressBar: {
     height: 4,

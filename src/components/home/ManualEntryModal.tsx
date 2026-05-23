@@ -51,6 +51,11 @@ function todayString() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function isoToDateString(iso: string) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export default function ManualEntryModal({ onClose, transactionId, prefill }: Props) {
   const { addTransaction, updateTransaction, getCurrencySymbol, expenseCategories, incomeCategories, budget, updateCustomGoal } = useApp();
   const { t } = useTranslation();
@@ -67,7 +72,7 @@ export default function ManualEntryModal({ onClose, transactionId, prefill }: Pr
 
   const [type, setType] = useState<TransactionType>(prefill?.type || 'expense');
   const [amount, setAmount] = useState(prefill?.amount ? String(prefill.amount) : '');
-  const [date, setDate] = useState(prefill?.date || todayString());
+  const [date, setDate] = useState(prefill?.date ? isoToDateString(prefill.date) : todayString());
   const [category, setCategory] = useState(prefill?.category || '');
   const [description, setDescription] = useState(prefill?.description || '');
   const [isAutoDebit, setIsAutoDebit] = useState(prefill?.isAutoDebit || false);

@@ -213,14 +213,16 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
     <>
     <View className="bg-green-700 rounded-3xl overflow-hidden">
       {/* Header row: month navigation */}
-      <View className="flex-row items-center px-5 pt-4 pb-2 gap-2">
-        {/* Left: today's date pill */}
-        <View className="bg-white/20 rounded-xl px-3 py-1.5">
-          <Text className="text-white font-bold text-sm">{todayLabel}</Text>
+      <View className="flex-row items-center px-5 pt-4 pb-2">
+        {/* Left: today's date pill — flex-1 so it balances the right side */}
+        <View className="flex-1 items-start">
+          <View className="bg-white/20 rounded-xl px-3 py-1.5">
+            <Text className="text-white font-bold text-sm">{todayLabel}</Text>
+          </View>
         </View>
 
-        {/* Center: month navigation */}
-        <View className="flex-1 flex-row items-center justify-center gap-3">
+        {/* Center: month navigation — truly centered */}
+        <View className="flex-row items-center gap-3">
           <TouchableOpacity onPress={onPrevMonth} className="w-7 h-7 rounded-full bg-white/20 items-center justify-center" activeOpacity={0.7}>
             <ChevronLeft size={16} color="white" />
           </TouchableOpacity>
@@ -232,11 +234,13 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
           </TouchableOpacity>
         </View>
 
-        {/* Right: year selector */}
-        <TouchableOpacity onPress={() => setShowYearPicker(v => !v)} className="bg-white/20 rounded-xl px-3 py-1.5 flex-row items-center gap-1">
-          <Text className="text-white font-bold text-sm">{year}</Text>
-          <ChevronDown size={12} color="white" />
-        </TouchableOpacity>
+        {/* Right: year selector — flex-1 so it balances the left side */}
+        <View className="flex-1 items-end">
+          <TouchableOpacity onPress={() => setShowYearPicker(v => !v)} className="bg-white/20 rounded-xl px-3 py-1.5 flex-row items-center gap-1">
+            <Text className="text-white font-bold text-sm">{year}</Text>
+            <ChevronDown size={12} color="white" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {showYearPicker && (
