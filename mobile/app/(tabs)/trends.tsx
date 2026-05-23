@@ -237,7 +237,7 @@ function CategoryModal({
         .reduce((s, tx) => s + tx.amount, 0);
       return { label: String(year), value: val };
     });
-  }, [period, catTxs]);
+  }, [period, catTxs, t]);
 
   const total = points.reduce((s, p) => s + p.value, 0);
   const nonZero = points.filter(p => p.value > 0);
@@ -399,7 +399,7 @@ export default function TrendsScreen() {
         label: t(`month.${MONTH_KEYS[month]}.short` as any),
       };
     });
-  }, [transactions]);
+  }, [visibleTransactions, t]);
 
   const categoryTotals = useMemo(() => {
     const yearTxs = visibleTransactions.filter((tx) => {
