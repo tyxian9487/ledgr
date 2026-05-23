@@ -379,7 +379,7 @@ export default function TrendsScreen() {
   // Exclude future-dated auto-debit instances from all analytics
   const visibleTransactions = useMemo(
     () => transactions.filter(tx => new Date(tx.date) <= now),
-    [transactions],
+    [transactions, now],
   );
 
   const monthlyData = useMemo(() => {
@@ -399,7 +399,7 @@ export default function TrendsScreen() {
         label: t(`month.${MONTH_KEYS[month]}.short` as any),
       };
     });
-  }, [visibleTransactions, t]);
+  }, [visibleTransactions, t, now];
 
   const categoryTotals = useMemo(() => {
     const yearTxs = visibleTransactions.filter((tx) => {
