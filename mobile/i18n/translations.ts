@@ -66,7 +66,7 @@ export const en = {
   'home.greeting_morning': 'Good morning',
   'home.greeting_afternoon': 'Good afternoon',
   'home.greeting_evening': 'Good evening',
-  'home.greeting_night': 'Good night',
+  'home.greeting_night': 'Good evening',
 
   // Login
   'login.tagline': 'Your money, simplified.',
@@ -766,7 +766,7 @@ const zh: Record<TKey, string> = {
   'common.today': '今天', 'common.yesterday': '昨天', 'common.custom': '自定义', 'common.ok': '好',
   'home.my_finances': '我的财务', 'home.this_month': '本月', 'home.balance': '结余', 'home.add_transaction': '添加记录', 'home.no_transactions': '暂无交易记录',
   'home.total_expenses': '总支出', 'home.set_budget': '设置预算与目标', 'home.filter': '筛选',
-  'home.greeting_morning': '早上好', 'home.greeting_afternoon': '下午好', 'home.greeting_evening': '晚上好', 'home.greeting_night': '夜深了',
+  'home.greeting_morning': '早上好', 'home.greeting_afternoon': '下午好', 'home.greeting_evening': '晚上好', 'home.greeting_night': '晚上好',
   'login.tagline': '让您的财务更简单。', 'login.get_started': '开始使用',
   'login.sign_in_desc': '登录或注册免费账户',
   'login.google': '使用 Google 登录', 'login.apple': '使用 Apple 登录',
