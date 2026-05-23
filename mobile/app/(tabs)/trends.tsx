@@ -399,7 +399,7 @@ export default function TrendsScreen() {
         label: t(`month.${MONTH_KEYS[month]}.short` as any),
       };
     });
-  }, [visibleTransactions, t, now];
+  }, [visibleTransactions, t, now]);
 
   const categoryTotals = useMemo(() => {
     const yearTxs = visibleTransactions.filter((tx) => {
