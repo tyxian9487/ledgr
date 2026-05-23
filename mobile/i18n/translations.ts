@@ -276,8 +276,8 @@ export const en = {
   'budget.monthly_savings': 'Monthly Savings Goal',
   'budget.allocation_generated': 'Budget generated',
   'budget.savings_locked': 'Savings locked at {pct}%',
-  'budget.no_expense': '暂无支出记录',
-  'budget.analyze': '分析预算',
+  'budget.no_expense': 'No expenses yet',
+  'budget.analyze': 'Analyze budget',
   'calendar.legend_spend': 'Low → High spend',
 
   // FAQ

@@ -200,7 +200,7 @@ function CategoryModal({
   const now = new Date();
 
   const catTxs = useMemo(
-    () => transactions.filter((tx) => tx.type === 'expense' && tx.category === categoryId && new Date(tx.date) <= now),
+    () => transactions.filter((tx) => tx.type === 'expense' && tx.category === categoryId && (!tx.isAutoDebit || new Date(tx.date) <= now)),
     [transactions, categoryId],
   );
 
@@ -376,9 +376,9 @@ export default function TrendsScreen() {
   const now = new Date();
   const currentYear = now.getFullYear();
 
-  // Exclude future-dated auto-debit instances from all analytics
+  // Exclude future-dated auto-debit instances from analytics, but keep actual same-day manual entries.
   const visibleTransactions = useMemo(
-    () => transactions.filter(tx => new Date(tx.date) <= now),
+    () => transactions.filter(tx => !tx.isAutoDebit || new Date(tx.date) <= now),
     [transactions, now],
   );
 
