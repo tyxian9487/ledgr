@@ -65,6 +65,8 @@ import {
   DEFAULT_PREFS,
   loadNotifPrefs,
   saveNotifPrefs,
+  syncNotificationSettings,
+  getTranslationFunction,
 } from '../../utils/notifications';
 import BadgeCelebration from '../../components/BadgeCelebration';
 import StatusCelebration from '../../components/StatusCelebration';
@@ -1492,8 +1494,12 @@ export default function ProfileScreen() {
                 return (
                   <TouchableOpacity
                     key={lang.code}
-                    onPress={() => {
+                    onPress={async () => {
                       updateUserProfile({ language: lang.code });
+                      // Re-sync notifications with the new language
+                      const prefs = await loadNotifPrefs();
+                      const t = await getTranslationFunction(lang.code);
+                      await syncNotificationSettings(prefs, t);
                       setShowLanguage(false);
                     }}
                     className={`flex-row items-center gap-4 px-5 py-4 border-b border-gray-50 dark:border-gray-900 ${

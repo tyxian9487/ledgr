@@ -36,13 +36,16 @@ export async function saveNotifPrefs(prefs: NotifPrefs): Promise<void> {
   await syncNotificationSettings(prefs, t);
 }
 
-export async function getTranslationFunction(): Promise<(key: TKey) => string> {
+export async function getTranslationFunction(language?: string): Promise<(key: TKey) => string> {
   try {
-    // Try to get user profile with language preference
-    const raw = await AsyncStorage.getItem('kachingo_userProfile');
-    const profile = raw ? JSON.parse(raw) : {};
-    const language = profile.language || 'en';
-    const dict = translations[language as keyof typeof translations] ?? translations.en;
+    // Use provided language or try to get user profile with language preference from the main app storage
+    let targetLanguage = language;
+    if (!targetLanguage) {
+      const raw = await AsyncStorage.getItem('expensewise_data');
+      const blob = raw ? JSON.parse(raw) : {};
+      targetLanguage = blob.userProfile?.language || 'en';
+    }
+    const dict = translations[targetLanguage as keyof typeof translations] ?? translations.en;
     
     return (key: TKey) => {
       return (dict[key] ?? (translations.en as Record<TKey, string>)[key] ?? key) as string;
