@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
+  Modal,
 } from 'react-native';
 
 const savingsJarImg = require('../../assets/m_savingsjar.png');
@@ -209,6 +210,7 @@ export default function BudgetScreen() {
   const [saved, setSaved] = useState(false);
   const [showAllAllocations, setShowAllAllocations] = useState(false);
   const [expandedAlloc, setExpandedAlloc] = useState<string | null>(null);
+  const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null);
 
   const income = parseFloat(incomeInput) || 0;
   const savingsAmt = income > 0 && savingsValue
@@ -270,6 +272,25 @@ export default function BudgetScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" edges={['top']}>
+      {/* Delete confirmation modal for custom goals */}
+      {deletingGoalId && (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setDeletingGoalId(null)}>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+            <View style={{ width: '86%', backgroundColor: '#fff', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#e5e7eb' }}>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 8 }}>{t('goal.delete_title')}</Text>
+              <Text style={{ fontSize: 14, color: '#6b7280', marginBottom: 14 }}>{t('goal.delete_confirm', { name: (budget.customGoals ?? []).find(g => g.id === deletingGoalId)?.name ?? '' })}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+                <TouchableOpacity onPress={() => setDeletingGoalId(null)} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 }}>
+                  <Text style={{ color: '#6b7280' }}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => { removeCustomGoal(deletingGoalId); setDeletingGoalId(null); }} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 }}>
+                  <Text style={{ color: '#ef4444', fontWeight: '700' }}>{t('common.delete')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
       {/* Header */}
       <View className="bg-white dark:bg-gray-900 px-5 pt-2 pb-4 border-b border-gray-100 dark:border-gray-800">
         <Text className="text-xl font-bold text-gray-900 dark:text-white">{t('budget.title')}</Text>
@@ -384,9 +405,9 @@ export default function BudgetScreen() {
                         {t('budget.month_of', { x: currentMonthIdx + 1, y: durationMonths })} · {formatCurrency(monthlyTarget)}{t('common.per_month')}
                       </Text>
                     </View>
-                    <TouchableOpacity onPress={() => removeCustomGoal(goal.id)} className="p-1">
-                      <X size={14} color="#d1d5db" />
-                    </TouchableOpacity>
+                      <TouchableOpacity onPress={() => setDeletingGoalId(goal.id)} className="p-1">
+                        <X size={14} color="#d1d5db" />
+                      </TouchableOpacity>
                   </View>
 
                   <View className="flex-row justify-between mb-1.5">
