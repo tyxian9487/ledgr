@@ -1510,15 +1510,17 @@ export default function ProfileScreen() {
                     <View className="flex-1">
                       <Text
                         className={`text-sm font-semibold ${
-                          selected ? 'text-green-700' : 'text-gray-900'
+                          selected
+                            ? 'text-green-700 dark:text-green-300'
+                            : 'text-gray-900 dark:text-white'
                         }`}
                       >
                         {lang.nativeLabel}
                       </Text>
-                      <Text className="text-xs text-gray-400 mt-0.5">{lang.label}</Text>
+                      <Text className="text-xs text-gray-400 dark:text-gray-400 mt-0.5">{lang.label}</Text>
                     </View>
                     {selected ? (
-                      <Text className="text-green-600 font-bold text-base">✓</Text>
+                      <Text className="text-green-600 dark:text-green-300 font-bold text-base">✓</Text>
                     ) : null}
                   </TouchableOpacity>
                 );
