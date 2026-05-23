@@ -186,7 +186,7 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
 
   const slices = EXPENSE_CATEGORIES.filter((c) => categoryTotals[c.id]).map((c) => ({
     id: c.id,
-    label: c.label,
+    label: (() => { const k = `cat.${c.id}` as any; const v = t(k); return v !== k ? v : c.label; })(),
     color: c.color,
     amount: categoryTotals[c.id],
     pct: totalExpenses > 0 ? (categoryTotals[c.id] / totalExpenses) * 100 : 0,
