@@ -874,13 +874,14 @@ export default function ProfileScreen() {
 
   // ── Financial score ────────────────────────────────────────────────────────
   const currentYear = new Date().getFullYear();
-  const yearTxs = useMemo(
-    () => transactions.filter(tx => {
+  const yearTxs = useMemo(() => {
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+    return transactions.filter(tx => {
       const d = new Date(tx.date);
-      return d.getFullYear() === currentYear && d <= new Date();
-    }),
-    [transactions, currentYear],
-  );
+      return d.getFullYear() === currentYear && d <= todayEnd;
+    });
+  }, [transactions, currentYear]);
   const yearIncome = yearTxs
     .filter(tx => tx.type === 'income')
     .reduce((s, tx) => s + tx.amount, 0);
