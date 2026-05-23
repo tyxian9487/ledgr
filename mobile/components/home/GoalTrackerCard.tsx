@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 
-const savingsJarImg = require('../../assets/m_savingsjar.png');
 import { ChevronDown, Activity } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useApp } from '../../context/AppContext';
@@ -114,23 +113,16 @@ export default function GoalTrackerCard({ year, month }: Props) {
     }
   }, [celebratedGoals, goal, isCompleted, year, month]);
 
-  const savingsJar = (
+  if (!goal) return (
     <View className="mx-4 mt-2 items-center py-3">
-      <Image source={savingsJarImg} style={{ width: 88, height: 88 }} resizeMode="contain" />
-      {!goal && (
-        <>
-          <Text className="text-sm font-bold text-gray-700 dark:text-white mt-2 text-center">
-            {t('budget.start_saving')}
-          </Text>
-          <Text className="text-xs text-gray-400 mt-1 text-center leading-relaxed px-4">
-            {t('budget.empty_goals_desc')}
-          </Text>
-        </>
-      )}
+      <Text className="text-sm font-bold text-gray-700 dark:text-white mt-2 text-center">
+        {t('budget.start_saving')}
+      </Text>
+      <Text className="text-xs text-gray-400 mt-1 text-center leading-relaxed px-4">
+        {t('budget.empty_goals_desc')}
+      </Text>
     </View>
   );
-
-  if (!goal) return savingsJar;
 
   return (
     <>
@@ -258,7 +250,6 @@ export default function GoalTrackerCard({ year, month }: Props) {
         </View>
       </View>
     </View>
-    {savingsJar}
     </>
   );
 }

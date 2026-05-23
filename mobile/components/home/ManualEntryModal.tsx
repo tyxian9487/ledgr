@@ -75,6 +75,11 @@ function todayString() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function isoToDateString(iso: string) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function yesterdayString() {
   const d = new Date();
   d.setDate(d.getDate() - 1);
@@ -215,7 +220,7 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
 
   const [type, setType] = useState<TransactionType>(prefill?.type ?? 'expense');
   const [amount, setAmount] = useState(prefill?.amount ? String(prefill.amount) : '');
-  const [date, setDate] = useState(prefill?.date ?? todayString());
+  const [date, setDate] = useState(prefill?.date ? isoToDateString(prefill.date) : todayString());
   const [category, setCategory] = useState(prefill?.category ?? '');
   const [description, setDescription] = useState(prefill?.description ?? '');
   const [isAutoDebit, setIsAutoDebit] = useState(prefill?.isAutoDebit ?? false);
@@ -232,7 +237,7 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
 
   useEffect(() => {
     if (!visible) return;
-    const nextDate = prefill?.date ?? todayString();
+    const nextDate = prefill?.date ? isoToDateString(prefill.date) : todayString();
     setType(prefill?.type ?? 'expense');
     setAmount(prefill?.amount ? String(prefill.amount) : '');
     setDate(nextDate);
