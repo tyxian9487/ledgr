@@ -975,25 +975,27 @@ export default function ProfileScreen() {
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   function confirmSignOut() {
-    Alert.alert(t('profile.sign_out'), t('profile.sign_out_confirm' as any) ?? 'Sign out?', [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('profile.sign_out'), style: 'destructive', onPress: signOut },
-    ]);
+    setShowSignOutModal(true);
   }
 
   function confirmClearData() {
-    Alert.alert(t('profile.clear_data'), t('profile.clear_confirm'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('profile.clear_data'),
-        style: 'destructive',
-        onPress: async () => {
-          const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-          await AsyncStorage.clear();
-          Alert.alert(t('common.done'), t('profile.data_cleared_msg'));
-        },
-      },
-    ]);
+    setShowClearDataModal(true);
+  }
+
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [showClearDataModal, setShowClearDataModal] = useState(false);
+  const [showClearedDoneModal, setShowClearedDoneModal] = useState(false);
+
+  async function doClearData() {
+    const AsyncStorageLib = require('@react-native-async-storage/async-storage').default;
+    await AsyncStorageLib.clear();
+    setShowClearDataModal(false);
+    setShowClearedDoneModal(true);
+  }
+
+  function doSignOut() {
+    setShowSignOutModal(false);
+    signOut();
   }
 
   async function handleGenerateReport() {
@@ -1436,6 +1438,57 @@ export default function ProfileScreen() {
             onPress={confirmSignOut}
           />
         </View>
+
+        {/* Sign out modal */}
+        <Modal visible={showSignOutModal} transparent animationType="fade" onRequestClose={() => setShowSignOutModal(false)}>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+            <View style={{ width: '86%', backgroundColor: '#fff', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#e5e7eb' }}>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 8 }}>{t('profile.sign_out')}</Text>
+              <Text style={{ fontSize: 14, color: '#6b7280', marginBottom: 14 }}>{t('profile.sign_out_confirm')}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+                <TouchableOpacity onPress={() => setShowSignOutModal(false)} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 }}>
+                  <Text style={{ color: '#6b7280' }}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={doSignOut} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 }}>
+                  <Text style={{ color: '#ef4444', fontWeight: '700' }}>{t('profile.sign_out')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Clear data modal */}
+        <Modal visible={showClearDataModal} transparent animationType="fade" onRequestClose={() => setShowClearDataModal(false)}>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+            <View style={{ width: '86%', backgroundColor: '#fff', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#e5e7eb' }}>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 8 }}>{t('profile.clear_data')}</Text>
+              <Text style={{ fontSize: 14, color: '#6b7280', marginBottom: 14 }}>{t('profile.clear_confirm')}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+                <TouchableOpacity onPress={() => setShowClearDataModal(false)} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 }}>
+                  <Text style={{ color: '#6b7280' }}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={doClearData} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 }}>
+                  <Text style={{ color: '#ef4444', fontWeight: '700' }}>{t('profile.clear_data')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Cleared done modal */}
+        <Modal visible={showClearedDoneModal} transparent animationType="fade" onRequestClose={() => setShowClearedDoneModal(false)}>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+            <View style={{ width: '86%', backgroundColor: '#fff', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#e5e7eb' }}>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 8 }}>{t('common.done')}</Text>
+              <Text style={{ fontSize: 14, color: '#6b7280', marginBottom: 14 }}>{t('profile.data_cleared_msg')}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+                <TouchableOpacity onPress={() => setShowClearedDoneModal(false)} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 }}>
+                  <Text style={{ color: '#6b7280' }}>{t('common.ok')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         <Text className="text-center text-[11px] text-gray-300 pb-8">{t('misc.version')}</Text>
 
