@@ -185,19 +185,28 @@ const SUPPORTED_LANGUAGES = ['en', 'zh', 'ja', 'ko', 'ms'] as const;
 
 function detectDeviceLanguage(): string {
   try {
-    let raw = '';
+    const sources: string[] = [];
     if (Platform.OS === 'ios') {
-      raw = NativeModules.SettingsManager?.settings?.AppleLanguages?.[0]
-        ?? NativeModules.SettingsManager?.settings?.AppleLocale
-        ?? '';
+      const s = NativeModules.SettingsManager?.settings;
+      if (s?.AppleLanguages?.[0]) sources.push(s.AppleLanguages[0]);
+      if (s?.AppleLocale) sources.push(s.AppleLocale);
     } else {
-      raw = NativeModules.I18nManager?.localeIdentifier ?? '';
+      const loc = NativeModules.I18nManager?.localeIdentifier;
+      if (loc) sources.push(loc);
     }
-    // Fallback to Intl API (available in Hermes without extra packages)
-    if (!raw) raw = Intl.DateTimeFormat().resolvedOptions().locale ?? '';
-    const tag = raw.replace('_', '-').toLowerCase();
-    const primary = tag.startsWith('zh') ? 'zh' : tag.split('-')[0];
-    return (SUPPORTED_LANGUAGES as readonly string[]).includes(primary) ? primary : 'en';
+    // Intl API — available in Hermes, good cross-platform fallback
+    try {
+      const intlLocale = Intl.DateTimeFormat().resolvedOptions().locale;
+      if (intlLocale && intlLocale !== 'und' && intlLocale !== 'root') sources.push(intlLocale);
+    } catch {}
+
+    for (const raw of sources) {
+      if (!raw) continue;
+      const tag = raw.replace(/_/g, '-').toLowerCase();
+      const primary = tag.startsWith('zh') ? 'zh' : tag.split('-')[0];
+      if ((SUPPORTED_LANGUAGES as readonly string[]).includes(primary)) return primary;
+    }
+    return 'en';
   } catch {
     return 'en';
   }
@@ -231,9 +240,9 @@ function generateSampleData(): Transaction[] {
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const systemColorScheme = useColorScheme();
+  const darkMode = systemColorScheme === 'dark';
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile>(DEFAULT_PROFILE);
-  const [darkMode, setDarkMode] = useState<boolean>(systemColorScheme === 'dark');
 
   const [budget, setBudget] = useState<BudgetSettings>(DEFAULT_BUDGET);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -292,7 +301,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const savedOverrides = data.profileOverrides || {};
           profileOverridesRef.current = savedOverrides;
           setProfileOverrides(savedOverrides);
-          setDarkMode(data.dark_mode ?? systemColorScheme === 'dark');
           setBudget(data.budget || DEFAULT_BUDGET);
           setHasCompletedOnboarding(data.hasCompletedOnboarding ?? true);
           setCustomCategories(data.customCategories || []);
@@ -303,13 +311,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             initMixpanel().then(() => identifyUser(data.userProfile || DEFAULT_PROFILE));
           }
         } else {
-          // Fresh install — seed language and dark mode from device settings
+          // Fresh install — seed language from device settings
           setTransactions([]);
           setUserProfile(prev => ({ ...prev, language: detectDeviceLanguage() }));
           profileOverridesRef.current = {};
           setProfileOverrides({});
           setLanguageManuallySelected(false);
-          setDarkMode(systemColorScheme === 'dark');
         }
       } catch {
         setTransactions([]);
@@ -365,7 +372,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             if (data.budget && Object.keys(data.budget).length > 0) setBudget(data.budget);
             if (data.custom_categories?.length) setCustomCategories(data.custom_categories);
             setDisabledCategories(data.disabled_categories ?? []);
-            setDarkMode(data.dark_mode ?? false);
             setHasCompletedOnboarding(data.has_completed_onboarding ?? false);
             if (data.analytics_consent !== null && data.analytics_consent !== undefined) {
               setAnalyticsConsent(data.analytics_consent);
@@ -395,7 +401,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const save = async () => {
       if (!hasLoadedStorage) return;
       const blob = {
-        transactions, userProfile, darkMode, budget,
+        transactions, userProfile, budget,
         hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent, profileOverrides,
         languageManuallySelected,
         langMigratedV1: true,
@@ -423,7 +429,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           budget: blob.budget,
           custom_categories: blob.customCategories,
           disabled_categories: blob.disabledCategories,
-          dark_mode: blob.darkMode,
           has_completed_onboarding: blob.hasCompletedOnboarding,
           analytics_consent: blob.analyticsConsent ?? null,
           updated_at: new Date().toISOString(),
@@ -432,12 +437,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }, 2000);
     };
     save();
-  }, [transactions, userProfile, darkMode, budget, hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent, profileOverrides, languageManuallySelected, hasLoadedStorage]);
-
-  useEffect(() => {
-    if (!hasLoadedStorage) return;
-    setDarkMode(systemColorScheme === 'dark');
-  }, [hasLoadedStorage, systemColorScheme]);
+  }, [transactions, userProfile, budget, hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent, profileOverrides, languageManuallySelected, hasLoadedStorage]);
 
   const expenseCategories = useMemo<Category[]>(() => [
     ...EXPENSE_CATEGORIES.filter(c => !disabledCategories.includes(c.id)),
@@ -518,9 +518,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUserProfile(prev => ({ ...prev, ...p }));
   }, []);
 
-  const toggleDarkMode = useCallback(() => {
-    setDarkMode(prev => !prev);
-  }, []);
+  // Dark mode is always derived from the system colour scheme — no manual override.
+  const toggleDarkMode = useCallback(() => {}, []);
 
   const updateBudget = useCallback((b: BudgetSettings) => {
     setBudget(b);

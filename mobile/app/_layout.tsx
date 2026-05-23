@@ -179,12 +179,12 @@ function NavigationGuard() {
 }
 
 function DarkModeBridge() {
-  const { darkMode } = useApp();
   const { setColorScheme } = useColorScheme();
 
   useEffect(() => {
-    setColorScheme(darkMode ? 'dark' : 'light');
-  }, [darkMode]);
+    // Always follow the OS colour scheme — updates in real time.
+    setColorScheme('system');
+  }, []);
 
   return null;
 }
