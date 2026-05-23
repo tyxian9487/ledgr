@@ -243,6 +243,7 @@ export function CalendarModal({
 export default function Categories({ year, month, view, filterFn, onEdit }: CategoriesProps) {
   const { transactions, expenseCategories, incomeCategories, removeTransaction, formatCurrency } = useApp();
   const { t } = useTranslation();
+  const [deletingTx, setDeletingTx] = useState<Transaction | null>(null);
   const { colorScheme } = useColorScheme();
   const dark = colorScheme === 'dark';
   const c = {
@@ -271,10 +272,17 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
   );
 
   function handleDelete(tx: Transaction) {
-    Alert.alert('Delete Transaction', `Delete "${tx.description || tx.category}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => removeTransaction(tx.id) },
-    ]);
+    setDeletingTx(tx);
+  }
+
+  function cancelDelete() {
+    setDeletingTx(null);
+  }
+
+  function confirmDelete() {
+    if (!deletingTx) return;
+    removeTransaction(deletingTx.id);
+    setDeletingTx(null);
   }
 
   function TxRow({ tx }: { tx: Transaction }) {
@@ -316,6 +324,22 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
   if (monthTxs.length === 0) {
     return (
       <View style={{ alignItems: 'center', paddingVertical: 64, paddingHorizontal: 32 }}>
+        <Modal visible={!!deletingTx} transparent animationType="fade" onRequestClose={cancelDelete}>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+            <View style={{ width: '86%', backgroundColor: c.surface, borderRadius: 14, padding: 18, borderWidth: 1, borderColor: c.border }}>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: c.textPrimary, marginBottom: 8 }}>{t('tx.delete_title' as any)}</Text>
+              <Text style={{ fontSize: 14, color: c.textSecondary, marginBottom: 14 }}>{deletingTx ? t('tx.delete_confirm' as any, { name: deletingTx.description || deletingTx.category }) : ''}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+                <TouchableOpacity onPress={cancelDelete} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 }}>
+                  <Text style={{ color: '#6b7280' }}>{t('common.cancel' as any)}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={confirmDelete} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 }}>
+                  <Text style={{ color: '#ef4444', fontWeight: '700' }}>{t('common.delete' as any)}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
         <Text style={{ color: '#9ca3af', fontSize: 14, textAlign: 'center' }}>{t('misc.no_tx_month' as any)}</Text>
       </View>
     );
@@ -335,6 +359,22 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
 
     return (
       <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+        <Modal visible={!!deletingTx} transparent animationType="fade" onRequestClose={cancelDelete}>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+            <View style={{ width: '86%', backgroundColor: c.surface, borderRadius: 14, padding: 18, borderWidth: 1, borderColor: c.border }}>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: c.textPrimary, marginBottom: 8 }}>{t('tx.delete_title' as any)}</Text>
+              <Text style={{ fontSize: 14, color: c.textSecondary, marginBottom: 14 }}>{deletingTx ? t('tx.delete_confirm' as any, { name: deletingTx.description || deletingTx.category }) : ''}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+                <TouchableOpacity onPress={cancelDelete} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 }}>
+                  <Text style={{ color: '#6b7280' }}>{t('common.cancel' as any)}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={confirmDelete} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 }}>
+                  <Text style={{ color: '#ef4444', fontWeight: '700' }}>{t('common.delete' as any)}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
         {rows.map(row => {
           const isExp = expanded[row.id] === true;
           const displayTotal = row.expTotal > 0 ? row.expTotal : row.incTotal;
@@ -400,6 +440,22 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
 
   return (
     <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+      <Modal visible={!!deletingTx} transparent animationType="fade" onRequestClose={cancelDelete}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <View style={{ width: '86%', backgroundColor: c.surface, borderRadius: 14, padding: 18, borderWidth: 1, borderColor: c.border }}>
+            <Text style={{ fontSize: 17, fontWeight: '700', color: c.textPrimary, marginBottom: 8 }}>{t('tx.delete_title' as any)}</Text>
+            <Text style={{ fontSize: 14, color: c.textSecondary, marginBottom: 14 }}>{deletingTx ? t('tx.delete_confirm' as any, { name: deletingTx.description || deletingTx.category }) : ''}</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+              <TouchableOpacity onPress={cancelDelete} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 }}>
+                <Text style={{ color: '#6b7280' }}>{t('common.cancel' as any)}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={confirmDelete} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 }}>
+                <Text style={{ color: '#ef4444', fontWeight: '700' }}>{t('common.delete' as any)}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
       {dateRows.map(({ dateStr, dayTxs, expenses, income }) => {
         const isExp = expanded[dateStr] === true;
         const label = formatDayLabel(dateStr, t);
