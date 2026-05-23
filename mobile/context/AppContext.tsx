@@ -240,9 +240,10 @@ function generateSampleData(): Transaction[] {
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const systemColorScheme = useColorScheme();
-  const darkMode = systemColorScheme === 'dark';
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile>(DEFAULT_PROFILE);
+  const [darkMode, setDarkMode] = useState<boolean>(systemColorScheme === 'dark');
+  const [darkModeManuallySet, setDarkModeManuallySet] = useState(false);
 
   const [budget, setBudget] = useState<BudgetSettings>(DEFAULT_BUDGET);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -301,6 +302,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const savedOverrides = data.profileOverrides || {};
           profileOverridesRef.current = savedOverrides;
           setProfileOverrides(savedOverrides);
+          const manualDark = data.darkModeManuallySet ?? false;
+          setDarkModeManuallySet(manualDark);
+          setDarkMode(manualDark ? (data.dark_mode ?? systemColorScheme === 'dark') : systemColorScheme === 'dark');
           setBudget(data.budget || DEFAULT_BUDGET);
           setHasCompletedOnboarding(data.hasCompletedOnboarding ?? true);
           setCustomCategories(data.customCategories || []);
@@ -372,6 +376,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             if (data.budget && Object.keys(data.budget).length > 0) setBudget(data.budget);
             if (data.custom_categories?.length) setCustomCategories(data.custom_categories);
             setDisabledCategories(data.disabled_categories ?? []);
+            if (data.dark_mode != null) { setDarkMode(data.dark_mode); setDarkModeManuallySet(true); }
             setHasCompletedOnboarding(data.has_completed_onboarding ?? false);
             if (data.analytics_consent !== null && data.analytics_consent !== undefined) {
               setAnalyticsConsent(data.analytics_consent);
@@ -402,6 +407,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!hasLoadedStorage) return;
       const blob = {
         transactions, userProfile, budget,
+        dark_mode: darkMode, darkModeManuallySet,
         hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent, profileOverrides,
         languageManuallySelected,
         langMigratedV1: true,
@@ -429,6 +435,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           budget: blob.budget,
           custom_categories: blob.customCategories,
           disabled_categories: blob.disabledCategories,
+          dark_mode: blob.dark_mode,
           has_completed_onboarding: blob.hasCompletedOnboarding,
           analytics_consent: blob.analyticsConsent ?? null,
           updated_at: new Date().toISOString(),
@@ -437,7 +444,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }, 2000);
     };
     save();
-  }, [transactions, userProfile, budget, hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent, profileOverrides, languageManuallySelected, hasLoadedStorage]);
+  }, [transactions, userProfile, darkMode, darkModeManuallySet, budget, hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent, profileOverrides, languageManuallySelected, hasLoadedStorage]);
+
+  // Follow system colour scheme in real time unless the user has manually set a preference.
+  useEffect(() => {
+    if (!darkModeManuallySet) setDarkMode(systemColorScheme === 'dark');
+  }, [systemColorScheme, darkModeManuallySet]);
 
   const expenseCategories = useMemo<Category[]>(() => [
     ...EXPENSE_CATEGORIES.filter(c => !disabledCategories.includes(c.id)),
@@ -518,8 +530,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUserProfile(prev => ({ ...prev, ...p }));
   }, []);
 
-  // Dark mode is always derived from the system colour scheme — no manual override.
-  const toggleDarkMode = useCallback(() => {}, []);
+  const toggleDarkMode = useCallback(() => {
+    setDarkModeManuallySet(true);
+    setDarkMode(prev => !prev);
+  }, []);
 
   const updateBudget = useCallback((b: BudgetSettings) => {
     setBudget(b);

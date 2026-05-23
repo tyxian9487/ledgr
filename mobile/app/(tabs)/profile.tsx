@@ -1317,7 +1317,7 @@ export default function ProfileScreen() {
             label={t('profile.notifications')}
             onPress={() => setShowNotifications(true)}
           />
-          {/* Dark Mode — read-only, always follows system */}
+          {/* Dark Mode */}
           <View className="flex-row items-center gap-3 px-4 py-3.5 border-t border-gray-50 dark:border-gray-900">
             <View className="w-9 h-9 rounded-2xl bg-gray-100 dark:bg-gray-800 items-center justify-center">
               {darkMode ? (
@@ -1326,16 +1326,12 @@ export default function ProfileScreen() {
                 <Sun size={16} color="#f59e0b" />
               )}
             </View>
-            <View className="flex-1">
-              <Text className="text-sm font-medium text-gray-900 dark:text-white">{t('profile.dark_mode')}</Text>
-              <Text className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">{t('profile.follows_system')}</Text>
-            </View>
+            <Text className="flex-1 text-sm font-medium text-gray-900 dark:text-white">{t('profile.dark_mode')}</Text>
             <Switch
               value={darkMode}
-              onValueChange={() => {}}
+              onValueChange={toggleDarkMode}
               trackColor={{ false: '#e5e7eb', true: '#16a34a' }}
               thumbColor="#fff"
-              disabled
             />
           </View>
           <SettingsRow
