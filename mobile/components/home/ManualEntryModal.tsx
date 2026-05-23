@@ -16,6 +16,7 @@ import {
   Platform,
   Pressable,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RefreshCw, Calendar, Plus, X, ChevronDown, ChevronUp, Image as ImageIcon } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
@@ -201,6 +202,7 @@ function CalendarDateModal({
 export default function ManualEntryModal({ visible, onClose, transactionId, prefill }: Props) {
   const { addTransaction, updateTransaction, getCurrencySymbol, expenseCategories, incomeCategories, budget, updateCustomGoal } = useApp();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const PERIODS: { value: AutoDebitPeriod; label: string }[] = [
     { value: 'daily',    label: t('period.daily') },
@@ -377,7 +379,7 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
 
           <ScrollView
             className="flex-1 px-5"
-            contentContainerStyle={{ paddingBottom: 16 }}
+            contentContainerStyle={{ paddingBottom: 16 + Math.max(insets.bottom, 60) }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
@@ -690,7 +692,10 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
           </ScrollView>
 
           {/* Footer save button */}
-          <View className="px-5 pt-3 pb-8 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
+          <View 
+            className="px-5 pt-3 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
+            style={{ paddingBottom: 32 + Math.max(insets.bottom, 60) }}
+          >
             <TouchableOpacity
               onPress={handleSubmit}
               disabled={!canSubmit}
