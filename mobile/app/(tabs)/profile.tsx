@@ -190,6 +190,22 @@ function LegalSheet({ type, onClose }: { type: 'terms' | 'privacy'; onClose: () 
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
+        <Modal visible={!!deletingId} transparent animationType="fade" onRequestClose={cancelDeleteCat}>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+            <View className="w-[86%] bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
+              <Text className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('catmgr.delete_title')}</Text>
+              <Text className="text-sm text-gray-600 dark:text-gray-400 mb-4">{t('catmgr.delete_confirm')}</Text>
+              <View className="flex-row justify-end">
+                <TouchableOpacity onPress={cancelDeleteCat} className="px-3 py-2 rounded-md mr-2">
+                  <Text className="text-gray-500">{t('common.cancel')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={confirmDeleteCat} className="px-3 py-2 rounded-md">
+                  <Text className="text-red-500 font-bold">{t('common.delete')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
         <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
           <Text className="text-lg font-bold text-gray-900 dark:text-white">
             {type === 'terms' ? t('profile.terms') : t('profile.privacy')}
@@ -279,10 +295,19 @@ function CategoryManagerSheet({ onClose }: { onClose: () => void }) {
   }
 
   function handleDelete(id: string) {
-    Alert.alert(t('catmgr.delete_title'), t('catmgr.delete_confirm'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.delete'), style: 'destructive', onPress: () => removeCustomCategory(id) },
-    ]);
+    setDeletingId(id);
+  }
+
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  function cancelDeleteCat() {
+    setDeletingId(null);
+  }
+
+  function confirmDeleteCat() {
+    if (!deletingId) return;
+    removeCustomCategory(deletingId);
+    setDeletingId(null);
   }
 
   return (
