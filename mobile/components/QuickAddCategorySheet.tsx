@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, Check } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../context/LanguageContext';
@@ -23,11 +24,22 @@ interface Props {
 export default function QuickAddCategorySheet({ visible, defaultType, onSave, onClose }: Props) {
   const { addCustomCategory } = useApp();
   const { t } = useTranslation();
+  const { bottom } = useSafeAreaInsets();
 
   const [type, setType] = useState<'expense' | 'income'>(defaultType);
   const [label, setLabel] = useState('');
   const [icon, setIcon] = useState('Star');
   const [color, setColor] = useState('#f97316');
+
+  // Reset form each time the sheet opens
+  useEffect(() => {
+    if (visible) {
+      setType(defaultType);
+      setLabel('');
+      setIcon('Star');
+      setColor('#f97316');
+    }
+  }, [visible, defaultType]);
 
   function handleSave() {
     if (!label.trim()) return;
@@ -150,8 +162,11 @@ export default function QuickAddCategorySheet({ visible, defaultType, onSave, on
           </View>
         </ScrollView>
 
-        {/* Save button */}
-        <View className="px-5 pt-3 pb-8 border-t border-gray-100 dark:border-gray-800">
+        {/* Save button — safe-area aware */}
+        <View
+          className="px-5 pt-3 border-t border-gray-100 dark:border-gray-800"
+          style={{ paddingBottom: Math.max(24, bottom + 8) }}
+        >
           <TouchableOpacity
             onPress={handleSave}
             disabled={!label.trim()}
