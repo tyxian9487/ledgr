@@ -14,7 +14,7 @@ import {
 const savingsJarImg = require('../../assets/m_savingsjar.png');
 const budgetImg = require('../../assets/m_budget.png');
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   PiggyBank,
   ToggleLeft,
@@ -35,6 +35,8 @@ import {
   ChevronDown,
   ChevronUp,
   BarChart2,
+  CheckCircle2,
+  ChevronRight,
 } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
@@ -169,6 +171,7 @@ export default function BudgetScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
+  const { bottom: safeBottom } = useSafeAreaInsets();
   const {
     budget, updateBudget, getMonthTransactions, getMonthIncome,
     formatCurrency, getCurrencySymbol, removeCustomGoal,
@@ -211,12 +214,16 @@ export default function BudgetScreen() {
   const [showAllAllocations, setShowAllAllocations] = useState(false);
   const [expandedAlloc, setExpandedAlloc] = useState<string | null>(null);
   const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null);
+  const [showCompleted, setShowCompleted] = useState(false);
+
+  const activeCustomGoals = (budget.customGoals ?? []).filter(g => !g.completedAt);
+  const completedGoals = (budget.customGoals ?? []).filter(g => !!g.completedAt);
 
   const income = parseFloat(incomeInput) || 0;
   const savingsAmt = income > 0 && savingsValue
     ? savingsMode === 'pct' ? income * (parseFloat(savingsValue) / 100) : parseFloat(savingsValue)
     : 0;
-  const customGoalMonthly = (budget.customGoals ?? []).reduce((sum, g) => {
+  const customGoalMonthly = activeCustomGoals.reduce((sum, g) => {
     const months = durationMonthsFromDays(g.durationDays);
     return sum + g.targetAmount / months;
   }, 0);
@@ -264,7 +271,7 @@ export default function BudgetScreen() {
     setSaved(true);
   }, [income, allocations, savingsEnabled, savingsValue, savingsMode, updateBudget, budget.customGoals]);
 
-  const activeGoalCount = (savingsEnabled ? 1 : 0) + (budget.customGoals?.length ?? 0);
+  const activeGoalCount = (savingsEnabled ? 1 : 0) + activeCustomGoals.length;
   const visibleAllocations = showAllAllocations
     ? allocations
     : allocations.slice(0, INITIAL_VISIBLE);
@@ -272,6 +279,55 @@ export default function BudgetScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" edges={['top']}>
+      {/* Completed goals bottom sheet */}
+      <Modal visible={showCompleted} animationType="slide" presentationStyle="pageSheet" transparent onRequestClose={() => setShowCompleted(false)}>
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View className="bg-white dark:bg-gray-900 rounded-t-3xl overflow-hidden" style={{ maxHeight: '80%' }}>
+            <View className="flex-row items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100 dark:border-gray-800">
+              <View className="flex-row items-center gap-2">
+                <CheckCircle2 size={18} color="#16a34a" />
+                <Text className="text-base font-bold text-gray-900 dark:text-white">
+                  {t('goal.completed_section')}
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowCompleted(false)} className="p-1">
+                <X size={20} color="#9ca3af" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ padding: 20, paddingBottom: Math.max(24, safeBottom + 16) }}
+            >
+              {completedGoals.map(goal => (
+                <TouchableOpacity
+                  key={goal.id}
+                  onPress={() => { setShowCompleted(false); router.push(`/goal/${goal.id}` as any); }}
+                  className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 mb-3 flex-row items-center gap-3"
+                  activeOpacity={0.7}
+                >
+                  <View
+                    className="w-10 h-10 rounded-2xl items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: goal.color + '20' }}
+                  >
+                    <CategoryIconRaw icon={goal.icon} color={goal.color} size={20} />
+                  </View>
+                  <View className="flex-1 min-w-0">
+                    <Text className="text-sm font-semibold text-gray-900 dark:text-white" numberOfLines={1}>{goal.name}</Text>
+                    <Text className="text-xs text-gray-400">
+                      {t('goal.completed_on', { date: goal.completedAt ? new Date(goal.completedAt).toLocaleDateString() : '' })}
+                    </Text>
+                    <Text className="text-xs font-semibold mt-0.5" style={{ color: goal.color }}>
+                      {formatCurrency(goal.savedAmount)} / {formatCurrency(goal.targetAmount)}
+                    </Text>
+                  </View>
+                  <ChevronRight size={16} color="#9ca3af" />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       {/* Delete confirmation modal for custom goals */}
       {deletingGoalId && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setDeletingGoalId(null)}>
@@ -327,6 +383,28 @@ export default function BudgetScreen() {
         {/* ── GOALS TAB ── */}
         {activeTab === 'goals' && (
           <>
+            {/* Completed goals entry point — only shown when at least one goal is done */}
+            {completedGoals.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setShowCompleted(true)}
+                className="flex-row items-center justify-between bg-green-50 dark:bg-green-900/20 rounded-2xl px-4 py-3 mb-4 border border-green-100 dark:border-green-800/30"
+                activeOpacity={0.7}
+              >
+                <View className="flex-row items-center gap-2.5">
+                  <CheckCircle2 size={18} color="#16a34a" />
+                  <Text className="text-sm font-semibold text-green-700 dark:text-green-400">
+                    {t('goal.completed_section')}
+                  </Text>
+                </View>
+                <View className="flex-row items-center gap-1.5">
+                  <View className="w-5 h-5 rounded-full bg-green-600 items-center justify-center">
+                    <Text className="text-white text-[10px] font-black">{completedGoals.length}</Text>
+                  </View>
+                  <ChevronRight size={14} color="#16a34a" />
+                </View>
+              </TouchableOpacity>
+            )}
+
             {/* Monthly Savings Goal toggle */}
             <View ref={tourRefGoals} collapsable={false} className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-4">
               <View className="px-5 py-4">
@@ -381,8 +459,8 @@ export default function BudgetScreen() {
               </View>
             </View>
 
-            {/* Custom goals */}
-            {(budget.customGoals ?? []).map((goal) => {
+            {/* Active custom goals */}
+            {activeCustomGoals.map((goal) => {
               const durationMonths = durationMonthsFromDays(goal.durationDays);
               const monthlyTarget = goal.targetAmount / durationMonths;
               const currentMonthIdx = goalMonthIndex(goal.startDate, durationMonths);
@@ -438,7 +516,7 @@ export default function BudgetScreen() {
             {/* Savings jar illustration — always visible so the mascot is always present */}
             <View className="items-center py-6 mb-2">
               <Image source={savingsJarImg} style={{ width: 110, height: 110 }} resizeMode="contain" />
-              {(budget.customGoals ?? []).length === 0 && (
+              {activeCustomGoals.length === 0 && (
                 <>
                   <Text className="text-sm font-bold text-gray-700 dark:text-white mt-3 text-center">{t('budget.start_saving')}</Text>
                   <Text className="text-xs text-gray-400 mt-1 text-center leading-relaxed px-6">
