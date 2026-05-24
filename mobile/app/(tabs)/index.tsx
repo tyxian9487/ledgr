@@ -210,7 +210,7 @@ export default function HomeScreen() {
             <TouchableOpacity
               onPress={() => setShowEntry(true)}
               activeOpacity={0.8}
-              className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5"
+              className="bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5"
             >
               <View className="w-7 h-7 rounded-full bg-green-600 items-center justify-center">
                 <Plus size={15} color="white" strokeWidth={2.5} />
@@ -226,7 +226,7 @@ export default function HomeScreen() {
             <TouchableOpacity
               onPress={() => router.push('/(tabs)/budget')}
               activeOpacity={0.8}
-              className={`flex-1 rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5 ${
+              className={`rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5 ${
                 !hasBudget
                   ? 'bg-gray-100 dark:bg-gray-800'
                   : isOverBudget
