@@ -73,15 +73,17 @@ export default function HomeScreen() {
   const [viewYear, setViewYear] = useState(now.getFullYear());
   const [viewMode, setViewMode] = useState<'category' | 'date' | 'calendar'>('category');
 
-  // Consume pending receipt left by the camera capture screen
+  // Reset scroll and consume any pending receipt left by the camera capture screen.
+  // Always scrolling to top on focus ensures layout is correct after returning from
+  // the capture page (which can disturb Android window-inset state).
   useFocusEffect(useCallback(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
     const PENDING_KEY = 'kachingo_pending_receipt';
     AsyncStorage.getItem(PENDING_KEY).then(raw => {
       if (!raw) return;
       AsyncStorage.removeItem(PENDING_KEY);
       try {
         const data = JSON.parse(raw);
-        scrollRef.current?.scrollTo({ y: 0, animated: false });
         setEntryPrefill(data);
         setShowEntry(true);
       } catch {}

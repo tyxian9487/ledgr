@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Camera, X, ImageIcon } from 'lucide-react-native';
 import { useTranslation } from '../context/LanguageContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -120,6 +120,12 @@ export default function CaptureScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const cameraRef = useRef<CameraView>(null);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+
+  useFocusEffect(useCallback(() => {
+    setIsCameraActive(true);
+    return () => setIsCameraActive(false);
+  }, []));
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
 
   const [stage, setStage] = useState<Stage>('preview');
@@ -379,14 +385,18 @@ export default function CaptureScreen() {
     <View style={{ flex: 1, backgroundColor: '#000' }}>
       <StatusBar style="light" />
       {/* Camera viewfinder — use style prop directly, not className, for native view sizing */}
+      {/* Only mount CameraView while this screen is focused so it releases the */}
+      {/* camera surface and window-inset state cleanly during the back transition. */}
       <View style={{ flex: 1, position: 'relative' }}>
-        <CameraView
-          ref={cameraRef}
-          style={{ flex: 1 }}
-          facing="back"
-          onCameraReady={() => setIsCameraReady(true)}
-          onMountError={(e) => setMountError(e.message ?? t('camera.camera_failed'))}
-        />
+        {isCameraActive && (
+          <CameraView
+            ref={cameraRef}
+            style={{ flex: 1 }}
+            facing="back"
+            onCameraReady={() => setIsCameraReady(true)}
+            onMountError={(e) => setMountError(e.message ?? t('camera.camera_failed'))}
+          />
+        )}
 
         {/* Camera mount error overlay */}
         {mountError ? (
