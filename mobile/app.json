@@ -27,7 +27,7 @@
         "backgroundColor": "#FF6B9D"
       },
       "package": "com.kachingo.app",
-      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"],
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "POST_NOTIFICATIONS"],
       "intentFilters": [
         {
           "action": "VIEW",
@@ -38,6 +38,7 @@
       ]
     },
     "plugins": [
+      "@sentry/react-native/expo",
       "./plugins/withAndroidCrashHandler",
       "expo-router",
       "expo-apple-authentication",

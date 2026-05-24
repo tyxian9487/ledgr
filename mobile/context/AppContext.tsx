@@ -65,7 +65,8 @@ interface AppContextType {
   getMonthExpenses: (year: number, month: number) => number;
   formatCurrency: (amount: number) => string;
   getCurrencySymbol: () => string;
-  signOut: () => void;
+  signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   completeOnboarding: () => void;
   addCustomCategory: (cat: Omit<CustomCategory, 'id'>) => CustomCategory;
   updateCustomCategory: (id: string, data: Partial<Omit<CustomCategory, 'id'>>) => void;
@@ -578,8 +579,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [userProfile.currency]);
 
-  const signOut = useCallback(() => {
-    supabase.auth.signOut();
+  const signOut = useCallback(async () => {
+    await AsyncStorage.multiRemove([STORAGE_KEY, 'kachingo_last_synced', 'kachingo_pending_receipt']);
+    await supabase.auth.signOut();
+    resetAnalytics();
+  }, []);
+
+  const deleteAccount = useCallback(async () => {
+    const uid = userIdRef.current;
+    if (uid) {
+      await supabase.from('user_data').delete().eq('user_id', uid);
+      await supabase.from('profiles').delete().eq('id', uid);
+    }
+    await AsyncStorage.multiRemove([STORAGE_KEY, 'kachingo_last_synced', 'kachingo_pending_receipt']);
+    await supabase.auth.signOut();
     resetAnalytics();
   }, []);
 
@@ -711,6 +724,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       formatCurrency,
       getCurrencySymbol,
       signOut,
+      deleteAccount,
       completeOnboarding,
       addCustomCategory,
       updateCustomCategory,

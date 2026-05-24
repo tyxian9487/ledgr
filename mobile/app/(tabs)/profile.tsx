@@ -28,6 +28,7 @@ import {
   FileText,
   LogOut,
   Trash2,
+  UserX,
   Edit3,
   TrendingUp,
   TrendingDown,
@@ -841,6 +842,7 @@ export default function ProfileScreen() {
     getCurrencySymbol,
     formatCurrency,
     signOut,
+    deleteAccount,
   } = useApp();
   const { isPro } = usePurchases();
 
@@ -985,6 +987,8 @@ export default function ProfileScreen() {
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [showClearDataModal, setShowClearDataModal] = useState(false);
   const [showClearedDoneModal, setShowClearedDoneModal] = useState(false);
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   async function doClearData() {
     const AsyncStorageLib = require('@react-native-async-storage/async-storage').default;
@@ -996,6 +1000,20 @@ export default function ProfileScreen() {
   function doSignOut() {
     setShowSignOutModal(false);
     signOut();
+  }
+
+  function confirmDeleteAccount() {
+    setShowDeleteAccountModal(true);
+  }
+
+  async function doDeleteAccount() {
+    setIsDeletingAccount(true);
+    try {
+      await deleteAccount();
+    } finally {
+      setIsDeletingAccount(false);
+      setShowDeleteAccountModal(false);
+    }
   }
 
   async function handleGenerateReport() {
@@ -1432,6 +1450,12 @@ export default function ProfileScreen() {
             onPress={confirmClearData}
           />
           <SettingsRow
+            icon={<UserX size={16} color="#ef4444" />}
+            label={t('profile.delete_account')}
+            danger
+            onPress={confirmDeleteAccount}
+          />
+          <SettingsRow
             icon={<LogOut size={16} color="#ef4444" />}
             label={t('profile.sign_out')}
             danger
@@ -1484,6 +1508,35 @@ export default function ProfileScreen() {
               <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
                 <TouchableOpacity onPress={() => setShowClearedDoneModal(false)} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 }}>
                   <Text style={{ color: '#6b7280' }}>{t('common.ok')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Delete account modal */}
+        <Modal visible={showDeleteAccountModal} transparent animationType="fade" onRequestClose={() => !isDeletingAccount && setShowDeleteAccountModal(false)}>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+            <View style={{ width: '86%', backgroundColor: '#fff', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#e5e7eb' }}>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: '#ef4444', marginBottom: 8 }}>{t('profile.delete_account')}</Text>
+              <Text style={{ fontSize: 14, color: '#6b7280', marginBottom: 14 }}>{t('profile.delete_account_confirm')}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+                <TouchableOpacity
+                  onPress={() => setShowDeleteAccountModal(false)}
+                  disabled={isDeletingAccount}
+                  style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 }}
+                >
+                  <Text style={{ color: '#6b7280' }}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={doDeleteAccount}
+                  disabled={isDeletingAccount}
+                  style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: '#fef2f2' }}
+                >
+                  {isDeletingAccount
+                    ? <ActivityIndicator size="small" color="#ef4444" />
+                    : <Text style={{ color: '#ef4444', fontWeight: '700' }}>{t('profile.delete_account')}</Text>
+                  }
                 </TouchableOpacity>
               </View>
             </View>
