@@ -77,7 +77,10 @@ export default function HomeScreen() {
   // Always scrolling to top on focus ensures layout is correct after returning from
   // the capture page (which can disturb Android window-inset state).
   useFocusEffect(useCallback(() => {
-    scrollRef.current?.scrollTo({ y: 0, animated: false });
+    // Defer until after the navigation animation so the layout is stable
+    const handle = requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    });
     const PENDING_KEY = 'kachingo_pending_receipt';
     AsyncStorage.getItem(PENDING_KEY).then(raw => {
       if (!raw) return;
@@ -88,6 +91,7 @@ export default function HomeScreen() {
         setShowEntry(true);
       } catch {}
     });
+    return () => cancelAnimationFrame(handle);
   }, []));
 
   const [showSearch, setShowSearch] = useState(false);

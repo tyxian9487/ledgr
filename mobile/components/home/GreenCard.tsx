@@ -1,6 +1,6 @@
 import { useState, useRef, RefObject } from 'react';
-import { Alert, View, Text, TouchableOpacity } from 'react-native';
-import Svg, { Circle, Circle as SvgCircle, Path, Text as SvgText } from 'react-native-svg';
+import { Alert, View, Text, TouchableOpacity, Image } from 'react-native';
+import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
 import { ChevronLeft, ChevronRight, ChevronDown, Share2, ArrowLeftRight } from 'lucide-react-native';
 import { captureRef } from 'react-native-view-shot';
 import { useApp } from '../../context/AppContext';
@@ -29,33 +29,11 @@ const MONTH_SHORT_KEYS = [
   'month.sep.short', 'month.oct.short', 'month.nov.short', 'month.dec.short',
 ] as const;
 
-function GoldCoin({ size = 28 }: { size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 28 28">
-      <SvgCircle cx="14" cy="14" r="13" fill="#f59e0b" stroke="#d97706" strokeWidth="1.5"/>
-      <SvgCircle cx="14" cy="14" r="9" fill="none" stroke="#fbbf24" strokeWidth="1" opacity={0.6}/>
-      <SvgText x="14" y="18.5" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#92400e">$</SvgText>
-    </Svg>
-  );
-}
-function SilverCoin({ size = 28 }: { size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 28 28">
-      <SvgCircle cx="14" cy="14" r="13" fill="#94a3b8" stroke="#64748b" strokeWidth="1.5"/>
-      <SvgCircle cx="14" cy="14" r="9" fill="none" stroke="#cbd5e1" strokeWidth="1" opacity={0.6}/>
-      <SvgText x="14" y="18.5" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#1e293b">$</SvgText>
-    </Svg>
-  );
-}
-function CopperCoin({ size = 28 }: { size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 28 28">
-      <SvgCircle cx="14" cy="14" r="13" fill="#b45309" stroke="#92400e" strokeWidth="1.5"/>
-      <SvgCircle cx="14" cy="14" r="9" fill="none" stroke="#d97706" strokeWidth="1" opacity={0.6}/>
-      <SvgText x="14" y="18.5" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#fef3c7">$</SvgText>
-    </Svg>
-  );
-}
+const MASCOT_IMAGES = {
+  excellent: require('../../assets/m_expression_happy.png'),
+  sustained: require('../../assets/m_expression_wink.png'),
+  critical:  require('../../assets/m_expression_sad.png'),
+} as const;
 
 function getStatus(income: number, expenses: number): FinancialStatus {
   if (income === 0) return expenses === 0 ? 'excellent' : 'critical';
@@ -136,9 +114,9 @@ function DonutRing({ slices, size = 200, centerLabel, centerValue, selectedId, o
 }
 
 const STATUS_CONFIG = {
-  excellent: { Coin: GoldCoin, textColor: '#fbbf24', score: '90+' },
-  sustained: { Coin: SilverCoin, textColor: '#cbd5e1', score: '60-79' },
-  critical:  { Coin: CopperCoin, textColor: '#f97316', score: '<60' },
+  excellent: { textColor: '#fbbf24', score: '90+' },
+  sustained: { textColor: '#cbd5e1', score: '60-79' },
+  critical:  { textColor: '#f97316', score: '<60' },
 } as const;
 
 export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYearChange, statsRef }: Props) {
@@ -152,7 +130,7 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
   const remaining = totalIncome - totalExpenses;
 
   const status = getStatus(totalIncome, totalExpenses);
-  const { Coin, textColor, score } = STATUS_CONFIG[status];
+  const { textColor, score } = STATUS_CONFIG[status];
 
   // Numeric score for share card (matches same formula as profile page)
   const numericScore = totalIncome > 0
@@ -261,7 +239,7 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
 
       {/* Financial status glass box */}
       <View className="mx-4 mb-3 rounded-2xl bg-white/15 p-3 flex-row items-center gap-3">
-        <Coin size={36} />
+        <Image source={MASCOT_IMAGES[status]} style={{ width: 40, height: 40 }} resizeMode="contain" />
 
         <View className="flex-1">
           <Text className="text-white/60 text-[10px] uppercase tracking-wider font-medium">
