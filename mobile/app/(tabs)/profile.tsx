@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTourTarget } from '../../context/TourContext';
+import CategoryManagerSheet from '../../components/CategoryManagerSheet';
 import {
   View,
   Text,
@@ -53,11 +54,6 @@ import { usePurchases, isUserCancelledError } from '../../context/PurchasesConte
 import {
   CURRENCIES,
   LANGUAGES,
-  EXPENSE_CATEGORIES,
-  INCOME_CATEGORIES,
-  CustomCategory,
-  COLOR_OPTIONS,
-  ICON_OPTIONS,
 } from '../../types';
 import type { Transaction } from '../../types';
 import { computeBadges, computeStreaks, BADGES, BadgeDef } from '../../utils/achievements';
@@ -191,22 +187,6 @@ function LegalSheet({ type, onClose }: { type: 'terms' | 'privacy'; onClose: () 
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
-        <Modal visible={!!deletingId} transparent animationType="fade" onRequestClose={cancelDeleteCat}>
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-            <View className="w-[86%] bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
-              <Text className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('catmgr.delete_title')}</Text>
-              <Text className="text-sm text-gray-600 dark:text-gray-400 mb-4">{t('catmgr.delete_confirm')}</Text>
-              <View className="flex-row justify-end">
-                <TouchableOpacity onPress={cancelDeleteCat} className="px-3 py-2 rounded-md mr-2">
-                  <Text className="text-gray-500">{t('common.cancel')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={confirmDeleteCat} className="px-3 py-2 rounded-md">
-                  <Text className="text-red-500 font-bold">{t('common.delete')}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
         <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
           <Text className="text-lg font-bold text-gray-900 dark:text-white">
             {type === 'terms' ? t('profile.terms') : t('profile.privacy')}
@@ -236,239 +216,6 @@ function LegalSheet({ type, onClose }: { type: 'terms' | 'privacy'; onClose: () 
             <Text className="text-white font-bold">{t('legal.i_understand')}</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
-    </Modal>
-  );
-}
-
-// ─── Category Manager Sheet ───────────────────────────────────────────────────
-function CategoryManagerSheet({ onClose }: { onClose: () => void }) {
-  const { t } = useTranslation();
-  const {
-    customCategories,
-    disabledCategories,
-    addCustomCategory,
-    updateCustomCategory,
-    removeCustomCategory,
-    toggleCategoryEnabled,
-  } = useApp();
-
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [formName, setFormName] = useState('');
-  const [formType, setFormType] = useState<'expense' | 'income'>('expense');
-  const [formColor, setFormColor] = useState(COLOR_OPTIONS[0]);
-  const [formIcon, setFormIcon] = useState(ICON_OPTIONS[0]);
-
-  const ALL_BUILTIN = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
-
-  function openNew() {
-    setEditingId(null);
-    setFormName('');
-    setFormType('expense');
-    setFormColor(COLOR_OPTIONS[0]);
-    setFormIcon(ICON_OPTIONS[0]);
-    setShowForm(true);
-  }
-
-  function openEdit(cat: CustomCategory) {
-    setEditingId(cat.id);
-    setFormName(cat.label);
-    setFormType(cat.type);
-    setFormColor(cat.color);
-    setFormIcon(cat.icon);
-    setShowForm(true);
-  }
-
-  function handleSave() {
-    if (!formName.trim()) return;
-    if (editingId) {
-      updateCustomCategory(editingId, {
-        label: formName.trim(),
-        type: formType,
-        color: formColor,
-        icon: formIcon,
-      });
-    } else {
-      addCustomCategory({ label: formName.trim(), type: formType, color: formColor, icon: formIcon });
-    }
-    setShowForm(false);
-  }
-
-  function handleDelete(id: string) {
-    setDeletingId(id);
-  }
-
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  function cancelDeleteCat() {
-    setDeletingId(null);
-  }
-
-  function confirmDeleteCat() {
-    if (!deletingId) return;
-    removeCustomCategory(deletingId);
-    setDeletingId(null);
-  }
-
-  return (
-    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
-        <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-          <Text className="text-lg font-bold text-gray-900 dark:text-white">{t('catmgr.title')}</Text>
-          <TouchableOpacity
-            onPress={onClose}
-            className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
-          >
-            <X size={16} color="#6b7280" />
-          </TouchableOpacity>
-        </View>
-
-        {showForm ? (
-          <ScrollView className="flex-1 px-5 py-4">
-            <Text className="text-base font-bold text-gray-900 dark:text-white mb-4">
-              {editingId ? t('catmgr.edit') : t('catmgr.new')}
-            </Text>
-            <Text className="text-xs font-semibold text-gray-500 mb-2">{t('catmgr.type')}</Text>
-            <View className="flex-row gap-3 mb-4">
-              {(['expense', 'income'] as const).map(tp => (
-                <TouchableOpacity
-                  key={tp}
-                  onPress={() => setFormType(tp)}
-                  className={`flex-1 py-2.5 rounded-xl items-center border-2 ${
-                    formType === tp ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-gray-50'
-                  }`}
-                >
-                  <Text
-                    className={`text-sm font-semibold ${
-                      formType === tp ? 'text-green-700' : 'text-gray-500'
-                    }`}
-                  >
-                    {tp === 'expense' ? t('common.expense') : t('common.income')}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text className="text-xs font-semibold text-gray-500 mb-1.5">{t('catmgr.name')}</Text>
-            <TextInput
-              value={formName}
-              onChangeText={setFormName}
-              placeholder={t('catmgr.name_ph')}
-              className="border-2 border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 mb-4"
-            />
-            <Text className="text-xs font-semibold text-gray-500 mb-2">{t('catmgr.color')}</Text>
-            <View className="flex-row flex-wrap gap-2 mb-4">
-              {COLOR_OPTIONS.map(c => (
-                <TouchableOpacity
-                  key={c}
-                  onPress={() => setFormColor(c)}
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 16,
-                    backgroundColor: c,
-                    borderWidth: formColor === c ? 3 : 0,
-                    borderColor: '#111',
-                  }}
-                />
-              ))}
-            </View>
-            <Text className="text-xs font-semibold text-gray-500 mb-2">{t('catmgr.icon')}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">
-              <View className="flex-row gap-2">
-                {ICON_OPTIONS.map(ic => (
-                  <TouchableOpacity
-                    key={ic}
-                    onPress={() => setFormIcon(ic)}
-                    className={`w-10 h-10 rounded-xl items-center justify-center border-2 ${
-                      formIcon === ic ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-gray-50'
-                    }`}
-                  >
-                    <Text className="text-xs text-gray-600">{ic.slice(0, 2)}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
-            <View className="flex-row gap-3">
-              <TouchableOpacity
-                onPress={() => setShowForm(false)}
-                className="flex-1 py-3 rounded-2xl bg-gray-100 items-center"
-              >
-                <Text className="font-semibold text-gray-600">{t('common.cancel')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleSave}
-                className="flex-1 py-3 rounded-2xl bg-green-600 items-center"
-                activeOpacity={0.8}
-              >
-                <Text className="font-bold text-white">{t('catmgr.save')}</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        ) : (
-          <ScrollView className="flex-1">
-            <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider px-5 pt-4 pb-2">
-              {t('catmgr.builtin')}
-            </Text>
-            {ALL_BUILTIN.map(cat => {
-              const disabled = disabledCategories.includes(cat.id);
-              return (
-                <View key={cat.id} className="flex-row items-center px-5 py-3 border-b border-gray-50 dark:border-gray-900">
-                  <View
-                    className="w-8 h-8 rounded-xl items-center justify-center mr-3"
-                    style={{ backgroundColor: cat.color + '20' }}
-                  >
-                    <View className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
-                  </View>
-                  <Text
-                    className={`flex-1 text-sm font-medium ${
-                      disabled ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'
-                    }`}
-                  >
-                    {(() => { const k = `cat.${cat.id}` as any; const v = t(k); return v !== k ? v : cat.label; })()}
-                  </Text>
-                  <Switch
-                    value={!disabled}
-                    onValueChange={() => toggleCategoryEnabled(cat.id)}
-                    trackColor={{ false: '#e5e7eb', true: '#16a34a' }}
-                    thumbColor="#fff"
-                  />
-                </View>
-              );
-            })}
-            {customCategories.length > 0 ? (
-              <>
-                <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider px-5 pt-5 pb-2">
-                  {t('catmgr.my_cats')}
-                </Text>
-                {customCategories.map(cat => (
-                  <View key={cat.id} className="flex-row items-center px-5 py-3 border-b border-gray-50 dark:border-gray-900">
-                    <View
-                      className="w-8 h-8 rounded-xl items-center justify-center mr-3"
-                      style={{ backgroundColor: cat.color + '20' }}
-                    >
-                      <View className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
-                    </View>
-                    <Text className="flex-1 text-sm font-medium text-gray-900 dark:text-white">{cat.label}</Text>
-                    <TouchableOpacity onPress={() => openEdit(cat)} className="p-2 mr-1">
-                      <Edit3 size={15} color="#6b7280" />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => handleDelete(cat.id)} className="p-2">
-                      <Trash2 size={15} color="#ef4444" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </>
-            ) : null}
-            <TouchableOpacity
-              onPress={openNew}
-              className="mx-5 mt-4 mb-8 py-3.5 rounded-2xl bg-green-600 items-center"
-              activeOpacity={0.8}
-            >
-              <Text className="text-white font-bold">{t('catmgr.add')}</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        )}
       </SafeAreaView>
     </Modal>
   );
@@ -1682,7 +1429,7 @@ export default function ProfileScreen() {
       {/* ── Modals ── */}
       {showTerms ? <LegalSheet type="terms" onClose={() => setShowTerms(false)} /> : null}
       {showPrivacy ? <LegalSheet type="privacy" onClose={() => setShowPrivacy(false)} /> : null}
-      {showCategories ? <CategoryManagerSheet onClose={() => setShowCategories(false)} /> : null}
+      <CategoryManagerSheet visible={showCategories} onClose={() => setShowCategories(false)} />
       {showNotifications ? (
         <NotificationsSheet onClose={() => setShowNotifications(false)} />
       ) : null}
