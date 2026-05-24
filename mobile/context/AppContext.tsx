@@ -85,7 +85,8 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | null>(null);
 
-const STORAGE_KEY = 'expensewise_data';
+const STORAGE_KEY = 'kachingo_data';
+const LEGACY_STORAGE_KEY = 'expensewise_data';
 
 type ProfileOverrides = {
   name?: boolean;
@@ -282,7 +283,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const load = async () => {
       try {
-        const saved = await AsyncStorage.getItem(STORAGE_KEY);
+        let saved = await AsyncStorage.getItem(STORAGE_KEY);
+        if (!saved) {
+          // Migrate from old key used in earlier builds
+          const legacy = await AsyncStorage.getItem(LEGACY_STORAGE_KEY);
+          if (legacy) {
+            await AsyncStorage.setItem(STORAGE_KEY, legacy);
+            await AsyncStorage.removeItem(LEGACY_STORAGE_KEY);
+            saved = legacy;
+          }
+        }
         if (saved) {
           const data = JSON.parse(saved);
           setTransactions(processAutoDebits(data.transactions || []));
@@ -419,7 +429,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!uid) return;
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
       // Debounce cloud sync so rapid state changes don't fire many requests
-      syncTimerRef.current = setTimeout(async () => {
+      syncTimerRef.current = setTimeout(async () => { // 500ms debounce — short enough to catch most force-closes
         if (userIdRef.current !== uid) return;
         await supabase.from('profiles').upsert({
           id: uid,
@@ -442,7 +452,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           updated_at: new Date().toISOString(),
         }, { onConflict: 'user_id' });
         await AsyncStorage.setItem('kachingo_last_synced', new Date().toISOString());
-      }, 2000);
+      }, 500);
     };
     save();
   }, [transactions, userProfile, darkMode, darkModeManuallySet, budget, hasCompletedOnboarding, customCategories, disabledCategories, analyticsConsent, profileOverrides, languageManuallySelected, hasLoadedStorage]);
@@ -580,7 +590,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [userProfile.currency]);
 
   const signOut = useCallback(async () => {
-    await AsyncStorage.multiRemove([STORAGE_KEY, 'kachingo_last_synced', 'kachingo_pending_receipt']);
+    await AsyncStorage.multiRemove([STORAGE_KEY, LEGACY_STORAGE_KEY, 'kachingo_last_synced', 'kachingo_pending_receipt']);
     await supabase.auth.signOut();
     resetAnalytics();
   }, []);
@@ -591,7 +601,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await supabase.from('user_data').delete().eq('user_id', uid);
       await supabase.from('profiles').delete().eq('id', uid);
     }
-    await AsyncStorage.multiRemove([STORAGE_KEY, 'kachingo_last_synced', 'kachingo_pending_receipt']);
+    await AsyncStorage.multiRemove([STORAGE_KEY, LEGACY_STORAGE_KEY, 'kachingo_last_synced', 'kachingo_pending_receipt']);
     await supabase.auth.signOut();
     resetAnalytics();
   }, []);

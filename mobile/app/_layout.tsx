@@ -1,10 +1,16 @@
 import '../global.css';
 import * as Sentry from '@sentry/react-native';
+import Constants from 'expo-constants';
 import { Slot, useRouter, useSegments } from 'expo-router';
 
 const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN;
 if (SENTRY_DSN) {
-  Sentry.init({ dsn: SENTRY_DSN, enableNativeCrashHandling: true });
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    enableNativeCrashHandling: true,
+    release: Constants.expoConfig?.version,
+    dist: Constants.expoConfig?.ios?.buildNumber ?? String(Constants.expoConfig?.android?.versionCode ?? ''),
+  });
 }
 import React, { useEffect, useState, Component } from 'react';
 import { View, Text, ScrollView, Linking, TouchableOpacity } from 'react-native';
