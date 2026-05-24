@@ -64,6 +64,7 @@ jobs:
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
           EXPO_PUBLIC_WORKER_URL: ${{ secrets.EXPO_PUBLIC_WORKER_URL }}
           EXPO_PUBLIC_REVENUECAT_KEY: ${{ secrets.EXPO_PUBLIC_REVENUECAT_KEY }}
+          SENTRY_DISABLE_AUTO_UPLOAD: "true"
         run: |
           set -euo pipefail
           PROFILE="${{ inputs.profile || 'production' }}"

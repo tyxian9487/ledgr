@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput, Image,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -51,7 +51,6 @@ function translateCategoryLabel(
 export default function HomeScreen() {
   const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
-  const insets = useSafeAreaInsets();
   const now = new Date();
   const {
     transactions, budget, formatCurrency,
@@ -74,15 +73,17 @@ export default function HomeScreen() {
   const [viewYear, setViewYear] = useState(now.getFullYear());
   const [viewMode, setViewMode] = useState<'category' | 'date' | 'calendar'>('category');
 
-  // Consume pending receipt left by the camera capture screen
+  // Reset scroll and consume any pending receipt left by the camera capture screen.
+  // Always scrolling to top on focus ensures layout is correct after returning from
+  // the capture page (which can disturb Android window-inset state).
   useFocusEffect(useCallback(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
     const PENDING_KEY = 'kachingo_pending_receipt';
     AsyncStorage.getItem(PENDING_KEY).then(raw => {
       if (!raw) return;
       AsyncStorage.removeItem(PENDING_KEY);
       try {
         const data = JSON.parse(raw);
-        scrollRef.current?.scrollTo({ y: 0, animated: false });
         setEntryPrefill(data);
         setShowEntry(true);
       } catch {}
@@ -155,9 +156,9 @@ export default function HomeScreen() {
   }
 
   return (
-    <View
+    <SafeAreaView
       className="flex-1 bg-gray-50 dark:bg-gray-950"
-      style={{ paddingTop: Math.min(insets.top, 48) }}
+      edges={['top']}
     >
       <ScrollView ref={scrollRef} className="flex-1" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
@@ -210,7 +211,7 @@ export default function HomeScreen() {
             <TouchableOpacity
               onPress={() => setShowEntry(true)}
               activeOpacity={0.8}
-              className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5"
+              className="bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5"
             >
               <View className="w-7 h-7 rounded-full bg-green-600 items-center justify-center">
                 <Plus size={15} color="white" strokeWidth={2.5} />
@@ -226,7 +227,7 @@ export default function HomeScreen() {
             <TouchableOpacity
               onPress={() => router.push('/(tabs)/budget')}
               activeOpacity={0.8}
-              className={`flex-1 rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5 ${
+              className={`rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5 ${
                 !hasBudget
                   ? 'bg-gray-100 dark:bg-gray-800'
                   : isOverBudget
@@ -527,6 +528,6 @@ export default function HomeScreen() {
           onClose={() => setViewMode('category')}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }

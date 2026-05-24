@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTourTarget } from '../../context/TourContext';
+import CategoryManagerSheet from '../../components/CategoryManagerSheet';
 import {
   View,
   Text,
@@ -12,6 +13,7 @@ import {
   TextInput,
   ActivityIndicator,
   Image,
+  Linking,
 } from 'react-native';
 
 const happyMascotImg = require('../../assets/m_expression_happy.png');
@@ -45,19 +47,15 @@ import {
   Download,
   BarChart2,
   User,
+  Check,
+  ExternalLink,
 } from 'lucide-react-native';
-import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
-import { usePurchases, isUserCancelledError } from '../../context/PurchasesContext';
+import { usePurchases } from '../../context/PurchasesContext';
 import {
   CURRENCIES,
   LANGUAGES,
-  EXPENSE_CATEGORIES,
-  INCOME_CATEGORIES,
-  CustomCategory,
-  COLOR_OPTIONS,
-  ICON_OPTIONS,
 } from '../../types';
 import type { Transaction } from '../../types';
 import { computeBadges, computeStreaks, BADGES, BadgeDef } from '../../utils/achievements';
@@ -191,26 +189,22 @@ function LegalSheet({ type, onClose }: { type: 'terms' | 'privacy'; onClose: () 
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
-        <Modal visible={!!deletingId} transparent animationType="fade" onRequestClose={cancelDeleteCat}>
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-            <View className="w-[86%] bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
-              <Text className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('catmgr.delete_title')}</Text>
-              <Text className="text-sm text-gray-600 dark:text-gray-400 mb-4">{t('catmgr.delete_confirm')}</Text>
-              <View className="flex-row justify-end">
-                <TouchableOpacity onPress={cancelDeleteCat} className="px-3 py-2 rounded-md mr-2">
-                  <Text className="text-gray-500">{t('common.cancel')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={confirmDeleteCat} className="px-3 py-2 rounded-md">
-                  <Text className="text-red-500 font-bold">{t('common.delete')}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
         <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-          <Text className="text-lg font-bold text-gray-900 dark:text-white">
-            {type === 'terms' ? t('profile.terms') : t('profile.privacy')}
-          </Text>
+          <View>
+            <Text className="text-lg font-bold text-gray-900 dark:text-white">
+              {type === 'terms' ? t('profile.terms') : t('profile.privacy')}
+            </Text>
+            {type === 'privacy' && (
+              <TouchableOpacity
+                onPress={() => Linking.openURL(process.env.EXPO_PUBLIC_PRIVACY_URL ?? 'https://kachingo.app/privacy')}
+                className="flex-row items-center gap-1 mt-0.5"
+                activeOpacity={0.7}
+              >
+                <Text className="text-xs text-green-600 dark:text-green-400">View Online</Text>
+                <ExternalLink size={10} color="#16a34a" />
+              </TouchableOpacity>
+            )}
+          </View>
           <TouchableOpacity
             onPress={onClose}
             className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
@@ -236,239 +230,6 @@ function LegalSheet({ type, onClose }: { type: 'terms' | 'privacy'; onClose: () 
             <Text className="text-white font-bold">{t('legal.i_understand')}</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
-    </Modal>
-  );
-}
-
-// ─── Category Manager Sheet ───────────────────────────────────────────────────
-function CategoryManagerSheet({ onClose }: { onClose: () => void }) {
-  const { t } = useTranslation();
-  const {
-    customCategories,
-    disabledCategories,
-    addCustomCategory,
-    updateCustomCategory,
-    removeCustomCategory,
-    toggleCategoryEnabled,
-  } = useApp();
-
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [formName, setFormName] = useState('');
-  const [formType, setFormType] = useState<'expense' | 'income'>('expense');
-  const [formColor, setFormColor] = useState(COLOR_OPTIONS[0]);
-  const [formIcon, setFormIcon] = useState(ICON_OPTIONS[0]);
-
-  const ALL_BUILTIN = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
-
-  function openNew() {
-    setEditingId(null);
-    setFormName('');
-    setFormType('expense');
-    setFormColor(COLOR_OPTIONS[0]);
-    setFormIcon(ICON_OPTIONS[0]);
-    setShowForm(true);
-  }
-
-  function openEdit(cat: CustomCategory) {
-    setEditingId(cat.id);
-    setFormName(cat.label);
-    setFormType(cat.type);
-    setFormColor(cat.color);
-    setFormIcon(cat.icon);
-    setShowForm(true);
-  }
-
-  function handleSave() {
-    if (!formName.trim()) return;
-    if (editingId) {
-      updateCustomCategory(editingId, {
-        label: formName.trim(),
-        type: formType,
-        color: formColor,
-        icon: formIcon,
-      });
-    } else {
-      addCustomCategory({ label: formName.trim(), type: formType, color: formColor, icon: formIcon });
-    }
-    setShowForm(false);
-  }
-
-  function handleDelete(id: string) {
-    setDeletingId(id);
-  }
-
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  function cancelDeleteCat() {
-    setDeletingId(null);
-  }
-
-  function confirmDeleteCat() {
-    if (!deletingId) return;
-    removeCustomCategory(deletingId);
-    setDeletingId(null);
-  }
-
-  return (
-    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
-        <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-          <Text className="text-lg font-bold text-gray-900 dark:text-white">{t('catmgr.title')}</Text>
-          <TouchableOpacity
-            onPress={onClose}
-            className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
-          >
-            <X size={16} color="#6b7280" />
-          </TouchableOpacity>
-        </View>
-
-        {showForm ? (
-          <ScrollView className="flex-1 px-5 py-4">
-            <Text className="text-base font-bold text-gray-900 dark:text-white mb-4">
-              {editingId ? t('catmgr.edit') : t('catmgr.new')}
-            </Text>
-            <Text className="text-xs font-semibold text-gray-500 mb-2">{t('catmgr.type')}</Text>
-            <View className="flex-row gap-3 mb-4">
-              {(['expense', 'income'] as const).map(tp => (
-                <TouchableOpacity
-                  key={tp}
-                  onPress={() => setFormType(tp)}
-                  className={`flex-1 py-2.5 rounded-xl items-center border-2 ${
-                    formType === tp ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-gray-50'
-                  }`}
-                >
-                  <Text
-                    className={`text-sm font-semibold ${
-                      formType === tp ? 'text-green-700' : 'text-gray-500'
-                    }`}
-                  >
-                    {tp === 'expense' ? t('common.expense') : t('common.income')}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text className="text-xs font-semibold text-gray-500 mb-1.5">{t('catmgr.name')}</Text>
-            <TextInput
-              value={formName}
-              onChangeText={setFormName}
-              placeholder={t('catmgr.name_ph')}
-              className="border-2 border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 mb-4"
-            />
-            <Text className="text-xs font-semibold text-gray-500 mb-2">{t('catmgr.color')}</Text>
-            <View className="flex-row flex-wrap gap-2 mb-4">
-              {COLOR_OPTIONS.map(c => (
-                <TouchableOpacity
-                  key={c}
-                  onPress={() => setFormColor(c)}
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 16,
-                    backgroundColor: c,
-                    borderWidth: formColor === c ? 3 : 0,
-                    borderColor: '#111',
-                  }}
-                />
-              ))}
-            </View>
-            <Text className="text-xs font-semibold text-gray-500 mb-2">{t('catmgr.icon')}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">
-              <View className="flex-row gap-2">
-                {ICON_OPTIONS.map(ic => (
-                  <TouchableOpacity
-                    key={ic}
-                    onPress={() => setFormIcon(ic)}
-                    className={`w-10 h-10 rounded-xl items-center justify-center border-2 ${
-                      formIcon === ic ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-gray-50'
-                    }`}
-                  >
-                    <Text className="text-xs text-gray-600">{ic.slice(0, 2)}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
-            <View className="flex-row gap-3">
-              <TouchableOpacity
-                onPress={() => setShowForm(false)}
-                className="flex-1 py-3 rounded-2xl bg-gray-100 items-center"
-              >
-                <Text className="font-semibold text-gray-600">{t('common.cancel')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleSave}
-                className="flex-1 py-3 rounded-2xl bg-green-600 items-center"
-                activeOpacity={0.8}
-              >
-                <Text className="font-bold text-white">{t('catmgr.save')}</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        ) : (
-          <ScrollView className="flex-1">
-            <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider px-5 pt-4 pb-2">
-              {t('catmgr.builtin')}
-            </Text>
-            {ALL_BUILTIN.map(cat => {
-              const disabled = disabledCategories.includes(cat.id);
-              return (
-                <View key={cat.id} className="flex-row items-center px-5 py-3 border-b border-gray-50 dark:border-gray-900">
-                  <View
-                    className="w-8 h-8 rounded-xl items-center justify-center mr-3"
-                    style={{ backgroundColor: cat.color + '20' }}
-                  >
-                    <View className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
-                  </View>
-                  <Text
-                    className={`flex-1 text-sm font-medium ${
-                      disabled ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'
-                    }`}
-                  >
-                    {(() => { const k = `cat.${cat.id}` as any; const v = t(k); return v !== k ? v : cat.label; })()}
-                  </Text>
-                  <Switch
-                    value={!disabled}
-                    onValueChange={() => toggleCategoryEnabled(cat.id)}
-                    trackColor={{ false: '#e5e7eb', true: '#16a34a' }}
-                    thumbColor="#fff"
-                  />
-                </View>
-              );
-            })}
-            {customCategories.length > 0 ? (
-              <>
-                <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider px-5 pt-5 pb-2">
-                  {t('catmgr.my_cats')}
-                </Text>
-                {customCategories.map(cat => (
-                  <View key={cat.id} className="flex-row items-center px-5 py-3 border-b border-gray-50 dark:border-gray-900">
-                    <View
-                      className="w-8 h-8 rounded-xl items-center justify-center mr-3"
-                      style={{ backgroundColor: cat.color + '20' }}
-                    >
-                      <View className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
-                    </View>
-                    <Text className="flex-1 text-sm font-medium text-gray-900 dark:text-white">{cat.label}</Text>
-                    <TouchableOpacity onPress={() => openEdit(cat)} className="p-2 mr-1">
-                      <Edit3 size={15} color="#6b7280" />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => handleDelete(cat.id)} className="p-2">
-                      <Trash2 size={15} color="#ef4444" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </>
-            ) : null}
-            <TouchableOpacity
-              onPress={openNew}
-              className="mx-5 mt-4 mb-8 py-3.5 rounded-2xl bg-green-600 items-center"
-              activeOpacity={0.8}
-            >
-              <Text className="text-white font-bold">{t('catmgr.add')}</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        )}
       </SafeAreaView>
     </Modal>
   );
@@ -587,27 +348,11 @@ function NotificationsSheet({ onClose }: { onClose: () => void }) {
 
 // ─── Subscription Sheet ───────────────────────────────────────────────────────
 function SubscriptionSheet({ onClose }: { onClose: () => void }) {
-  const { isPro, isLoading, presentPaywallIfNeeded, presentCustomerCenter, restorePurchases } =
+  const { isPro, isLoading, presentCustomerCenter, restorePurchases } =
     usePurchases();
   const { t } = useTranslation();
   const [working, setWorking] = useState(false);
-
-  async function handleUpgrade() {
-    setWorking(true);
-    try {
-      const result = await presentPaywallIfNeeded();
-      if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
-        Alert.alert(t('profile.welcome_pro_title'), t('profile.welcome_pro_msg'));
-        onClose();
-      }
-    } catch (e) {
-      if (!isUserCancelledError(e)) {
-        Alert.alert(t('profile.purchase_failed'), t('profile.something_wrong'));
-      }
-    } finally {
-      setWorking(false);
-    }
-  }
+  const [selectedPlan, setSelectedPlan] = useState<'annual' | 'monthly'>('annual');
 
   async function handleManage() {
     try {
@@ -701,52 +446,91 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
             </View>
           </ScrollView>
         ) : (
-          <ScrollView className="flex-1">
-            <View className="mx-4 mt-6 rounded-2xl overflow-hidden shadow-sm">
-              <View className="px-5 py-5 items-center" style={{ backgroundColor: '#14532d' }}>
-                <View className="w-12 h-12 rounded-2xl bg-green-400/20 items-center justify-center mb-3">
-                  <Zap size={24} color="#4ade80" />
+          <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+            {/* ── Hero ── */}
+            <View className="mx-4 mt-6 rounded-2xl overflow-hidden" style={{ backgroundColor: '#052e16' }}>
+              <View className="px-5 pt-6 pb-5 items-center">
+                <View className="w-14 h-14 rounded-2xl bg-green-400/20 items-center justify-center mb-3">
+                  <Star size={28} color="#4ade80" fill="#4ade80" />
                 </View>
-                <Text className="text-white font-black text-base mb-1">{t('profile.unlock_pro')}</Text>
-                <Text className="text-white/60 text-xs text-center leading-relaxed mb-4">
-                  {t('profile.pro_subtitle')}
-                </Text>
+                <Text className="text-white font-black text-xl mb-1">{t('profile.pro_title')}</Text>
+                <Text className="text-white/60 text-xs text-center leading-relaxed">{t('profile.pro_subtitle')}</Text>
+              </View>
+            </View>
+
+            {/* ── Plan selector ── */}
+            <View className="mx-4 mt-4">
+              <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-2xl p-1 gap-1">
                 <TouchableOpacity
-                  onPress={handleUpgrade}
-                  disabled={working}
-                  className="w-full bg-green-400 rounded-xl py-3 items-center"
-                  activeOpacity={0.85}
+                  onPress={() => setSelectedPlan('annual')}
+                  activeOpacity={0.8}
+                  className={`flex-1 py-3.5 rounded-xl items-center ${selectedPlan === 'annual' ? 'bg-white dark:bg-gray-700' : ''}`}
+                  style={selectedPlan === 'annual' ? { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 } : {}}
                 >
-                  {working ? (
-                    <ActivityIndicator size="small" color="#052e16" />
-                  ) : (
-                    <Text className="text-green-950 font-black text-sm">{t('profile.upgrade_pro')}</Text>
-                  )}
+                  <Text className="text-[9px] font-black text-green-600 uppercase tracking-widest mb-0.5">Best Value · Save 50%</Text>
+                  <Text className={`text-xl font-black ${selectedPlan === 'annual' ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>$29.99</Text>
+                  <Text className={`text-xs mt-0.5 ${selectedPlan === 'annual' ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400'}`}>per year</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setSelectedPlan('monthly')}
+                  activeOpacity={0.8}
+                  className={`flex-1 py-3.5 rounded-xl items-center ${selectedPlan === 'monthly' ? 'bg-white dark:bg-gray-700' : ''}`}
+                  style={selectedPlan === 'monthly' ? { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 } : {}}
+                >
+                  <Text className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5"> </Text>
+                  <Text className={`text-xl font-black ${selectedPlan === 'monthly' ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>$4.99</Text>
+                  <Text className={`text-xs mt-0.5 ${selectedPlan === 'monthly' ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400'}`}>per month</Text>
                 </TouchableOpacity>
               </View>
-              <View className="bg-white px-5 py-3 border-t border-gray-50 dark:border-gray-900">
-                {([
-                  t('profile.pro_feature1'),
-                  t('profile.pro_feature2'),
-                  t('profile.pro_feature3'),
-                  t('profile.pro_feature4'),
-                ] as string[]).map(feat => (
-                  <View key={feat} className="flex-row items-center gap-2 py-1.5">
-                    <Star size={12} color="#16a34a" fill="#16a34a" />
-                    <Text className="text-xs text-gray-600">{feat}</Text>
+            </View>
+
+            {/* ── Features ── */}
+            <View className="mx-4 mt-3 bg-white dark:bg-gray-900 rounded-2xl px-5 py-4 border border-gray-100 dark:border-gray-800">
+              {([
+                t('profile.pro_feature1'),
+                t('profile.pro_feature2'),
+                t('profile.pro_feature3'),
+                t('profile.pro_feature4'),
+              ] as string[]).map(feat => (
+                <View key={feat} className="flex-row items-center gap-3 py-2">
+                  <View className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 items-center justify-center flex-shrink-0">
+                    <Check size={11} color="#16a34a" strokeWidth={3} />
                   </View>
-                ))}
-              </View>
+                  <Text className="text-sm text-gray-700 dark:text-gray-300 flex-1">{feat}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* ── CTA button ── */}
+            <View className="mx-4 mt-4">
               <TouchableOpacity
-                onPress={handleRestore}
-                disabled={working}
-                className="bg-white border-t border-gray-50 dark:border-gray-900 px-5 py-3 flex-row items-center justify-center gap-1.5"
-                activeOpacity={0.7}
+                onPress={() => Alert.alert('Coming Soon', 'In-app purchases will be available in the next update.')}
+                className="w-full bg-green-600 rounded-2xl py-4 items-center"
+                activeOpacity={0.85}
+                style={{ elevation: 4, shadowColor: '#16a34a', shadowOpacity: 0.3, shadowRadius: 8 }}
               >
-                <RotateCcw size={12} color="#9ca3af" />
-                <Text className="text-xs text-gray-400">{t('profile.restore_prev')}</Text>
+                <Text className="text-white font-black text-base">
+                  {selectedPlan === 'annual' ? 'Get Annual — $29.99/yr' : 'Get Monthly — $4.99/mo'}
+                </Text>
+                <Text className="text-white/70 text-xs mt-0.5">
+                  {selectedPlan === 'annual' ? 'Billed $29.99 once per year' : 'Billed $4.99 every month'}
+                </Text>
               </TouchableOpacity>
             </View>
+
+            {/* ── Restore ── */}
+            <TouchableOpacity
+              onPress={handleRestore}
+              disabled={working}
+              className="items-center py-4 mb-6"
+              activeOpacity={0.7}
+            >
+              {working ? (
+                <ActivityIndicator size="small" color="#9ca3af" />
+              ) : (
+                <Text className="text-xs text-gray-400">{t('profile.restore_prev')}</Text>
+              )}
+            </TouchableOpacity>
           </ScrollView>
         )}
       </SafeAreaView>
@@ -1682,7 +1466,7 @@ export default function ProfileScreen() {
       {/* ── Modals ── */}
       {showTerms ? <LegalSheet type="terms" onClose={() => setShowTerms(false)} /> : null}
       {showPrivacy ? <LegalSheet type="privacy" onClose={() => setShowPrivacy(false)} /> : null}
-      {showCategories ? <CategoryManagerSheet onClose={() => setShowCategories(false)} /> : null}
+      <CategoryManagerSheet visible={showCategories} onClose={() => setShowCategories(false)} />
       {showNotifications ? (
         <NotificationsSheet onClose={() => setShowNotifications(false)} />
       ) : null}

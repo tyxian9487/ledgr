@@ -12,7 +12,7 @@ import { useTourTarget } from '../../context/TourContext';
 const magnifierImg = require('../../assets/m_magnifier.png');
 import Svg, { Circle, Path, Line, Text as SvgText } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { TrendingUp, TrendingDown, Minus, ChevronRight, X } from 'lucide-react-native';
+import { TrendingUp, TrendingDown, Minus, ChevronLeft, ChevronRight, X } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
@@ -189,6 +189,8 @@ function CategoryModal({
   const dark = colorScheme === 'dark';
 
   const [period, setPeriod] = useState<Period>('monthly');
+  const now = new Date();
+  const [chartYear, setChartYear] = useState(now.getFullYear());
 
   const color = CATEGORY_COLORS[categoryId] || '#94a3b8';
   const rawKey = ('cat.' + categoryId) as any;
@@ -197,55 +199,58 @@ function CategoryModal({
     return tr !== rawKey ? tr : categoryId.charAt(0).toUpperCase() + categoryId.slice(1);
   })();
 
-  const now = new Date();
-
   const catTxs = useMemo(
     () => transactions.filter((tx) => tx.type === 'expense' && tx.category === categoryId && (!tx.isAutoDebit || new Date(tx.date) <= now)),
     [transactions, categoryId],
   );
 
+  // Earliest year that has data for this category (limits the year selector's back button)
+  const minYear = catTxs.length > 0
+    ? catTxs.reduce((min, tx) => Math.min(min, new Date(tx.date).getFullYear()), now.getFullYear())
+    : now.getFullYear();
+
   const points = useMemo((): { label: string; value: number }[] => {
     if (period === 'monthly') {
-      return Array.from({ length: 12 }, (_, i) => {
-        const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
-        const m = d.getMonth(), y = d.getFullYear();
+      // Show Jan–Dec of chartYear. For the current year cap at the current month.
+      const lastMonth = chartYear === now.getFullYear() ? now.getMonth() : 11;
+      return Array.from({ length: lastMonth + 1 }, (_, m) => {
         const val = catTxs.filter(tx => {
           const td = new Date(tx.date);
-          return td.getMonth() === m && td.getFullYear() === y;
+          return td.getMonth() === m && td.getFullYear() === chartYear;
         }).reduce((s, tx) => s + tx.amount, 0);
         return { label: t(`month.${MONTH_KEYS[m]}.short` as any), value: val };
       });
     }
     if (period === 'quarterly') {
-      return Array.from({ length: 8 }, (_, i) => {
-        const totalQ = (now.getFullYear() - 2020) * 4 + Math.floor(now.getMonth() / 3);
-        const qi = totalQ - 7 + i;
-        const year = 2020 + Math.floor(qi / 4);
-        const q = qi % 4;
+      // Show Q1–Q4 of chartYear. For the current year cap at the current quarter.
+      const lastQ = chartYear === now.getFullYear() ? Math.floor(now.getMonth() / 3) : 3;
+      return Array.from({ length: lastQ + 1 }, (_, q) => {
         const startM = q * 3, endM = startM + 2;
         const val = catTxs.filter(tx => {
           const td = new Date(tx.date);
-          return td.getFullYear() === year && td.getMonth() >= startM && td.getMonth() <= endM;
+          return td.getFullYear() === chartYear && td.getMonth() >= startM && td.getMonth() <= endM;
         }).reduce((s, tx) => s + tx.amount, 0);
-        return { label: `Q${q + 1} '${String(year).slice(2)}`, value: val };
+        return { label: `Q${q + 1}`, value: val };
       });
     }
-    // annually — last 5 years
+    // annually — last 5 years (no year selector)
     return Array.from({ length: 5 }, (_, i) => {
       const year = now.getFullYear() - 4 + i;
       const val = catTxs.filter(tx => new Date(tx.date).getFullYear() === year)
         .reduce((s, tx) => s + tx.amount, 0);
       return { label: String(year), value: val };
     });
-  }, [period, catTxs, t]);
+  }, [period, chartYear, catTxs, t]);
 
   const total = points.reduce((s, p) => s + p.value, 0);
   const nonZero = points.filter(p => p.value > 0);
   const avg = nonZero.length > 0 ? total / nonZero.length : 0;
   const highest = points.length > 0 ? points.reduce((a, b) => b.value > a.value ? b : a, points[0]) : null;
 
-  const periodLabel = period === 'monthly' ? t('trends.monthly')
-    : period === 'quarterly' ? t('trends.quarterly')
+  const periodLabel = period === 'monthly'
+    ? `${t('trends.monthly')} · ${chartYear}`
+    : period === 'quarterly'
+    ? `${t('trends.quarterly')} · ${chartYear}`
     : t('trends.annually');
 
   return (
@@ -279,7 +284,7 @@ function CategoryModal({
             {(['monthly', 'quarterly', 'annually'] as Period[]).map(p => (
               <TouchableOpacity
                 key={p}
-                onPress={() => setPeriod(p)}
+                onPress={() => { setPeriod(p); setChartYear(now.getFullYear()); }}
                 className={`flex-1 py-1.5 rounded-[10px] items-center ${period === p ? 'bg-white dark:bg-gray-700 shadow-sm' : ''}`}
               >
                 <Text className={`text-[11px] font-semibold ${
@@ -291,6 +296,31 @@ function CategoryModal({
             ))}
           </View>
         </View>
+
+        {/* Year selector — shown for monthly and quarterly views only */}
+        {period !== 'annually' && (
+          <View className="flex-row items-center justify-center gap-5 pt-3 pb-1">
+            <TouchableOpacity
+              onPress={() => setChartYear(y => y - 1)}
+              disabled={chartYear <= minYear}
+              className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
+              activeOpacity={0.7}
+            >
+              <ChevronLeft size={15} color={chartYear <= minYear ? '#d1d5db' : (dark ? '#9ca3af' : '#6b7280')} />
+            </TouchableOpacity>
+            <Text className="text-base font-bold text-gray-900 dark:text-white w-12 text-center">
+              {chartYear}
+            </Text>
+            <TouchableOpacity
+              onPress={() => setChartYear(y => y + 1)}
+              disabled={chartYear >= now.getFullYear()}
+              className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
+              activeOpacity={0.7}
+            >
+              <ChevronRight size={15} color={chartYear >= now.getFullYear() ? '#d1d5db' : (dark ? '#9ca3af' : '#6b7280')} />
+            </TouchableOpacity>
+          </View>
+        )}
 
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           {/* Line chart */}

@@ -71,6 +71,9 @@ export default function GoalCelebration({ goalName, totalAmount, color, isMonthl
                 >
                   <Text className="font-bold text-base" style={{ color }}>{t('goal.im_done')}</Text>
                 </TouchableOpacity>
+                <Text className="text-xs text-gray-400 dark:text-gray-500 text-center px-2">
+                  {t('cel.done_hint')}
+                </Text>
               </View>
             )}
           </View>
