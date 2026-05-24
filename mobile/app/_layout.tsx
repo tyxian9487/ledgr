@@ -1,5 +1,11 @@
 import '../global.css';
+import * as Sentry from '@sentry/react-native';
 import { Slot, useRouter, useSegments } from 'expo-router';
+
+const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN;
+if (SENTRY_DSN) {
+  Sentry.init({ dsn: SENTRY_DSN, enableNativeCrashHandling: true });
+}
 import React, { useEffect, useState, Component } from 'react';
 import { View, Text, ScrollView, Linking, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -43,16 +49,22 @@ function installGlobalErrorHandler() {
 installGlobalErrorHandler();
 
 // ── Error boundary + debug screen ─────────────────────────────────────────────
-interface EBState { reactError: Error | null; globalMsg: string; prevCrash: string }
+interface EBState { reactError: Error | null; globalMsg: string; prevCrash: string; resetKey: number }
 
 class AppErrorBoundary extends Component<{ children: React.ReactNode }, EBState> {
   constructor(props: { children: React.ReactNode }) {
     super(props);
-    this.state = { reactError: null, globalMsg: '', prevCrash: '' };
+    this.state = { reactError: null, globalMsg: '', prevCrash: '', resetKey: 0 };
   }
 
   static getDerivedStateFromError(error: Error) {
     return { reactError: error };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    if (SENTRY_DSN) {
+      Sentry.captureException(error, { contexts: { react: { componentStack: info.componentStack } } });
+    }
   }
 
   private async loadNativeCrash() {
@@ -118,8 +130,8 @@ class AppErrorBoundary extends Component<{ children: React.ReactNode }, EBState>
             <TouchableOpacity
               onPress={() => {
                 AsyncStorage.removeItem(CRASH_STORAGE_KEY).catch(() => {});
-                this.setState({ reactError: null, globalMsg: '', prevCrash: '' });
                 _globalCrashMsg = '';
+                this.setState(prev => ({ reactError: null, globalMsg: '', prevCrash: '', resetKey: prev.resetKey + 1 }));
               }}
               style={{ backgroundColor: '#dc2626', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 10 }}
             >
@@ -132,7 +144,7 @@ class AppErrorBoundary extends Component<{ children: React.ReactNode }, EBState>
 
     // No active crash — show previous session crash as a non-blocking banner
     return (
-      <>
+      <React.Fragment key={this.state.resetKey}>
         {this.props.children}
         {prevCrash ? (
           <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#1c1917', padding: 12, maxHeight: 180 }}>
@@ -152,7 +164,7 @@ class AppErrorBoundary extends Component<{ children: React.ReactNode }, EBState>
             </TouchableOpacity>
           </View>
         ) : null}
-      </>
+      </React.Fragment>
     );
   }
 }
