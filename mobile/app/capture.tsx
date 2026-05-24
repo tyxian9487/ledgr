@@ -28,21 +28,91 @@ interface ParsedReceipt {
 
 const PENDING_RECEIPT_KEY = 'kachingo_pending_receipt';
 
+const RECEIPT_SYSTEM_PROMPT = `You are a receipt and invoice parser. Extract transaction details from the provided image.
+
+Return ONLY a valid JSON object with no extra text, explanation, or markdown. Use exactly this structure:
+{
+  "type": "expense" or "income",
+  "amount": <number, the total amount paid>,
+  "category": <one of the category IDs listed below>,
+  "description": <short merchant name or item description, max 40 chars>
+}
+
+Expense category IDs (pick the closest match):
+food, transport, shopping, entertainment, health, housing, utilities, education, travel, personal, subscriptions, insurance, savings, investment, others
+
+Income category IDs:
+salary, freelance, business, gift, other_income
+
+Rules:
+- amount must be a plain number (e.g. 42.50), never a string
+- If the image is not a receipt or invoice, still return a best-effort guess with type "expense" and category "others"
+- description should be concise: merchant name or item (e.g. "Starbucks", "Grocery run", "Uber ride")`;
+
+function parseReceiptJson(text: string): ParsedReceipt {
+  try {
+    return JSON.parse(text.trim());
+  } catch {
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Could not parse receipt data');
+    return JSON.parse(match[0]);
+  }
+}
+
 async function parseReceiptWithClaude(base64: string, mediaType: string): Promise<ParsedReceipt> {
   const workerUrl = process.env.EXPO_PUBLIC_WORKER_URL;
-  if (!workerUrl) throw new Error('Receipt scanning is not configured for this build.');
+  const anthropicKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
 
-  const res = await fetch(`${workerUrl}/api/scan-receipt`, {
+  if (!workerUrl && !anthropicKey) {
+    throw new Error('Receipt scanning is not configured for this build.');
+  }
+
+  // ── Production path: proxy through Cloudflare Worker ──────────────────────
+  if (workerUrl) {
+    const res = await fetch(`${workerUrl}/api/scan-receipt`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ base64, mediaType }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as any).error || 'Scan failed');
+    }
+    return res.json();
+  }
+
+  // ── Development fallback: call Anthropic API directly ─────────────────────
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ base64, mediaType }),
+    headers: {
+      'x-api-key': anthropicKey!,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-4-7',
+      max_tokens: 512,
+      system: RECEIPT_SYSTEM_PROMPT,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+            { type: 'text', text: 'Extract the transaction details from this receipt and return JSON only.' },
+          ],
+        },
+      ],
+    }),
   });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error((err as any).error || 'Scan failed');
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as any)?.error?.message || `API error ${res.status}`);
   }
-  return res.json();
+
+  const data = await res.json();
+  const text: string = data?.content?.[0]?.text ?? '';
+  return parseReceiptJson(text);
 }
 
 export default function CaptureScreen() {
