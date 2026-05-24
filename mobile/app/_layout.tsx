@@ -187,6 +187,13 @@ function NavigationGuard() {
     }
   }, [isAuthenticated, isAuthInitialized, hasCompletedOnboarding, segments, router]);
 
+  // Block any content from rendering while auth state is being determined.
+  // Without this gate, Expo Router briefly renders the default route (home screen)
+  // before the redirect fires — giving unauthenticated users a flash of app content.
+  if (!isAuthInitialized) {
+    return <View style={{ flex: 1, backgroundColor: '#052e16' }} />;
+  }
+
   return <Slot />;
 }
 

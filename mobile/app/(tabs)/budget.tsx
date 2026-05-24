@@ -489,7 +489,7 @@ export default function BudgetScreen() {
                 <Text className="text-gray-400 font-semibold text-xl">{getCurrencySymbol()}</Text>
                 <TextInput
                   className="flex-1 text-xl font-bold text-gray-900 dark:text-white"
-                  placeholder="e.g. 5000"
+                  placeholder={t('budget.income_placeholder')}
                   placeholderTextColor="#d1d5db"
                   keyboardType="decimal-pad"
                   value={incomeInput}

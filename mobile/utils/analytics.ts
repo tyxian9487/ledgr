@@ -12,7 +12,7 @@ try {
   console.warn('[Analytics] mixpanel-react-native failed to load:', e);
 }
 
-const MIXPANEL_TOKEN = '7da9020d9537b75ac0595651281a8b99';
+const MIXPANEL_TOKEN = process.env.EXPO_PUBLIC_MIXPANEL_TOKEN ?? '';
 const USER_ID_KEY = 'kachingo_analytics_uid';
 
 let mp: Mixpanel | null = null;
@@ -26,7 +26,7 @@ async function getOrCreateUserId(): Promise<string> {
 }
 
 export async function initMixpanel(): Promise<void> {
-  if (mp || !MixpanelClass) return;
+  if (!MIXPANEL_TOKEN || mp || !MixpanelClass) return;
   const instance = new MixpanelClass(MIXPANEL_TOKEN, /* trackAutomaticEvents */ false);
   await instance.init();
   instance.registerSuperProperties({ platform: Platform.OS });

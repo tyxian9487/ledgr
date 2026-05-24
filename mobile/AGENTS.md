@@ -8,7 +8,7 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v54.0.0/ before 
 
 **SDK:** `mixpanel-react-native` v3.x (direct, no CDP)  
 **Platform:** React Native (iOS + Android)  
-**Token location:** hardcoded in `utils/analytics.ts` (`MIXPANEL_TOKEN`)  
+**Token location:** `EXPO_PUBLIC_MIXPANEL_TOKEN` env var, read in `utils/analytics.ts`  
 **Consent:** conservative gate — SDK never initialises until user taps "Accept" in `ConsentBanner`
 
 ### Tracking plan
