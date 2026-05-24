@@ -17,6 +17,8 @@ import {
 } from 'react-native';
 
 const happyMascotImg = require('../../assets/m_expression_happy.png');
+const winkMascotImg  = require('../../assets/m_expression_wink.png');
+const sadMascotImg   = require('../../assets/m_expression_sad.png');
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -1074,9 +1076,11 @@ export default function ProfileScreen() {
 
           {/* Score ring */}
           <View className="bg-white dark:bg-gray-900 rounded-2xl p-5 items-center gap-3 shadow-sm border border-gray-800 mb-3">
-            {score >= 80 && (
-              <Image source={happyMascotImg} style={{ width: 72, height: 72 }} resizeMode="contain" />
-            )}
+            <Image
+              source={score >= 80 ? happyMascotImg : score >= 60 ? winkMascotImg : sadMascotImg}
+              style={{ width: 72, height: 72 }}
+              resizeMode="contain"
+            />
             <ScoreRing score={score} onPress={() => setShowStatusCelebration(true)} />
             <View className="items-center">
               <Text className="font-bold text-base text-gray-900 dark:text-white">{scoreLabel}</Text>
