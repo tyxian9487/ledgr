@@ -293,7 +293,7 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
     };
 
     const task = InteractionManager.runAfterInteractions(() => {
-      setTimeout(() => measure(), options.scrollRef ? 650 : 250);
+      setTimeout(() => measure(), options.scrollRef ? 850 : 250);
     });
 
     return () => {

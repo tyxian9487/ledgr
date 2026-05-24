@@ -193,11 +193,12 @@ export default function HomeScreen() {
             onPrevMonth={prevMonth}
             onNextMonth={nextMonth}
             onYearChange={setViewYear}
+            statsRef={tourRefStats}
           />
         </View>
 
         {/* ── Goal Tracker Card ── */}
-        <View ref={tourRefStats} collapsable={false} style={{ marginHorizontal: 16 }}>
+        <View style={{ marginHorizontal: 16 }}>
           <GoalTrackerCard year={viewYear} month={viewMonth} />
         </View>
 
@@ -205,8 +206,8 @@ export default function HomeScreen() {
         <View className="mx-4 mt-4 gap-y-3">
           <View className="flex-row gap-3">
             {/* Add Transaction */}
+            <View ref={tourRefAddTx} collapsable={false} style={{ flex: 1 }}>
             <TouchableOpacity
-              ref={tourRefAddTx}
               onPress={() => setShowEntry(true)}
               activeOpacity={0.8}
               className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5"
@@ -218,6 +219,7 @@ export default function HomeScreen() {
                 {t('home.add_transaction')}
               </Text>
             </TouchableOpacity>
+            </View>
 
             {/* Budget status */}
             <TouchableOpacity
