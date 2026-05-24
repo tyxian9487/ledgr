@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput, Image,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -51,7 +51,6 @@ function translateCategoryLabel(
 export default function HomeScreen() {
   const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
-  const insets = useSafeAreaInsets();
   const now = new Date();
   const {
     transactions, budget, formatCurrency,
@@ -155,9 +154,9 @@ export default function HomeScreen() {
   }
 
   return (
-    <View
+    <SafeAreaView
       className="flex-1 bg-gray-50 dark:bg-gray-950"
-      style={{ paddingTop: Math.min(insets.top, 48) }}
+      edges={['top']}
     >
       <ScrollView ref={scrollRef} className="flex-1" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
@@ -527,6 +526,6 @@ export default function HomeScreen() {
           onClose={() => setViewMode('category')}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }

@@ -41,7 +41,7 @@ export async function getTranslationFunction(language?: string): Promise<(key: T
     // Use provided language or try to get user profile with language preference from the main app storage
     let targetLanguage = language;
     if (!targetLanguage) {
-      const raw = await AsyncStorage.getItem('expensewise_data');
+      const raw = await AsyncStorage.getItem('kachingo_data') ?? await AsyncStorage.getItem('expensewise_data');
       const blob = raw ? JSON.parse(raw) : {};
       targetLanguage = blob.userProfile?.language || 'en';
     }
