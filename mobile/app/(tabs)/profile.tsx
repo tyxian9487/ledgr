@@ -13,6 +13,7 @@ import {
   TextInput,
   ActivityIndicator,
   Image,
+  Linking,
 } from 'react-native';
 
 const happyMascotImg = require('../../assets/m_expression_happy.png');
@@ -46,11 +47,12 @@ import {
   Download,
   BarChart2,
   User,
+  Check,
+  ExternalLink,
 } from 'lucide-react-native';
-import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
-import { usePurchases, isUserCancelledError } from '../../context/PurchasesContext';
+import { usePurchases } from '../../context/PurchasesContext';
 import {
   CURRENCIES,
   LANGUAGES,
@@ -188,9 +190,21 @@ function LegalSheet({ type, onClose }: { type: 'terms' | 'privacy'; onClose: () 
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
         <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-          <Text className="text-lg font-bold text-gray-900 dark:text-white">
-            {type === 'terms' ? t('profile.terms') : t('profile.privacy')}
-          </Text>
+          <View>
+            <Text className="text-lg font-bold text-gray-900 dark:text-white">
+              {type === 'terms' ? t('profile.terms') : t('profile.privacy')}
+            </Text>
+            {type === 'privacy' && (
+              <TouchableOpacity
+                onPress={() => Linking.openURL(process.env.EXPO_PUBLIC_PRIVACY_URL ?? 'https://kachingo.app/privacy')}
+                className="flex-row items-center gap-1 mt-0.5"
+                activeOpacity={0.7}
+              >
+                <Text className="text-xs text-green-600 dark:text-green-400">View Online</Text>
+                <ExternalLink size={10} color="#16a34a" />
+              </TouchableOpacity>
+            )}
+          </View>
           <TouchableOpacity
             onPress={onClose}
             className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
@@ -334,27 +348,11 @@ function NotificationsSheet({ onClose }: { onClose: () => void }) {
 
 // ─── Subscription Sheet ───────────────────────────────────────────────────────
 function SubscriptionSheet({ onClose }: { onClose: () => void }) {
-  const { isPro, isLoading, presentPaywallIfNeeded, presentCustomerCenter, restorePurchases } =
+  const { isPro, isLoading, presentCustomerCenter, restorePurchases } =
     usePurchases();
   const { t } = useTranslation();
   const [working, setWorking] = useState(false);
-
-  async function handleUpgrade() {
-    setWorking(true);
-    try {
-      const result = await presentPaywallIfNeeded();
-      if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
-        Alert.alert(t('profile.welcome_pro_title'), t('profile.welcome_pro_msg'));
-        onClose();
-      }
-    } catch (e) {
-      if (!isUserCancelledError(e)) {
-        Alert.alert(t('profile.purchase_failed'), t('profile.something_wrong'));
-      }
-    } finally {
-      setWorking(false);
-    }
-  }
+  const [selectedPlan, setSelectedPlan] = useState<'annual' | 'monthly'>('annual');
 
   async function handleManage() {
     try {
@@ -448,52 +446,91 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
             </View>
           </ScrollView>
         ) : (
-          <ScrollView className="flex-1">
-            <View className="mx-4 mt-6 rounded-2xl overflow-hidden shadow-sm">
-              <View className="px-5 py-5 items-center" style={{ backgroundColor: '#14532d' }}>
-                <View className="w-12 h-12 rounded-2xl bg-green-400/20 items-center justify-center mb-3">
-                  <Zap size={24} color="#4ade80" />
+          <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+            {/* ── Hero ── */}
+            <View className="mx-4 mt-6 rounded-2xl overflow-hidden" style={{ backgroundColor: '#052e16' }}>
+              <View className="px-5 pt-6 pb-5 items-center">
+                <View className="w-14 h-14 rounded-2xl bg-green-400/20 items-center justify-center mb-3">
+                  <Star size={28} color="#4ade80" fill="#4ade80" />
                 </View>
-                <Text className="text-white font-black text-base mb-1">{t('profile.unlock_pro')}</Text>
-                <Text className="text-white/60 text-xs text-center leading-relaxed mb-4">
-                  {t('profile.pro_subtitle')}
-                </Text>
+                <Text className="text-white font-black text-xl mb-1">{t('profile.pro_title')}</Text>
+                <Text className="text-white/60 text-xs text-center leading-relaxed">{t('profile.pro_subtitle')}</Text>
+              </View>
+            </View>
+
+            {/* ── Plan selector ── */}
+            <View className="mx-4 mt-4">
+              <View className="flex-row bg-gray-100 dark:bg-gray-800 rounded-2xl p-1 gap-1">
                 <TouchableOpacity
-                  onPress={handleUpgrade}
-                  disabled={working}
-                  className="w-full bg-green-400 rounded-xl py-3 items-center"
-                  activeOpacity={0.85}
+                  onPress={() => setSelectedPlan('annual')}
+                  activeOpacity={0.8}
+                  className={`flex-1 py-3.5 rounded-xl items-center ${selectedPlan === 'annual' ? 'bg-white dark:bg-gray-700' : ''}`}
+                  style={selectedPlan === 'annual' ? { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 } : {}}
                 >
-                  {working ? (
-                    <ActivityIndicator size="small" color="#052e16" />
-                  ) : (
-                    <Text className="text-green-950 font-black text-sm">{t('profile.upgrade_pro')}</Text>
-                  )}
+                  <Text className="text-[9px] font-black text-green-600 uppercase tracking-widest mb-0.5">Best Value · Save 50%</Text>
+                  <Text className={`text-xl font-black ${selectedPlan === 'annual' ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>$29.99</Text>
+                  <Text className={`text-xs mt-0.5 ${selectedPlan === 'annual' ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400'}`}>per year</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setSelectedPlan('monthly')}
+                  activeOpacity={0.8}
+                  className={`flex-1 py-3.5 rounded-xl items-center ${selectedPlan === 'monthly' ? 'bg-white dark:bg-gray-700' : ''}`}
+                  style={selectedPlan === 'monthly' ? { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 } : {}}
+                >
+                  <Text className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5"> </Text>
+                  <Text className={`text-xl font-black ${selectedPlan === 'monthly' ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>$4.99</Text>
+                  <Text className={`text-xs mt-0.5 ${selectedPlan === 'monthly' ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400'}`}>per month</Text>
                 </TouchableOpacity>
               </View>
-              <View className="bg-white px-5 py-3 border-t border-gray-50 dark:border-gray-900">
-                {([
-                  t('profile.pro_feature1'),
-                  t('profile.pro_feature2'),
-                  t('profile.pro_feature3'),
-                  t('profile.pro_feature4'),
-                ] as string[]).map(feat => (
-                  <View key={feat} className="flex-row items-center gap-2 py-1.5">
-                    <Star size={12} color="#16a34a" fill="#16a34a" />
-                    <Text className="text-xs text-gray-600">{feat}</Text>
+            </View>
+
+            {/* ── Features ── */}
+            <View className="mx-4 mt-3 bg-white dark:bg-gray-900 rounded-2xl px-5 py-4 border border-gray-100 dark:border-gray-800">
+              {([
+                t('profile.pro_feature1'),
+                t('profile.pro_feature2'),
+                t('profile.pro_feature3'),
+                t('profile.pro_feature4'),
+              ] as string[]).map(feat => (
+                <View key={feat} className="flex-row items-center gap-3 py-2">
+                  <View className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 items-center justify-center flex-shrink-0">
+                    <Check size={11} color="#16a34a" strokeWidth={3} />
                   </View>
-                ))}
-              </View>
+                  <Text className="text-sm text-gray-700 dark:text-gray-300 flex-1">{feat}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* ── CTA button ── */}
+            <View className="mx-4 mt-4">
               <TouchableOpacity
-                onPress={handleRestore}
-                disabled={working}
-                className="bg-white border-t border-gray-50 dark:border-gray-900 px-5 py-3 flex-row items-center justify-center gap-1.5"
-                activeOpacity={0.7}
+                onPress={() => Alert.alert('Coming Soon', 'In-app purchases will be available in the next update.')}
+                className="w-full bg-green-600 rounded-2xl py-4 items-center"
+                activeOpacity={0.85}
+                style={{ elevation: 4, shadowColor: '#16a34a', shadowOpacity: 0.3, shadowRadius: 8 }}
               >
-                <RotateCcw size={12} color="#9ca3af" />
-                <Text className="text-xs text-gray-400">{t('profile.restore_prev')}</Text>
+                <Text className="text-white font-black text-base">
+                  {selectedPlan === 'annual' ? 'Get Annual — $29.99/yr' : 'Get Monthly — $4.99/mo'}
+                </Text>
+                <Text className="text-white/70 text-xs mt-0.5">
+                  {selectedPlan === 'annual' ? 'Billed $29.99 once per year' : 'Billed $4.99 every month'}
+                </Text>
               </TouchableOpacity>
             </View>
+
+            {/* ── Restore ── */}
+            <TouchableOpacity
+              onPress={handleRestore}
+              disabled={working}
+              className="items-center py-4 mb-6"
+              activeOpacity={0.7}
+            >
+              {working ? (
+                <ActivityIndicator size="small" color="#9ca3af" />
+              ) : (
+                <Text className="text-xs text-gray-400">{t('profile.restore_prev')}</Text>
+              )}
+            </TouchableOpacity>
           </ScrollView>
         )}
       </SafeAreaView>

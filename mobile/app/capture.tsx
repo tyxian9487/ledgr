@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
   StyleSheet,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -242,9 +243,18 @@ export default function CaptureScreen() {
             <Text className="text-white font-bold">{t('camera.allow_camera')}</Text>
           </TouchableOpacity>
         ) : (
-          <Text className="text-white/60 text-sm text-center mb-8">
-            {t('camera.permission_denied_desc')}
-          </Text>
+          <>
+            <Text className="text-white/60 text-sm text-center mb-5">
+              {t('camera.permission_denied_desc')}
+            </Text>
+            <TouchableOpacity
+              onPress={() => Linking.openSettings()}
+              className="w-full py-4 rounded-2xl bg-white/15 border border-white/20 items-center mb-3"
+              activeOpacity={0.8}
+            >
+              <Text className="text-white font-semibold">Open Settings</Text>
+            </TouchableOpacity>
+          </>
         )}
         <TouchableOpacity
           onPress={pickFromGallery}
