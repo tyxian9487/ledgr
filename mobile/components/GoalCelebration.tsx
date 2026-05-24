@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Modal, View, Text, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { playRewardSound } from '../utils/sounds';
 import { useTranslation } from '../context/LanguageContext';
 
@@ -16,6 +17,7 @@ interface Props {
 
 export default function GoalCelebration({ goalName, totalAmount, color, isMonthly, onContinue, onDone, onClose, formatCurrency }: Props) {
   const { t } = useTranslation();
+  const { bottom } = useSafeAreaInsets();
 
   useEffect(() => {
     playRewardSound();
@@ -28,7 +30,7 @@ export default function GoalCelebration({ goalName, totalAmount, color, isMonthl
           {/* Color stripe */}
           <View style={{ height: 5, backgroundColor: color }} />
 
-          <View className="px-6 pt-7 pb-10 items-center">
+          <View className="px-6 pt-7 items-center" style={{ paddingBottom: Math.max(40, bottom + 24) }}>
             {/* Big emoji */}
             <View
               className="w-20 h-20 rounded-full items-center justify-center mb-4"

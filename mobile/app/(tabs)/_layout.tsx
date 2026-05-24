@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router';
 import { Home, PieChart, TrendingUp, User } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from '../../context/LanguageContext';
 
 export default function TabLayout() {
@@ -11,6 +12,8 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
 
   return (
+    <>
+    <StatusBar style={dark ? 'light' : 'dark'} />
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -53,5 +56,6 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </>
   );
 }

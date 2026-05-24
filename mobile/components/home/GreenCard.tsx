@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, RefObject } from 'react';
 import { Alert, View, Text, TouchableOpacity } from 'react-native';
 import Svg, { Circle, Circle as SvgCircle, Path, Text as SvgText } from 'react-native-svg';
 import { ChevronLeft, ChevronRight, ChevronDown, Share2, ArrowLeftRight } from 'lucide-react-native';
@@ -14,6 +14,7 @@ interface Props {
   onPrevMonth: () => void;
   onNextMonth: () => void;
   onYearChange?: (year: number) => void;
+  statsRef?: RefObject<View>;
 }
 
 const MONTH_KEYS = [
@@ -140,7 +141,7 @@ const STATUS_CONFIG = {
   critical:  { Coin: CopperCoin, textColor: '#f97316', score: '<60' },
 } as const;
 
-export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYearChange }: Props) {
+export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYearChange, statsRef }: Props) {
   const { getMonthTransactions, getMonthIncome, getMonthExpenses, formatCurrency } = useApp();
   const { t } = useTranslation();
   const shareCardRef = useRef<View>(null);
@@ -331,7 +332,7 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
       </View>
 
       {/* Income / Remaining row */}
-      <View className="mx-4 mb-4 flex-row gap-3">
+      <View ref={statsRef} collapsable={false} className="mx-4 mb-4 flex-row gap-3">
         <TouchableOpacity
           className="flex-1 bg-white/15 rounded-2xl p-3"
           onPress={() => { setShowIncome(v => !v); setSelectedSliceId(null); }}

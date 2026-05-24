@@ -8,6 +8,8 @@ import {
   ScrollView,
   Switch,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useColorScheme } from 'nativewind';
 import { X, Plus, Trash2, Edit2, Check } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../context/LanguageContext';
@@ -31,18 +33,17 @@ interface AddFormState {
   type: Tab;
 }
 
-const DEFAULT_FORM: AddFormState = { label: '', icon: 'Star', color: '#f97316', type: 'expense' };
+// ─── Edit Form (for editing existing custom categories) ───────────────────────
 
-// ─── Inner Edit Form ──────────────────────────────────────────────────────────
-
-interface AddFormProps {
+interface EditFormProps {
   initial: AddFormState;
   onSave: (data: Omit<CustomCategory, 'id'>) => void;
   onCancel: () => void;
 }
 
-function EditCategoryForm({ initial, onSave, onCancel }: AddFormProps) {
+function EditCategoryForm({ initial, onSave, onCancel }: EditFormProps) {
   const { t } = useTranslation();
+  const { bottom } = useSafeAreaInsets();
   const [form, setForm] = useState<AddFormState>(initial);
 
   return (
@@ -158,8 +159,11 @@ function EditCategoryForm({ initial, onSave, onCancel }: AddFormProps) {
         </View>
       </ScrollView>
 
-      {/* Save button */}
-      <View className="px-5 pt-3 pb-8 border-t border-gray-100 dark:border-gray-800">
+      {/* Save button — safe-area aware */}
+      <View
+        className="px-5 pt-3 border-t border-gray-100 dark:border-gray-800"
+        style={{ paddingBottom: Math.max(24, bottom + 8) }}
+      >
         <TouchableOpacity
           onPress={() =>
             onSave({ label: form.label.trim(), icon: form.icon, color: form.color, type: form.type })
@@ -190,17 +194,28 @@ export default function CategoryManagerSheet({ visible, onClose }: Props) {
     toggleCategoryEnabled,
   } = useApp();
   const { t } = useTranslation();
+  const { bottom } = useSafeAreaInsets();
+  const { colorScheme } = useColorScheme();
+  const dark = colorScheme === 'dark';
 
+  const [activeTab, setActiveTab] = useState<Tab>('expense');
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<CustomCategory | null>(null);
+  const [deletingCat, setDeletingCat] = useState<CustomCategory | null>(null);
 
-  const expenseCustoms = customCategories.filter(c => c.type === 'expense');
-  const incomeCustoms = customCategories.filter(c => c.type === 'income');
+  const builtins = activeTab === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+  const customs = customCategories.filter(c => c.type === activeTab);
 
   function handleSaveEdit(data: Omit<CustomCategory, 'id'>) {
     if (!editing) return;
     updateCustomCategory(editing.id, data);
     setEditing(null);
+  }
+
+  function confirmDelete() {
+    if (!deletingCat) return;
+    removeCustomCategory(deletingCat.id);
+    setDeletingCat(null);
   }
 
   function BuiltinRow({ cat }: { cat: typeof EXPENSE_CATEGORIES[0] }) {
@@ -237,7 +252,7 @@ export default function CategoryManagerSheet({ visible, onClose }: Props) {
           <Edit2 size={12} color="#3b82f6" />
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => removeCustomCategory(cat.id)}
+          onPress={() => setDeletingCat(cat)}
           className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/20 items-center justify-center"
         >
           <Trash2 size={12} color="#ef4444" />
@@ -246,10 +261,17 @@ export default function CategoryManagerSheet({ visible, onClose }: Props) {
     );
   }
 
+  // Colors for the delete confirmation dialog (inline styles, no className inside Modal)
+  const dlgBg     = dark ? '#1f2937' : '#ffffff';
+  const dlgBorder = dark ? '#374151' : '#e5e7eb';
+  const dlgText   = dark ? '#f9fafb' : '#111827';
+  const dlgSub    = dark ? '#9ca3af' : '#6b7280';
+
   return (
     <>
+      {/* ── Main manager sheet ── */}
       <Modal
-        visible={visible && !editing}
+        visible={visible && !editing && !adding}
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={onClose}
@@ -271,46 +293,56 @@ export default function CategoryManagerSheet({ visible, onClose }: Props) {
             </TouchableOpacity>
           </View>
 
-          {/* Category list — expense section then income section */}
+          {/* Expense / Income tab switcher */}
+          <View className="flex-row mx-5 mb-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-0.5 gap-0.5">
+            {(['expense', 'income'] as Tab[]).map(tab => (
+              <TouchableOpacity
+                key={tab}
+                onPress={() => setActiveTab(tab)}
+                className={`flex-1 py-2 rounded-[10px] items-center ${
+                  activeTab === tab
+                    ? tab === 'expense' ? 'bg-red-500' : 'bg-green-600'
+                    : ''
+                }`}
+              >
+                <Text className={`text-sm font-semibold ${activeTab === tab ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                  {tab === 'expense' ? t('common.expense') : t('common.income')}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Category list */}
           <ScrollView
             className="flex-1"
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 16 }}
           >
-            {/* ── Expenses ── */}
-            <Text className="text-[10px] font-bold text-red-400 dark:text-red-500 uppercase tracking-wider px-5 pt-3 pb-2">
-              {t('common.expense')}
+            {/* Built-in section */}
+            <Text className={`text-[10px] font-bold uppercase tracking-wider px-5 pt-3 pb-2 ${
+              activeTab === 'expense' ? 'text-red-400 dark:text-red-500' : 'text-green-500 dark:text-green-600'
+            }`}>
+              {t('catmgr.builtin')}
             </Text>
-            {EXPENSE_CATEGORIES.map(cat => <BuiltinRow key={cat.id} cat={cat} />)}
-            {expenseCustoms.length > 0 && (
+            {builtins.map(cat => <BuiltinRow key={cat.id} cat={cat} />)}
+
+            {/* Custom section */}
+            {customs.length > 0 && (
               <>
-                <Text className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-5 pt-4 pb-2">
+                <View className="mx-5 my-3 border-t border-gray-100 dark:border-gray-800" />
+                <Text className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-5 pb-2">
                   {t('catmgr.my_cats')}
                 </Text>
-                {expenseCustoms.map(cat => <CustomRow key={cat.id} cat={cat} />)}
-              </>
-            )}
-
-            {/* Divider */}
-            <View className="mx-5 my-3 border-t border-gray-100 dark:border-gray-800" />
-
-            {/* ── Income ── */}
-            <Text className="text-[10px] font-bold text-green-500 dark:text-green-600 uppercase tracking-wider px-5 pb-2">
-              {t('common.income')}
-            </Text>
-            {INCOME_CATEGORIES.map(cat => <BuiltinRow key={cat.id} cat={cat} />)}
-            {incomeCustoms.length > 0 && (
-              <>
-                <Text className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-wider px-5 pt-4 pb-2">
-                  {t('catmgr.my_cats')}
-                </Text>
-                {incomeCustoms.map(cat => <CustomRow key={cat.id} cat={cat} />)}
+                {customs.map(cat => <CustomRow key={cat.id} cat={cat} />)}
               </>
             )}
           </ScrollView>
 
-          {/* Add button */}
-          <View className="px-5 pt-3 pb-8 border-t border-gray-100 dark:border-gray-800">
+          {/* Add custom category button — safe-area aware */}
+          <View
+            className="px-5 pt-3 border-t border-gray-100 dark:border-gray-800"
+            style={{ paddingBottom: Math.max(24, bottom + 8) }}
+          >
             <TouchableOpacity
               onPress={() => setAdding(true)}
               className="w-full py-3.5 rounded-2xl border-2 border-dashed border-green-300 dark:border-green-800 flex-row items-center justify-center gap-2"
@@ -320,17 +352,57 @@ export default function CategoryManagerSheet({ visible, onClose }: Props) {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Delete confirmation — rendered inside the pageSheet so it overlays it */}
+        <Modal
+          visible={!!deletingCat}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setDeletingCat(null)}
+        >
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.45)' }}>
+            <View style={{
+              width: '86%',
+              backgroundColor: dlgBg,
+              borderRadius: 14,
+              padding: 18,
+              borderWidth: 1,
+              borderColor: dlgBorder,
+            }}>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: dlgText, marginBottom: 8 }}>
+                {t('catmgr.delete_title')}
+              </Text>
+              <Text style={{ fontSize: 14, color: dlgSub, marginBottom: 14 }}>
+                {deletingCat ? `"${deletingCat.label}" — ${t('catmgr.delete_confirm')}` : ''}
+              </Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+                <TouchableOpacity
+                  onPress={() => setDeletingCat(null)}
+                  style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 }}
+                >
+                  <Text style={{ color: dlgSub }}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={confirmDelete}
+                  style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 }}
+                >
+                  <Text style={{ color: '#ef4444', fontWeight: '700' }}>{t('common.delete')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </Modal>
 
-      {/* Add category — same QuickAddCategorySheet as in the add-transaction flow */}
+      {/* ── Add new category — uses QuickAddCategorySheet (same as add-transaction flow) ── */}
       <QuickAddCategorySheet
         visible={adding}
-        defaultType="expense"
+        defaultType={activeTab}
         onSave={() => setAdding(false)}
         onClose={() => setAdding(false)}
       />
 
-      {/* Edit category — separate modal on top */}
+      {/* ── Edit existing custom category ── */}
       <Modal
         visible={!!editing}
         animationType="slide"
