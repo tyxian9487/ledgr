@@ -17,12 +17,13 @@ import CategoryIcon, { CategoryIconRaw } from './home/CategoryIcon';
 interface Props {
   visible: boolean;
   defaultType: 'expense' | 'income';
+  editMode?: CustomCategory;
   onSave: (cat: CustomCategory) => void;
   onClose: () => void;
 }
 
-export default function QuickAddCategorySheet({ visible, defaultType, onSave, onClose }: Props) {
-  const { addCustomCategory } = useApp();
+export default function QuickAddCategorySheet({ visible, defaultType, editMode, onSave, onClose }: Props) {
+  const { addCustomCategory, updateCustomCategory } = useApp();
   const { t } = useTranslation();
   const { bottom } = useSafeAreaInsets();
 
@@ -31,20 +32,31 @@ export default function QuickAddCategorySheet({ visible, defaultType, onSave, on
   const [icon, setIcon] = useState('Star');
   const [color, setColor] = useState('#f97316');
 
-  // Reset form each time the sheet opens
   useEffect(() => {
     if (visible) {
-      setType(defaultType);
-      setLabel('');
-      setIcon('Star');
-      setColor('#f97316');
+      if (editMode) {
+        setType(editMode.type);
+        setLabel(editMode.label);
+        setIcon(editMode.icon);
+        setColor(editMode.color);
+      } else {
+        setType(defaultType);
+        setLabel('');
+        setIcon('Star');
+        setColor('#f97316');
+      }
     }
-  }, [visible, defaultType]);
+  }, [visible, defaultType, editMode]);
 
   function handleSave() {
     if (!label.trim()) return;
-    const newCat = addCustomCategory({ label: label.trim(), icon, color, type });
-    onSave(newCat);
+    if (editMode) {
+      updateCustomCategory(editMode.id, { label: label.trim(), icon, color, type });
+      onSave({ ...editMode, label: label.trim(), icon, color, type });
+    } else {
+      const newCat = addCustomCategory({ label: label.trim(), icon, color, type });
+      onSave(newCat);
+    }
   }
 
   return (
@@ -62,7 +74,9 @@ export default function QuickAddCategorySheet({ visible, defaultType, onSave, on
 
         {/* Header */}
         <View className="flex-row items-center justify-between px-5 pt-2 pb-3 border-b border-gray-100 dark:border-gray-800">
-          <Text className="text-base font-bold text-gray-900 dark:text-white">{t('catmgr.new')}</Text>
+          <Text className="text-base font-bold text-gray-900 dark:text-white">
+            {editMode ? t('catmgr.edit') : t('catmgr.new')}
+          </Text>
           <TouchableOpacity
             onPress={onClose}
             className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
