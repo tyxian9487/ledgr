@@ -222,8 +222,8 @@ export default function HomeScreen() {
             </View>
 
             {/* Budget status */}
+            <View ref={tourRefBudgetBtn} collapsable={false} style={{ flex: 1 }}>
             <TouchableOpacity
-              ref={tourRefBudgetBtn}
               onPress={() => router.push('/(tabs)/budget')}
               activeOpacity={0.8}
               className={`flex-1 rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5 ${
@@ -263,6 +263,7 @@ export default function HomeScreen() {
                   : <TrendingUp size={14} color="#22c55e" />
               )}
             </TouchableOpacity>
+            </View>
           </View>
 
           {/* Search + Filter row */}
