@@ -13,7 +13,7 @@ export default function TabLayout() {
 
   return (
     <>
-    <StatusBar style={dark ? 'light' : 'dark'} />
+    <StatusBar style={dark ? 'light' : 'dark'} translucent={true} />
     <Tabs
       screenOptions={{
         headerShown: false,

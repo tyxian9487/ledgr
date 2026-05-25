@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, Image,
+  View, Text, ScrollView, TouchableOpacity, TextInput, Image, InteractionManager,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -77,8 +77,8 @@ export default function HomeScreen() {
   // Always scrolling to top on focus ensures layout is correct after returning from
   // the capture page (which can disturb Android window-inset state).
   useFocusEffect(useCallback(() => {
-    // Defer until after the navigation animation so the layout is stable
-    const handle = requestAnimationFrame(() => {
+    // Defer until all animations complete so the layout is stable
+    const task = InteractionManager.runAfterInteractions(() => {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
     });
     const PENDING_KEY = 'kachingo_pending_receipt';
@@ -91,7 +91,7 @@ export default function HomeScreen() {
         setShowEntry(true);
       } catch {}
     });
-    return () => cancelAnimationFrame(handle);
+    return () => task.cancel();
   }, []));
 
   const [showSearch, setShowSearch] = useState(false);

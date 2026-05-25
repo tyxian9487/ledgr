@@ -13,6 +13,7 @@ if (SENTRY_DSN) {
   });
 }
 import React, { useEffect, useState, Component } from 'react';
+import { StatusBar as RootStatusBar } from 'expo-status-bar';
 import { View, Text, ScrollView, Linking, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -286,6 +287,7 @@ export default function RootLayout() {
             <AppProvider>
               <TourProvider>
                 <LanguageProvider>
+                  <RootStatusBar translucent={true} />
                   <OAuthCallbackHandler />
                   <DarkModeBridge />
                   <EntitlementSyncBridge />
