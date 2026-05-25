@@ -8,6 +8,8 @@ import {
   Alert,
   StyleSheet,
   Linking,
+  Platform,
+  StatusBar as RNStatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -124,7 +126,15 @@ export default function CaptureScreen() {
 
   useFocusEffect(useCallback(() => {
     setIsCameraActive(true);
-    return () => setIsCameraActive(false);
+    return () => {
+      setIsCameraActive(false);
+      // Restore translucent (edge-to-edge) mode so SafeAreaProvider
+      // reports stable insets on all tab screens after leaving camera.
+      if (Platform.OS === 'android') {
+        RNStatusBar.setTranslucent(true);
+        RNStatusBar.setBackgroundColor('transparent', false);
+      }
+    };
   }, []));
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
 
@@ -232,7 +242,7 @@ export default function CaptureScreen() {
   if (!cameraPermission.granted) {
     return (
       <SafeAreaView className="flex-1 bg-black items-center justify-center px-8">
-        <StatusBar style="light" />
+        <StatusBar style="light" translucent={true} />
         <Camera size={48} color="rgba(255,255,255,0.6)" />
         <Text className="text-white font-semibold text-lg text-center mt-4 mb-2">
           {t('camera.permission_title')}
@@ -280,7 +290,7 @@ export default function CaptureScreen() {
   if (stage === 'review' && parsed) {
     return (
       <SafeAreaView className="flex-1 bg-black">
-        <StatusBar style="light" />
+        <StatusBar style="light" translucent={true} />
         {/* Header */}
         <View className="flex-row items-center justify-between px-5 py-4">
           <TouchableOpacity
@@ -364,7 +374,7 @@ export default function CaptureScreen() {
   if (stage === 'processing') {
     return (
       <SafeAreaView className="flex-1 bg-black items-center justify-center gap-5">
-        <StatusBar style="light" />
+        <StatusBar style="light" translucent={true} />
         {capturedUri ? (
           <Image
             source={{ uri: capturedUri }}
@@ -383,7 +393,7 @@ export default function CaptureScreen() {
   // ── Preview / camera stage ─────────────────────────────────────────────────
   return (
     <View style={{ flex: 1, backgroundColor: '#000' }}>
-      <StatusBar style="light" />
+      <StatusBar style="light" translucent={true} />
       {/* Camera viewfinder — use style prop directly, not className, for native view sizing */}
       {/* Only mount CameraView while this screen is focused so it releases the */}
       {/* camera surface and window-inset state cleanly during the back transition. */}
