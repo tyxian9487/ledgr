@@ -64,11 +64,6 @@ function parseReceiptJson(text: string): ParsedReceipt {
 
 async function parseReceiptWithClaude(base64: string, mediaType: string): Promise<ParsedReceipt> {
   const workerUrl = process.env.EXPO_PUBLIC_WORKER_URL;
-  const anthropicKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
-
-  if (!workerUrl && !anthropicKey) {
-    throw new Error('Receipt scanning is not configured for this build.');
-  }
 
   // ── Production path: proxy through Cloudflare Worker ──────────────────────
   if (workerUrl) {
@@ -85,6 +80,15 @@ async function parseReceiptWithClaude(base64: string, mediaType: string): Promis
   }
 
   // ── Development fallback: call Anthropic API directly ─────────────────────
+  // Blocked in production to prevent API key exposure in the app bundle.
+  if (!__DEV__) {
+    throw new Error('Receipt scanning is not configured for this build.');
+  }
+  const anthropicKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
+  if (!anthropicKey) {
+    throw new Error('Receipt scanning is not configured for this build.');
+  }
+
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
