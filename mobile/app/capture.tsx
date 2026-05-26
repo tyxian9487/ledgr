@@ -247,7 +247,11 @@ export default function CaptureScreen() {
     return (
       <SafeAreaView className="flex-1 bg-black items-center justify-center px-8">
         <StatusBar style="light" translucent={true} />
-        <Camera size={48} color="rgba(255,255,255,0.6)" />
+        <Image
+          source={require('../assets/m_receipt.png')}
+          style={{ width: 120, height: 120 }}
+          resizeMode="contain"
+        />
         <Text className="text-white font-semibold text-lg text-center mt-4 mb-2">
           {t('camera.permission_title')}
         </Text>
