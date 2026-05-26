@@ -64,11 +64,6 @@ function parseReceiptJson(text: string): ParsedReceipt {
 
 async function parseReceiptWithClaude(base64: string, mediaType: string): Promise<ParsedReceipt> {
   const workerUrl = process.env.EXPO_PUBLIC_WORKER_URL;
-  const anthropicKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
-
-  if (!workerUrl && !anthropicKey) {
-    throw new Error('Receipt scanning is not configured for this build.');
-  }
 
   // ── Production path: proxy through Cloudflare Worker ──────────────────────
   if (workerUrl) {
@@ -85,6 +80,15 @@ async function parseReceiptWithClaude(base64: string, mediaType: string): Promis
   }
 
   // ── Development fallback: call Anthropic API directly ─────────────────────
+  // Blocked in production to prevent API key exposure in the app bundle.
+  if (!__DEV__) {
+    throw new Error('Receipt scanning is not configured for this build.');
+  }
+  const anthropicKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
+  if (!anthropicKey) {
+    throw new Error('Receipt scanning is not configured for this build.');
+  }
+
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -243,7 +247,11 @@ export default function CaptureScreen() {
     return (
       <SafeAreaView className="flex-1 bg-black items-center justify-center px-8">
         <StatusBar style="light" translucent={true} />
-        <Camera size={48} color="rgba(255,255,255,0.6)" />
+        <Image
+          source={require('../assets/m_receipt.png')}
+          style={{ width: 120, height: 120 }}
+          resizeMode="contain"
+        />
         <Text className="text-white font-semibold text-lg text-center mt-4 mb-2">
           {t('camera.permission_title')}
         </Text>
