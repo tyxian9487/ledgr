@@ -20,6 +20,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { AppProvider, useApp } from '../context/AppContext';
 import { LanguageProvider } from '../context/LanguageContext';
 import { PurchasesProvider, usePurchases } from '../context/PurchasesContext';
+import { PaywallProvider } from '../context/PaywallContext';
 import { TourProvider } from '../context/TourContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -284,6 +285,7 @@ export default function RootLayout() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <PurchasesProvider>
+            <PaywallProvider>
             <AppProvider>
               <TourProvider>
                 <LanguageProvider>
@@ -299,6 +301,7 @@ export default function RootLayout() {
                 </LanguageProvider>
               </TourProvider>
             </AppProvider>
+            </PaywallProvider>
           </PurchasesProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>

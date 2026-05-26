@@ -20,6 +20,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RefreshCw, Calendar, Plus, X, ChevronDown, ChevronUp, Image as ImageIcon } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
+import { usePurchases } from '../../context/PurchasesContext';
+import { usePaywall } from '../../context/PaywallContext';
 import { TransactionType, AutoDebitPeriod, CustomCategory } from '../../types';
 import CategoryIcon from './CategoryIcon';
 import QuickAddCategorySheet from '../QuickAddCategorySheet';
@@ -206,8 +208,10 @@ function CalendarDateModal({
 }
 
 export default function ManualEntryModal({ visible, onClose, transactionId, prefill }: Props) {
-  const { addTransaction, updateTransaction, getCurrencySymbol, expenseCategories, incomeCategories, budget, updateCustomGoal } = useApp();
+  const { addTransaction, updateTransaction, getCurrencySymbol, expenseCategories, incomeCategories, budget, updateCustomGoal, transactions } = useApp();
   const { t } = useTranslation();
+  const { isPro } = usePurchases();
+  const { showPaywall } = usePaywall();
   const insets = useSafeAreaInsets();
 
   const PERIODS: { value: AutoDebitPeriod; label: string }[] = [
@@ -312,6 +316,17 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
     if (transactionId) {
       updateTransaction(transactionId, data);
     } else {
+      if (!isPro) {
+        const now = new Date();
+        const monthCount = transactions.filter(tx => {
+          const d = new Date(tx.date);
+          return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+        }).length;
+        if (monthCount >= 50) {
+          showPaywall();
+          return;
+        }
+      }
       addTransaction(data);
       playCoinSound();
       if (category === 'savings' && linkedGoalId && linkedGoalId !== '__monthly__') {

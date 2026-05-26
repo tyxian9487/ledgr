@@ -11,6 +11,8 @@ import {
 } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
+import { usePurchases } from '../../context/PurchasesContext';
+import { usePaywall } from '../../context/PaywallContext';
 import { useTourTarget } from '../../context/TourContext';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, Transaction } from '../../types';
 import GreenCard from '../../components/home/GreenCard';
@@ -57,6 +59,8 @@ export default function HomeScreen() {
     getMonthExpenses, userProfile,
   } = useApp();
   const { t } = useTranslation();
+  const { isPro } = usePurchases();
+  const { showPaywall } = usePaywall();
 
   // Tour target refs
   const tourRefGreenCard = useTourTarget('home-green-card', { scrollRef, scrollY: 0 });
@@ -514,7 +518,7 @@ export default function HomeScreen() {
       {/* ── Camera FAB ── */}
       <View ref={tourRefCapture} collapsable={false} className="absolute bottom-6 right-5">
         <TouchableOpacity
-          onPress={() => router.push('/capture')}
+          onPress={() => { if (!isPro) { showPaywall(); return; } router.push('/capture'); }}
           className="w-14 h-14 bg-green-600 rounded-full items-center justify-center shadow-lg"
           activeOpacity={0.85}
           style={{ elevation: 6 }}

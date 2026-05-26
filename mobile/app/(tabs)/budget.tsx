@@ -40,6 +40,8 @@ import {
 } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
+import { usePurchases } from '../../context/PurchasesContext';
+import { usePaywall } from '../../context/PaywallContext';
 import { BudgetAllocation } from '../../types';
 import { CategoryIconRaw } from '../../components/home/CategoryIcon';
 import { durationMonthsFromDays, goalMonthIndex } from '../../utils/goals';
@@ -176,6 +178,8 @@ export default function BudgetScreen() {
     budget, updateBudget, getMonthTransactions, getMonthIncome,
     formatCurrency, getCurrencySymbol, removeCustomGoal,
   } = useApp();
+  const { isPro } = usePurchases();
+  const { showPaywall } = usePaywall();
 
   const now = new Date();
   const autoFilledMonth = t(`month.${MONTH_KEYS[now.getMonth()]}` as any);
@@ -528,7 +532,10 @@ export default function BudgetScreen() {
 
             {/* Add Goal */}
             <TouchableOpacity
-              onPress={() => router.push('/goal/new' as any)}
+              onPress={() => {
+                if (!isPro && (budget.customGoals?.length ?? 0) >= 1) { showPaywall(); return; }
+                router.push('/goal/new' as any);
+              }}
               className="w-full flex-row items-center gap-3 px-1 py-3 mb-4"
               activeOpacity={0.7}
             >
