@@ -224,7 +224,7 @@ export default function SubscriptionSheet({ onClose }: { onClose: () => void }) 
             <TouchableOpacity
               onPress={handleRestore}
               disabled={working}
-              className="items-center py-4 mb-6"
+              className="items-center pt-4"
               activeOpacity={0.7}
             >
               {working ? (
@@ -232,6 +232,15 @@ export default function SubscriptionSheet({ onClose }: { onClose: () => void }) 
               ) : (
                 <Text className="text-xs text-gray-400">{t('profile.restore_prev')}</Text>
               )}
+            </TouchableOpacity>
+
+            {/* ── Maybe later ── */}
+            <TouchableOpacity
+              onPress={onClose}
+              className="items-center py-4 mb-4"
+              activeOpacity={0.6}
+            >
+              <Text className="text-xs text-gray-300 dark:text-gray-600">Maybe later</Text>
             </TouchableOpacity>
           </ScrollView>
         )}
