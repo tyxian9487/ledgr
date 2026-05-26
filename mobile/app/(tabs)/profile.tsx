@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTourTarget } from '../../context/TourContext';
 import CategoryManagerSheet from '../../components/CategoryManagerSheet';
@@ -350,11 +350,18 @@ function NotificationsSheet({ onClose }: { onClose: () => void }) {
 
 // ─── Subscription Sheet ───────────────────────────────────────────────────────
 function SubscriptionSheet({ onClose }: { onClose: () => void }) {
-  const { isPro, isLoading, presentCustomerCenter, restorePurchases } =
-    usePurchases();
+  const { isPro, isLoading, currentOffering, purchasePackage,
+          presentCustomerCenter, restorePurchases } = usePurchases();
   const { t } = useTranslation();
   const [working, setWorking] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'annual' | 'monthly'>('annual');
+
+  const annualPkg  = currentOffering?.annual  ?? null;
+  const monthlyPkg = currentOffering?.monthly ?? null;
+  const selectedPkg = selectedPlan === 'annual' ? annualPkg : monthlyPkg;
+
+  const annualPrice  = annualPkg?.product.priceString  ?? '$29.99';
+  const monthlyPrice = monthlyPkg?.product.priceString ?? '$4.99';
 
   async function handleManage() {
     try {
@@ -363,6 +370,21 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
       console.warn('[RevenueCat] Customer Center error:', e);
     }
   }
+
+  const handlePurchase = useCallback(async () => {
+    if (!selectedPkg || working) return;
+    setWorking(true);
+    try {
+      const success = await purchasePackage(selectedPkg);
+      if (success) onClose();
+    } catch (e: any) {
+      if (e?.code !== 1) {
+        Alert.alert(t('common.error'), e.message ?? t('sub.restore_failed'));
+      }
+    } finally {
+      setWorking(false);
+    }
+  }, [selectedPkg, working, purchasePackage, onClose, t]);
 
   async function handleRestore() {
     setWorking(true);
@@ -452,9 +474,11 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
             {/* ── Hero ── */}
             <View className="mx-4 mt-6 rounded-2xl overflow-hidden" style={{ backgroundColor: '#052e16' }}>
               <View className="px-5 pt-6 pb-5 items-center">
-                <View className="w-14 h-14 rounded-2xl bg-green-400/20 items-center justify-center mb-3">
-                  <Star size={28} color="#4ade80" fill="#4ade80" />
-                </View>
+                <Image
+                  source={require('../../assets/m_payment.png')}
+                  style={{ width: 88, height: 88, marginBottom: 8 }}
+                  resizeMode="contain"
+                />
                 <Text className="text-white font-black text-xl mb-1">{t('profile.pro_title')}</Text>
                 <Text className="text-white/60 text-xs text-center leading-relaxed">{t('profile.pro_subtitle')}</Text>
               </View>
@@ -470,7 +494,7 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
                   style={selectedPlan === 'annual' ? { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 } : {}}
                 >
                   <Text className="text-[9px] font-black text-green-600 uppercase tracking-widest mb-0.5">Best Value · Save 50%</Text>
-                  <Text className={`text-xl font-black ${selectedPlan === 'annual' ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>$29.99</Text>
+                  <Text className={`text-xl font-black ${selectedPlan === 'annual' ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>{annualPrice}</Text>
                   <Text className={`text-xs mt-0.5 ${selectedPlan === 'annual' ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400'}`}>per year</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -480,7 +504,7 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
                   style={selectedPlan === 'monthly' ? { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 } : {}}
                 >
                   <Text className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5"> </Text>
-                  <Text className={`text-xl font-black ${selectedPlan === 'monthly' ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>$4.99</Text>
+                  <Text className={`text-xl font-black ${selectedPlan === 'monthly' ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>{monthlyPrice}</Text>
                   <Text className={`text-xs mt-0.5 ${selectedPlan === 'monthly' ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400'}`}>per month</Text>
                 </TouchableOpacity>
               </View>
@@ -506,17 +530,28 @@ function SubscriptionSheet({ onClose }: { onClose: () => void }) {
             {/* ── CTA button ── */}
             <View className="mx-4 mt-4">
               <TouchableOpacity
-                onPress={() => Alert.alert('Coming Soon', 'In-app purchases will be available in the next update.')}
+                onPress={handlePurchase}
+                disabled={working || !selectedPkg}
                 className="w-full bg-green-600 rounded-2xl py-4 items-center"
                 activeOpacity={0.85}
-                style={{ elevation: 4, shadowColor: '#16a34a', shadowOpacity: 0.3, shadowRadius: 8 }}
+                style={{ elevation: 4, shadowColor: '#16a34a', shadowOpacity: 0.3, shadowRadius: 8, opacity: working || !selectedPkg ? 0.6 : 1 }}
               >
-                <Text className="text-white font-black text-base">
-                  {selectedPlan === 'annual' ? 'Get Annual — $29.99/yr' : 'Get Monthly — $4.99/mo'}
-                </Text>
-                <Text className="text-white/70 text-xs mt-0.5">
-                  {selectedPlan === 'annual' ? 'Billed $29.99 once per year' : 'Billed $4.99 every month'}
-                </Text>
+                {working ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <>
+                    <Text className="text-white font-black text-base">
+                      {selectedPlan === 'annual'
+                        ? `Get Annual — ${annualPrice}/yr`
+                        : `Get Monthly — ${monthlyPrice}/mo`}
+                    </Text>
+                    <Text className="text-white/70 text-xs mt-0.5">
+                      {selectedPlan === 'annual'
+                        ? `Billed ${annualPrice} once per year`
+                        : `Billed ${monthlyPrice} every month`}
+                    </Text>
+                  </>
+                )}
               </TouchableOpacity>
             </View>
 
