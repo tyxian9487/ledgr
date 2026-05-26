@@ -12,10 +12,12 @@ import { useTourTarget } from '../../context/TourContext';
 const magnifierImg = require('../../assets/m_magnifier.png');
 import Svg, { Circle, Path, Line, Text as SvgText } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { TrendingUp, TrendingDown, Minus, ChevronLeft, ChevronRight, X } from 'lucide-react-native';
+import { TrendingUp, TrendingDown, Minus, ChevronLeft, ChevronRight, X, Lock } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
+import { usePurchases } from '../../context/PurchasesContext';
+import { usePaywall } from '../../context/PaywallContext';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -187,6 +189,8 @@ function CategoryModal({
   const { t } = useTranslation();
   const { colorScheme } = useColorScheme();
   const dark = colorScheme === 'dark';
+  const { isPro } = usePurchases();
+  const { showPaywall } = usePaywall();
 
   const [period, setPeriod] = useState<Period>('monthly');
   const now = new Date();
@@ -301,7 +305,7 @@ function CategoryModal({
         {period !== 'annually' && (
           <View className="flex-row items-center justify-center gap-5 pt-3 pb-1">
             <TouchableOpacity
-              onPress={() => setChartYear(y => y - 1)}
+              onPress={() => { if (!isPro) { showPaywall(); return; } setChartYear(y => y - 1); }}
               disabled={chartYear <= minYear}
               className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
               activeOpacity={0.7}
@@ -392,6 +396,8 @@ export default function TrendsScreen() {
   const { t } = useTranslation();
   const { colorScheme } = useColorScheme();
   const dark = colorScheme === 'dark';
+  const { isPro } = usePurchases();
+  const { showPaywall } = usePaywall();
 
   // Tour target refs
   const tourRefTop        = useTourTarget('trends-top', { scrollRef, scrollY: 0 });
@@ -667,66 +673,79 @@ export default function TrendsScreen() {
         </View>
 
         {/* ── Income vs Expenses ── */}
-        <View ref={tourRefIncomeVs} collapsable={false} className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl p-5">
-          <Text className="text-sm font-bold text-gray-900 dark:text-white mb-4">
-            {t('trends.income_vs')}
-          </Text>
-          <View className="gap-3">
-            {[...monthlyData].reverse().map((m) => {
-              const maxVal = Math.max(m.income, m.expenses, 1);
-              const surplus = m.income - m.expenses;
-              return (
-                <View key={`${m.year}-${m.month}`}>
-                  <View className="flex-row items-center">
-                    <Text className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 w-8">
-                      {m.label}
-                    </Text>
-                    <View className="flex-1 mx-3 gap-1">
-                      <View className="flex-row items-center gap-1.5">
-                        <View className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
-                        <View className="flex-1 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                          <View
-                            className="h-full rounded-full bg-green-500"
-                            style={{ width: `${(m.income / maxVal) * 100}%` }}
-                          />
+        {isPro ? (
+          <View ref={tourRefIncomeVs} collapsable={false} className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl p-5">
+            <Text className="text-sm font-bold text-gray-900 dark:text-white mb-4">
+              {t('trends.income_vs')}
+            </Text>
+            <View className="gap-3">
+              {[...monthlyData].reverse().map((m) => {
+                const maxVal = Math.max(m.income, m.expenses, 1);
+                const surplus = m.income - m.expenses;
+                return (
+                  <View key={`${m.year}-${m.month}`}>
+                    <View className="flex-row items-center">
+                      <Text className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 w-8">
+                        {m.label}
+                      </Text>
+                      <View className="flex-1 mx-3 gap-1">
+                        <View className="flex-row items-center gap-1.5">
+                          <View className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
+                          <View className="flex-1 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                            <View
+                              className="h-full rounded-full bg-green-500"
+                              style={{ width: `${(m.income / maxVal) * 100}%` }}
+                            />
+                          </View>
+                        </View>
+                        <View className="flex-row items-center gap-1.5">
+                          <View className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
+                          <View className="flex-1 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                            <View
+                              className="h-full rounded-full bg-red-400"
+                              style={{ width: `${(m.expenses / maxVal) * 100}%` }}
+                            />
+                          </View>
                         </View>
                       </View>
-                      <View className="flex-row items-center gap-1.5">
-                        <View className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
-                        <View className="flex-1 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                          <View
-                            className="h-full rounded-full bg-red-400"
-                            style={{ width: `${(m.expenses / maxVal) * 100}%` }}
-                          />
-                        </View>
-                      </View>
+                      <Text
+                        className={`text-[11px] font-bold w-16 text-right ${
+                          surplus > 0 ? 'text-green-500' : surplus < 0 ? 'text-red-500' : 'text-gray-400'
+                        }`}
+                      >
+                        {m.income === 0 && m.expenses === 0
+                          ? '–'
+                          : `${surplus > 0 ? '+' : surplus < 0 ? '-' : ''}${surplus !== 0 ? formatCurrency(Math.abs(surplus)) : '–'}`}
+                      </Text>
                     </View>
-                    <Text
-                      className={`text-[11px] font-bold w-16 text-right ${
-                        surplus > 0 ? 'text-green-500' : surplus < 0 ? 'text-red-500' : 'text-gray-400'
-                      }`}
-                    >
-                      {m.income === 0 && m.expenses === 0
-                        ? '–'
-                        : `${surplus > 0 ? '+' : surplus < 0 ? '-' : ''}${surplus !== 0 ? formatCurrency(Math.abs(surplus)) : '–'}`}
-                    </Text>
                   </View>
-                </View>
-              );
-            })}
-          </View>
+                );
+              })}
+            </View>
 
-          <View className="flex-row gap-4 mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-            <View className="flex-row items-center gap-1.5">
-              <View className="w-2.5 h-2.5 rounded-full bg-green-500" />
-              <Text className="text-[11px] text-gray-400">{t('common.income')}</Text>
-            </View>
-            <View className="flex-row items-center gap-1.5">
-              <View className="w-2.5 h-2.5 rounded-full bg-red-400" />
-              <Text className="text-[11px] text-gray-400">{t('common.expenses')}</Text>
+            <View className="flex-row gap-4 mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+              <View className="flex-row items-center gap-1.5">
+                <View className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                <Text className="text-[11px] text-gray-400">{t('common.income')}</Text>
+              </View>
+              <View className="flex-row items-center gap-1.5">
+                <View className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                <Text className="text-[11px] text-gray-400">{t('common.expenses')}</Text>
+              </View>
             </View>
           </View>
-        </View>
+        ) : (
+          <TouchableOpacity
+            ref={tourRefIncomeVs}
+            onPress={showPaywall}
+            activeOpacity={0.8}
+            className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl p-5 items-center gap-2"
+          >
+            <Lock size={18} color="#9ca3af" />
+            <Text className="text-sm font-semibold text-gray-400">{t('trends.income_vs')}</Text>
+            <Text className="text-xs text-gray-400">Upgrade to Pro to unlock</Text>
+          </TouchableOpacity>
+        )}
 
       </ScrollView>
 

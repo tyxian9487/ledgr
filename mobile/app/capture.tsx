@@ -18,6 +18,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Camera, X, ImageIcon } from 'lucide-react-native';
 import { useTranslation } from '../context/LanguageContext';
+import { usePurchases } from '../context/PurchasesContext';
+import { usePaywall } from '../context/PaywallContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Stage = 'preview' | 'processing' | 'review';
@@ -125,6 +127,8 @@ async function parseReceiptWithClaude(base64: string, mediaType: string): Promis
 export default function CaptureScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { isPro } = usePurchases();
+  const { showPaywall } = usePaywall();
   const cameraRef = useRef<CameraView>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
 
@@ -158,6 +162,10 @@ export default function CaptureScreen() {
 
   // ── Core: process an image (base64 string + mediaType) ────────────────────
   const processImage = useCallback(async (base64: string, mediaType: string, uri: string) => {
+    if (!isPro) {
+      showPaywall();
+      return;
+    }
     setCapturedUri(uri);
     setScanError(null);
     setStage('processing');
@@ -170,7 +178,7 @@ export default function CaptureScreen() {
       setScanError(err instanceof Error ? err.message : 'Scan failed');
       setStage('preview');
     }
-  }, []);
+  }, [isPro, showPaywall]);
 
   // ── Camera capture ─────────────────────────────────────────────────────────
   const capturePhoto = useCallback(async () => {
