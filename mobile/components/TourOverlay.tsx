@@ -128,12 +128,23 @@ export default function TourOverlay() {
     spotlightOpacity.setValue(0);
   }, [tourStepIndex, backdropOpacity, spotlightOpacity]);
 
-  // Cross-fade: backdrop fades OUT while spotlight fades IN once rect is known
+  // Cross-fade: backdrop fades OUT while spotlight fades IN once rect is known.
+  // Also logs the committed rect in DEV so you can cross-check it against the
+  // console output from useTourTarget's stability poll.
   useEffect(() => {
     if (!highlightRect) {
       backdropOpacity.setValue(1);
       spotlightOpacity.setValue(0);
       return;
+    }
+    if (__DEV__) {
+      const { width: wW, height: wH } = require('react-native').Dimensions.get('window');
+      console.log(
+        `[TourOverlay] rendering spotlight` +
+        `  x=${highlightRect.x.toFixed(0)} y=${highlightRect.y.toFixed(0)}` +
+        `  w=${highlightRect.width.toFixed(0)} h=${highlightRect.height.toFixed(0)}` +
+        `  (window ${wW}×${wH})`
+      );
     }
     Animated.parallel([
       Animated.timing(backdropOpacity,  { toValue: 0, duration: 200, useNativeDriver: true }),
@@ -232,6 +243,62 @@ export default function TourOverlay() {
                   borderColor:  '#16a34a',
                 }}
               />
+
+              {/*
+               * ── DEV ONLY: Debug border + coordinate readout ────────────────
+               *
+               * A bright yellow dashed border shows the exact measured rect so
+               * you can visually verify it aligns with the spotlit component.
+               * The coordinate chip below the border mirrors the useTourTarget
+               * console output so you can cross-reference without a device log.
+               *
+               * Rendered on top of the green border — remove this entire block
+               * before shipping if you want a cleaner look, though it only
+               * appears in __DEV__ builds so it never reaches production.
+               */}
+              {__DEV__ && (
+                <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
+                  {/* Dashed yellow outline — exact measured boundary */}
+                  <View
+                    style={{
+                      position:    'absolute',
+                      top:         highlightRect.y - 3,
+                      left:        highlightRect.x - 3,
+                      width:       highlightRect.width  + 6,
+                      height:      highlightRect.height + 6,
+                      borderWidth: 2,
+                      borderColor: '#facc15',
+                      borderStyle: 'dashed',
+                      borderRadius: 18,
+                    }}
+                  />
+                  {/* Coordinate chip */}
+                  <View
+                    style={{
+                      position:        'absolute',
+                      top:             highlightRect.y + highlightRect.height + 8,
+                      left:            highlightRect.x,
+                      backgroundColor: 'rgba(0,0,0,0.82)',
+                      borderRadius:    4,
+                      paddingHorizontal: 6,
+                      paddingVertical:   3,
+                      flexDirection:   'row',
+                      gap:             6,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color:      '#facc15',
+                        fontSize:   9,
+                        fontFamily: 'monospace',
+                        lineHeight: 13,
+                      }}
+                    >
+                      {`x=${highlightRect.x.toFixed(0)}  y=${highlightRect.y.toFixed(0)}  ${highlightRect.width.toFixed(0)}×${highlightRect.height.toFixed(0)}`}
+                    </Text>
+                  </View>
+                </View>
+              )}
             </Animated.View>
           )}
 

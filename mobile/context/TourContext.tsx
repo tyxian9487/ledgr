@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode, RefObject } from 'react';
-import { Dimensions, ScrollView, View } from 'react-native';
+import { Dimensions, InteractionManager, Platform, ScrollView, View } from 'react-native';
 
 export interface HighlightRect { x: number; y: number; width: number; height: number; }
 
@@ -170,152 +170,257 @@ interface TourTargetOptions {
 }
 
 /**
- * HOW THE MEASUREMENT WORKS (full explanation for future debuggers)
- * ─────────────────────────────────────────────────────────────────
+ * HOW THE MEASUREMENT WORKS
+ * ─────────────────────────
  *
- * 1. INSTANT SCROLL (`animated: false`)
- *    We scroll the parent ScrollView to the hardcoded `scrollY` position with
- *    NO animation. This eliminates the core race condition: previously, we used
- *    `animated: true` and waited a fixed 700 ms, but animated scrolls on Android
- *    have variable duration (200–600 ms). Measuring while the animation was still
- *    in progress returned the element's mid-animation position, not its final
- *    screen position.
+ * PHASE 0 — InteractionManager gate
+ *   React Navigation registers tab-switch gestures and animations as
+ *   InteractionManager interactions.  By waiting for runAfterInteractions()
+ *   before doing anything, we guarantee that the active tab's layout is
+ *   fully committed before we attempt to measure.  This is the primary fix
+ *   for misalignment after guide steps that navigate between tabs.
  *
- *    With `animated: false`, the JS command is sent over the React Native bridge
- *    to the native UI thread. The scroll itself is synchronous on the native side,
- *    but the BRIDGE call is asynchronous — there is an inherent 1-3 frame delay
- *    before the native view processes the command.
+ * PHASE 1 — Instant scroll  (animated: false)
+ *   We scroll to the hard-coded scrollY with NO animation.  Animated scrolls
+ *   on Android have variable durations (200–600 ms); measuring mid-animation
+ *   gives the mid-animation position, not the final one.
+ *   With animated:false the native command is synchronous on the native side
+ *   but still crosses the JS→native bridge asynchronously (1–3 frames).
  *
- * 2. DOUBLE requestAnimationFrame + 80 ms SETTLE
- *    - rAF 1: waits until the current JS frame finishes rendering
- *    - rAF 2: waits until the native layout pass triggered by the rAF 1 render commits
- *    - 80 ms: additional safety margin for Android's shadow-tree flush and the
- *      bridge async gap on slow/mid-range devices
+ * PHASE 2 — Double rAF + platform-specific settle
+ *   rAF 1: flush the current JS render cycle
+ *   rAF 2: wait for the subsequent native layout pass
+ *   settle: extra safety margin — 180 ms on Android (slower bridge + shadow
+ *           tree), 80 ms on iOS.
  *
- * 3. STABILITY POLLING (the real fix for bridge async)
- *    After the initial settle, we measure the element twice with a 50 ms gap.
- *    If both measurements agree within 1 px (position hasn't changed), the scroll
- *    has settled and the measurement is trustworthy. If the positions differ, the
- *    scroll command hasn't completed yet — we wait another 50 ms and retry.
- *    Maximum polling window: 10 × 50 ms = 500 ms (never reached on a real device).
+ * PHASE 3 — 2-consecutive-stable poll
+ *   We require TWO consecutive measureInWindow() calls (50 ms apart) that
+ *   agree within 1 px before committing.  A single stable pair is enough to
+ *   survive bridge-batching artefacts.  Maximum poll window: 12 × 55 ms ≈
+ *   660 ms (never hit on a real device for normal scroll depths).
  *
- * 4. COORDINATE SYSTEM
- *    `measureInWindow()` returns coordinates in the SCREEN/WINDOW coordinate
- *    space (y=0 = top of screen, behind the status bar when translucent=true).
- *    The TourOverlay Modal uses `statusBarTranslucent={true}`, so the Modal
- *    content also starts at y=0 (screen top). Both coordinate systems share the
- *    same origin — no manual offset correction is required.
+ * PHASE 4 — Tooltip-card overflow correction
+ *   If the element's bottom edge would be hidden behind the floating tooltip
+ *   card, we do a second instant scroll + fresh stability pass using
+ *   *dedicated* RAF handles so the main raf1/raf2 variables are not corrupted.
  *
- * 5. WHY NOT `measure()` (relative)?
- *    `measure()` returns position relative to the component's first non-absolute
- *    ancestor. This varies depending on how deep the element is nested, making
- *    it unreliable for an absolute overlay. `measureInWindow()` is unambiguous.
+ * COORDINATE SYSTEM
+ *   measureInWindow() returns window-space coords (y=0 = physical top of
+ *   screen, behind the translucent status bar).  The tour Modal uses
+ *   statusBarTranslucent={true}, so its origin is also y=0.  Both spaces
+ *   are identical — no offset correction is needed.
+ *
+ * options ARE NOT in the dependency array.
+ *   The values are always stable per-step (hardcoded numbers, stable useRef
+ *   objects).  Listing them would add noise without benefit.  We capture
+ *   them through optionsRef to guard against hypothetical future changes.
  */
 export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
   const { currentStep, setHighlightRect } = useTour();
-  const ref = useRef<View>(null);
+  const ref        = useRef<View>(null);
+  // Always keep the latest options available inside the effect without
+  // re-running the effect when they change (they are constants in practice).
+  const optionsRef = useRef<TourTargetOptions>(options);
+  optionsRef.current = options;
 
   useEffect(() => {
     if (currentStep?.id !== stepId) return;
 
-    let cancelled  = false;
-    let raf1 = 0, raf2 = 0;
-    let timer = 0;
+    let cancelled = false;
 
-    const initialScrollY = options.scrollY ?? 0;
+    // Handles for Phase 1/2
+    let raf1 = 0, raf2 = 0, timer = 0;
+    // Dedicated handles for Phase 4 extra-scroll — never share with Phase 1/2
+    // to avoid corrupting the cleanup closure.
+    let xRaf1 = 0, xRaf2 = 0, xTimer = 0;
+    // InteractionManager cancellation token
+    let interactionTask: { cancel(): void } | null = null;
 
-    // ── 1. Instant scroll ─────────────────────────────────────────────────────
-    if (options.scrollRef) {
-      options.scrollRef.current?.scrollTo({ y: initialScrollY, animated: false });
+    // Platform-aware settle time: Android's JS→native bridge and shadow-tree
+    // flush are slower than iOS (especially on mid-range devices).
+    const SETTLE_MS = Platform.OS === 'android' ? 180 : 80;
+    const POLL_MS   = 55;
+
+    if (__DEV__) {
+      const win = Dimensions.get('window');
+      console.log(
+        `[Tour] ▶ step="${stepId}"` +
+        `  platform=${Platform.OS}` +
+        `  window=${win.width.toFixed(0)}×${win.height.toFixed(0)}` +
+        `  settle=${SETTLE_MS}ms` +
+        `  scrollY=${optionsRef.current.scrollY ?? 0}`
+      );
     }
 
-    // ── 2. Wait for bridge + layout ───────────────────────────────────────────
-    raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => {
-        if (cancelled) return;
-        timer = setTimeout(() => {
-          if (!cancelled) pollForStability(0, null);
-        }, 80) as unknown as number;
+    // ── Phase 0: Wait for all pending interactions (tab transitions) ──────────
+    interactionTask = InteractionManager.runAfterInteractions(() => {
+      if (cancelled) return;
+
+      const { scrollRef, scrollY: targetY = 0 } = optionsRef.current;
+
+      // ── Phase 1: Instant scroll ───────────────────────────────────────────
+      if (scrollRef?.current) {
+        if (__DEV__) {
+          scrollRef.current.measure((rx, ry, rw, rh, rpx, rpy) => {
+            console.log(
+              `[Tour]   ScrollView on screen:` +
+              ` pageX=${rpx?.toFixed(0)} pageY=${rpy?.toFixed(0)}` +
+              ` w=${rw?.toFixed(0)} h=${rh?.toFixed(0)}`
+            );
+          });
+        }
+        scrollRef.current.scrollTo({ y: targetY, animated: false });
+      }
+
+      // ── Phase 2: Double rAF + settle ─────────────────────────────────────
+      raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(() => {
+          if (cancelled) return;
+          timer = setTimeout(() => {
+            if (!cancelled) pollForStability(0, null, 0);
+          }, SETTLE_MS) as unknown as number;
+        });
       });
     });
 
-    // ── 3. Stability-based measurement ────────────────────────────────────────
-    // Measure twice 50 ms apart. If positions agree within 1 px, the scroll
-    // command has been processed and the position is accurate.
-    function pollForStability(attempt: number, prev: { x: number; y: number } | null) {
+    // ── Phase 3: Stability-based measurement ─────────────────────────────────
+    //
+    // We require 2 consecutive stable samples (stableCount must reach 1)
+    // before committing.  This guards against bridge-batching where two
+    // quick measurements both return the pre-scroll position (false stable).
+    function pollForStability(
+      attempt:     number,
+      prev:        { x: number; y: number } | null,
+      stableCount: number,
+    ) {
       if (cancelled) return;
 
       ref.current?.measureInWindow((x, y, w, h) => {
         if (cancelled) return;
 
         if (__DEV__) {
-          // eslint-disable-next-line no-console
+          const drift = prev
+            ? (Math.abs(x - prev.x) + Math.abs(y - prev.y)).toFixed(1)
+            : '—';
           console.log(
-            `[Tour] ${stepId} attempt=${attempt}` +
-            ` pos=(${x.toFixed(0)},${y.toFixed(0)})` +
-            ` size=(${w.toFixed(0)}×${h.toFixed(0)})` +
-            (prev ? ` drift=(${(x - prev.x).toFixed(1)},${(y - prev.y).toFixed(1)})` : '')
+            `[Tour]   poll att=${attempt}` +
+            `  pos=(${x.toFixed(0)},${y.toFixed(0)})` +
+            `  size=(${w.toFixed(0)}×${h.toFixed(0)})` +
+            `  drift=${drift}  stable=${stableCount}`
           );
         }
 
-        // Element not laid out yet — retry
+        // Not laid out yet — wait and retry
         if (w === 0 || h === 0) {
-          if (attempt < 10) {
-            timer = setTimeout(() => pollForStability(attempt + 1, null), 60) as unknown as number;
+          if (attempt < 12) {
+            timer = setTimeout(
+              () => pollForStability(attempt + 1, null, 0),
+              POLL_MS,
+            ) as unknown as number;
+          } else if (__DEV__) {
+            console.warn(`[Tour] ✗ ${stepId}: element has zero size after 12 attempts`);
           }
           return;
         }
 
-        // Check positional stability (did it move since last poll?)
-        if (prev !== null) {
-          const drift = Math.abs(x - prev.x) + Math.abs(y - prev.y);
-          if (drift > 1 && attempt < 10) {
-            // Still settling — wait and check again
-            timer = setTimeout(() => pollForStability(attempt + 1, { x, y }), 50) as unknown as number;
-            return;
-          }
-        } else {
-          // First measurement — wait 50 ms then check if it moved
-          timer = setTimeout(() => pollForStability(attempt + 1, { x, y }), 50) as unknown as number;
+        // First measurement — record position, wait for next sample
+        if (prev === null) {
+          timer = setTimeout(
+            () => pollForStability(attempt + 1, { x, y }, 0),
+            POLL_MS,
+          ) as unknown as number;
           return;
         }
 
-        // ── 4. Extra scroll if element is covered by the tooltip card ─────────
-        const screenH = Dimensions.get('window').height;
-        const CARD_H  = 250; // estimated tooltip card height
-        const MARGIN  = 12;
+        const drift = Math.abs(x - prev.x) + Math.abs(y - prev.y);
 
-        if (options.scrollRef && (y + h + MARGIN) > (screenH - CARD_H)) {
-          const extra = (y + h + MARGIN) - (screenH - CARD_H);
-          options.scrollRef.current?.scrollTo({ y: initialScrollY + extra, animated: false });
-          // Re-enter stability polling from scratch
-          raf1 = requestAnimationFrame(() => {
-            raf2 = requestAnimationFrame(() => {
+        if (drift > 1) {
+          // Still moving — reset stable counter
+          if (attempt < 12) {
+            timer = setTimeout(
+              () => pollForStability(attempt + 1, { x, y }, 0),
+              POLL_MS,
+            ) as unknown as number;
+          }
+          return;
+        }
+
+        // Position is stable in this sample; need one more to confirm
+        if (stableCount < 1) {
+          timer = setTimeout(
+            () => pollForStability(attempt + 1, { x, y }, stableCount + 1),
+            POLL_MS,
+          ) as unknown as number;
+          return;
+        }
+
+        // ── Phase 4: Extra scroll if element is hidden behind tooltip card ────
+        const { height: screenH } = Dimensions.get('window');
+        const CARD_H  = 250;
+        const MARGIN  = 16;
+
+        const { scrollRef: sRef, scrollY: baseY = 0 } = optionsRef.current;
+        if (sRef?.current && (y + h + MARGIN) > (screenH - CARD_H)) {
+          const overhang  = (y + h + MARGIN) - (screenH - CARD_H);
+          const newScrollY = baseY + overhang;
+
+          if (__DEV__) {
+            console.log(
+              `[Tour]   element obscured: overhang=${overhang.toFixed(0)}px` +
+              ` → extra scroll to y=${newScrollY.toFixed(0)}`
+            );
+          }
+
+          sRef.current.scrollTo({ y: newScrollY, animated: false });
+
+          // Use DEDICATED handles so raf1/raf2 are not overwritten
+          xRaf1 = requestAnimationFrame(() => {
+            xRaf2 = requestAnimationFrame(() => {
               if (!cancelled) {
-                timer = setTimeout(() => pollForStability(0, null), 80) as unknown as number;
+                xTimer = setTimeout(
+                  () => pollForStability(0, null, 0),
+                  SETTLE_MS,
+                ) as unknown as number;
               }
             });
           });
           return;
         }
 
-        // ── 5. Commit the highlight rect ──────────────────────────────────────
-        setHighlightRect({
+        // ── Phase 5: Commit ───────────────────────────────────────────────────
+        const rect = {
           x:      Math.max(0, x - 4),
           y:      Math.max(0, y - 4),
           width:  w + 8,
           height: h + 8,
-        });
+        };
+
+        if (__DEV__) {
+          console.log(
+            `[Tour] ✓ "${stepId}" committed` +
+            `  rect=(${rect.x.toFixed(0)},${rect.y.toFixed(0)})` +
+            `  ${rect.width.toFixed(0)}×${rect.height.toFixed(0)}` +
+            `  attempts=${attempt + 1}`
+          );
+        }
+
+        setHighlightRect(rect);
       });
     }
 
     return () => {
       cancelled = true;
+      interactionTask?.cancel();
       cancelAnimationFrame(raf1);
       cancelAnimationFrame(raf2);
       clearTimeout(timer);
+      cancelAnimationFrame(xRaf1);
+      cancelAnimationFrame(xRaf2);
+      clearTimeout(xTimer);
     };
-  }, [currentStep?.id, stepId, options.scrollRef, options.scrollY, setHighlightRect]);
+    // options intentionally omitted — captured via optionsRef
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep?.id, stepId, setHighlightRect]);
 
   return ref;
 }
