@@ -204,10 +204,13 @@ function CategoryModal({
     return tr !== rawKey ? tr : categoryId.charAt(0).toUpperCase() + categoryId.slice(1);
   })();
 
-  const catTxs = useMemo(
-    () => transactions.filter((tx) => tx.type === 'expense' && tx.category === categoryId && (!tx.isAutoDebit || new Date(tx.date) <= now)),
-    [transactions, categoryId],
-  );
+  const catTxs = useMemo(() => {
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+    return transactions.filter(
+      (tx) => tx.type === 'expense' && tx.category === categoryId && (!tx.isAutoDebit || new Date(tx.date) <= endOfToday),
+    );
+  }, [transactions, categoryId]);
 
   // Earliest year that has data for this category (limits the year selector's back button)
   const minYear = catTxs.length > 0
@@ -421,18 +424,31 @@ export default function TrendsScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showAllCats, setShowAllCats] = useState(false);
 
-  const now = new Date();
-  const currentYear = now.getFullYear();
+  const currentYear = new Date().getFullYear();
 
-  // Exclude future-dated auto-debit instances from analytics, but keep actual same-day manual entries.
-  const visibleTransactions = useMemo(
-    () => transactions.filter(tx => !tx.isAutoDebit || new Date(tx.date) <= now),
-    [transactions, now],
-  );
+  // Exclude FUTURE-dated auto-debit instances from analytics (instances for months that
+  // haven't arrived yet), while including instances for today and any earlier date.
+  //
+  // IMPORTANT: use LOCAL-time end-of-day as the cutoff, NOT the current UTC moment.
+  // addTransaction() and processAutoDebits() both cap auto-debit generation at local
+  // midnight (ceiling.setHours(23,59,59,999)).  profile.tsx yearTxs uses the same
+  // local-midnight gate.  Using raw `new Date()` (UTC "now") here was inconsistent:
+  // in UTC+ timezones (e.g. Malaysia UTC+8) at midnight/early morning, today's
+  // auto-debit instance (stored as local-midnight UTC, e.g. "2026-05-27T00:00:00Z")
+  // would appear future in UTC and get incorrectly excluded — making the Trends page
+  // show 0 income while the Home screen and Profile correctly showed the same income.
+  const visibleTransactions = useMemo(() => {
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999); // local midnight — matches processAutoDebits ceiling
+    return transactions.filter(tx => !tx.isAutoDebit || new Date(tx.date) <= endOfToday);
+  }, [transactions]); // `endOfToday` is computed inside — no stale-reference churn
 
   const monthlyData = useMemo(() => {
+    // Compute `today` inside the memo so the 6-month window is always current
+    // without causing a re-run on every render (avoids the `now` reference churn).
+    const today = new Date();
     return Array.from({ length: 6 }, (_, i) => {
-      const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+      const d = new Date(today.getFullYear(), today.getMonth() - 5 + i, 1);
       const month = d.getMonth();
       const year = d.getFullYear();
       const txs = visibleTransactions.filter((tx) => {
@@ -447,7 +463,7 @@ export default function TrendsScreen() {
         label: t(`month.${MONTH_KEYS[month]}.short` as any),
       };
     });
-  }, [visibleTransactions, t, now]);
+  }, [visibleTransactions, t]);
 
   const categoryTotals = useMemo(() => {
     const yearTxs = visibleTransactions.filter((tx) => {
