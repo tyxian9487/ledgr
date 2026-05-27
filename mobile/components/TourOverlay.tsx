@@ -1,13 +1,40 @@
+/**
+ * TourOverlay — spotlight-based onboarding overlay
+ *
+ * ARCHITECTURE
+ * ────────────
+ * The spotlight is rendered inside a React Native Modal with
+ * `statusBarTranslucent={true}`.  This means:
+ *
+ *   • Modal content origin  → (0, 0) = TOP OF SCREEN (behind status bar)
+ *   • measureInWindow()     → (0, 0) = TOP OF SCREEN (because the app uses
+ *                             StatusBar translucent={true}, so the RN root view
+ *                             fills the entire window including the status bar)
+ *
+ * Both coordinate systems share the same origin, so the spotlight rect
+ * produced by measureInWindow() can be placed directly in the Modal with no
+ * manual offset correction.
+ *
+ * UX FLOW PER STEP
+ * ────────────────
+ *  1. Step activates → highlightRect = null
+ *  2. Modal appears immediately with a FULL DIM backdrop (user sees dark screen)
+ *  3. Behind the dim, useTourTarget() performs the instant scroll + stability poll
+ *  4. Once measurement stabilises → highlightRect is set
+ *  5. Backdrop fades OUT, spotlight (4-strip cutout + border) fades IN (200 ms)
+ *  6. Card is always visible at the bottom (or floats near element if space allows)
+ */
+
 import { useCallback, useRef, useEffect } from 'react';
 import {
-  View,
+  Animated,
+  Dimensions,
+  Image,
+  Modal,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  Modal,
-  Image,
-  StyleSheet,
-  Dimensions,
-  Animated,
+  View,
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useTour, TOUR_STEPS } from '../context/TourContext';
@@ -18,191 +45,213 @@ import { useTranslation } from '../context/LanguageContext';
 const mapMascotImg = require('../assets/m_map.png');
 
 const TAB_ROUTES: Record<string, string> = {
-  home: '/(tabs)/',
-  trends: '/(tabs)/trends',
-  budget: '/(tabs)/budget',
+  home:    '/(tabs)/',
+  trends:  '/(tabs)/trends',
+  budget:  '/(tabs)/budget',
   profile: '/(tabs)/profile',
 };
 
-function pathnameToTab(pathname: string): string {
-  if (pathname.includes('budget')) return 'budget';
-  if (pathname.includes('trends')) return 'trends';
-  if (pathname.includes('profile')) return 'profile';
+function pathnameToTab(p: string) {
+  if (p.includes('budget'))  return 'budget';
+  if (p.includes('trends'))  return 'trends';
+  if (p.includes('profile')) return 'profile';
   return 'home';
 }
 
-/**
- * Four-quadrant dim mask with a transparent cutout around `rect`.
- * Rendered inside the same absolute overlay as the card — same coordinate
- * space as measureInWindow, so no status-bar offset correction is needed.
- */
-function Spotlight({ rect, onSkip }: { rect: HighlightRect; onSkip: () => void }) {
-  const DIM = 'rgba(0,0,0,0.72)';
+// ─── Spotlight strips (dim everything except the highlighted rect) ────────────
+
+const DIM = 'rgba(0,0,0,0.72)';
+
+function SpotlightStrips({ rect }: { rect: HighlightRect }) {
+  const { x, y, width: w, height: h } = rect;
   return (
     <>
-      {/* top strip */}
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: rect.y, backgroundColor: DIM }} pointerEvents="none" />
-      {/* left strip beside cutout */}
-      <View style={{ position: 'absolute', top: rect.y, left: 0, width: rect.x, height: rect.height, backgroundColor: DIM }} pointerEvents="none" />
-      {/* right strip beside cutout */}
-      <View style={{ position: 'absolute', top: rect.y, left: rect.x + rect.width, right: 0, height: rect.height, backgroundColor: DIM }} pointerEvents="none" />
-      {/* bottom strip */}
-      <View style={{ position: 'absolute', top: rect.y + rect.height, left: 0, right: 0, bottom: 0, backgroundColor: DIM }} pointerEvents="none" />
-      {/* green highlight border */}
-      <View
-        style={{
-          position: 'absolute',
-          top: rect.y,
-          left: rect.x,
-          width: rect.width,
-          height: rect.height,
-          borderRadius: 16,
-          borderWidth: 2,
-          borderColor: '#16a34a',
-        }}
-        pointerEvents="none"
-      />
-      {/* full-screen tap-to-skip — sits behind the card but covers the dim area */}
-      <TouchableOpacity style={StyleSheet.absoluteFillObject} onPress={onSkip} activeOpacity={0} />
+      {/* top  */}
+      <View style={{ position:'absolute', top:0, left:0, right:0, height:y,   backgroundColor:DIM }} pointerEvents="none" />
+      {/* left */}
+      <View style={{ position:'absolute', top:y, left:0, width:x,  height:h,  backgroundColor:DIM }} pointerEvents="none" />
+      {/* right */}
+      <View style={{ position:'absolute', top:y, left:x+w, right:0, height:h, backgroundColor:DIM }} pointerEvents="none" />
+      {/* bottom */}
+      <View style={{ position:'absolute', top:y+h, left:0, right:0, bottom:0, backgroundColor:DIM }} pointerEvents="none" />
     </>
   );
 }
 
-const CARD_GAP = 12;
-const CARD_EST_H = 210;
+// ─── Floating card position (above or below the spotlit element) ──────────────
 
-function getFloatingPos(rect: HighlightRect): { top?: number; bottom?: number; left: number; right: number } | null {
+const CARD_EST_H = 220;
+const CARD_GAP   = 12;
+
+function getFloatingPos(rect: HighlightRect) {
   const { height: screenH } = Dimensions.get('window');
   const spaceAbove = rect.y - CARD_GAP;
   const spaceBelow = screenH - (rect.y + rect.height) - CARD_GAP;
-
-  if (spaceAbove >= CARD_EST_H) {
-    return { bottom: screenH - rect.y + CARD_GAP, left: 12, right: 12 };
-  }
-  if (spaceBelow >= CARD_EST_H) {
-    return { top: rect.y + rect.height + CARD_GAP, left: 12, right: 12 };
-  }
-  return null;
+  if (spaceAbove >= CARD_EST_H) return { bottom: screenH - rect.y + CARD_GAP, left: 12, right: 12 };
+  if (spaceBelow >= CARD_EST_H) return { top: rect.y + rect.height + CARD_GAP,  left: 12, right: 12 };
+  return null; // fall back to bottom sheet
 }
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export default function TourOverlay() {
   const {
-    tourActive,
-    tourStepIndex,
-    currentStep,
-    showOffer,
-    highlightRect,
-    acceptTour,
-    declineTour,
-    nextStep,
-    skipTour,
+    tourActive, tourStepIndex, currentStep, showOffer, highlightRect,
+    acceptTour, declineTour, nextStep, skipTour,
   } = useTour();
   const { isAuthenticated, hasCompletedOnboarding, darkMode } = useApp();
-  const { t } = useTranslation();
-  const router = useRouter();
-  const pathname = usePathname();
-  const currentTab = pathnameToTab(pathname);
+  const { t }       = useTranslation();
+  const router      = useRouter();
+  const pathname    = usePathname();
+  const currentTab  = pathnameToTab(pathname);
 
-  const navigateToTab = useCallback(
-    (tab: string) => {
-      const route = TAB_ROUTES[tab];
-      if (route) router.navigate(route as any);
-    },
-    [router],
-  );
+  const navigateToTab = useCallback((tab: string) => {
+    const route = TAB_ROUTES[tab];
+    if (route) router.navigate(route as any);
+  }, [router]);
 
-  const handleNext = useCallback(() => {
-    nextStep(navigateToTab);
-  }, [nextStep, navigateToTab]);
+  const handleNext = useCallback(() => nextStep(navigateToTab), [nextStep, navigateToTab]);
 
-  // ── Spotlight fade-in ─────────────────────────────────────────────────────
-  // MUST be before the early return so hook call count is always the same.
-  // Reset to transparent on every step change; animate to opaque once
-  // highlightRect is set (i.e. after measurement completes).
+  // ── Animation values ────────────────────────────────────────────────────────
+  // MUST be declared before any conditional return (Rules of Hooks).
+  //
+  // backdropOpacity  → full-screen dim; 1 while measuring, fades to 0 once
+  //                    the spotlight strips take over
+  // spotlightOpacity → spotlight strips + border + (optionally) card float;
+  //                    0 while measuring, fades to 1 once rect is known
+  const backdropOpacity  = useRef(new Animated.Value(1)).current;
   const spotlightOpacity = useRef(new Animated.Value(0)).current;
 
+  // Reset animations every time the step changes (new measurement pending)
   useEffect(() => {
+    backdropOpacity.setValue(1);
     spotlightOpacity.setValue(0);
-  }, [tourStepIndex, spotlightOpacity]);
+  }, [tourStepIndex, backdropOpacity, spotlightOpacity]);
 
+  // Cross-fade: backdrop fades OUT while spotlight fades IN once rect is known
   useEffect(() => {
     if (!highlightRect) {
+      backdropOpacity.setValue(1);
       spotlightOpacity.setValue(0);
       return;
     }
-    Animated.timing(spotlightOpacity, {
-      toValue: 1,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-  }, [highlightRect, spotlightOpacity]);
+    Animated.parallel([
+      Animated.timing(backdropOpacity,  { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.timing(spotlightOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+    ]).start();
+  }, [highlightRect, backdropOpacity, spotlightOpacity]);
 
+  // ── Early return (after all hooks) ──────────────────────────────────────────
   if (!isAuthenticated || !hasCompletedOnboarding) return null;
 
-  const isLastStep = tourStepIndex === TOUR_STEPS.length - 1;
-  const onCorrectTab = currentStep?.tab === currentTab;
-  const showTooltip = tourActive && onCorrectTab && !!currentStep;
+  const isLastStep    = tourStepIndex === TOUR_STEPS.length - 1;
+  const onCorrectTab  = currentStep?.tab === currentTab;
+  const showTooltip   = tourActive && onCorrectTab && !!currentStep;
 
-  const bg = darkMode ? '#111827' : '#ffffff';
+  // Theme
+  const bg          = darkMode ? '#111827' : '#ffffff';
   const textPrimary = darkMode ? '#f9fafb' : '#111827';
-  const textSecondary = darkMode ? '#9ca3af' : '#6b7280';
-  const border = darkMode ? '#1f2937' : '#e5e7eb';
-  const skipColor = darkMode ? '#6b7280' : '#9ca3af';
+  const textSec     = darkMode ? '#9ca3af' : '#6b7280';
+  const borderClr   = darkMode ? '#1f2937' : '#e5e7eb';
+  const skipClr     = darkMode ? '#6b7280' : '#9ca3af';
 
   const floatingPos = highlightRect ? getFloatingPos(highlightRect) : null;
-  const isFloating = floatingPos !== null;
+  const isFloating  = floatingPos !== null;
 
   return (
     <>
-      {/* ── Quick Tour Offer (full-screen Modal is fine here — no coordinate matching needed) ── */}
+      {/* ── Quick Tour Offer (full-screen, no coordinate dependency) ── */}
       <Modal visible={showOffer} transparent={false} animationType="fade">
         <View style={[s.offerRoot, { backgroundColor: bg }]}>
           <Image source={mapMascotImg} style={s.mascot} resizeMode="contain" />
           <Text style={[s.offerTitle, { color: textPrimary }]}>{t('tour.title')}</Text>
-          <Text style={[s.offerDesc, { color: textSecondary }]}>{t('tour.desc')}</Text>
+          <Text style={[s.offerDesc,  { color: textSec }]}>{t('tour.desc')}</Text>
           <TouchableOpacity onPress={acceptTour} activeOpacity={0.85} style={s.primaryBtn}>
             <Text style={s.primaryBtnTxt}>{t('tour.offer_start')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={declineTour} activeOpacity={0.75} style={[s.secondaryBtn, { borderColor: border }]}>
-            <Text style={[s.secondaryBtnTxt, { color: textSecondary }]}>{t('tour.offer_skip')}</Text>
+          <TouchableOpacity onPress={declineTour} activeOpacity={0.75} style={[s.secondaryBtn, { borderColor: borderClr }]}>
+            <Text style={[s.secondaryBtnTxt, { color: textSec }]}>{t('tour.offer_skip')}</Text>
           </TouchableOpacity>
         </View>
       </Modal>
 
       {/*
-       * ── Tour Tooltip Overlay ──
+       * ── Tour spotlight Modal ──────────────────────────────────────────────
        *
-       * NOT a Modal — rendered as a plain absolute View in the same React Native
-       * root as all app content. measureInWindow() and this overlay share the same
-       * coordinate space, so the spotlight cutout aligns perfectly with the target
-       * element on every Android device, regardless of status-bar height.
+       * statusBarTranslucent={true} is REQUIRED on Android so that the Modal's
+       * coordinate system starts at y=0 (top of screen, behind the status bar),
+       * matching the coordinates returned by measureInWindow().  Without this
+       * flag, Android places the Modal window below the status bar, creating a
+       * systematic y-offset equal to StatusBar.currentHeight.
        *
-       * The Animated.View for the dim/spotlight fades in after the measurement
-       * completes, hiding the instant scroll jump from the user.
+       * animationType="none" prevents the built-in slide/fade between steps —
+       * we handle all transitions ourselves with the Animated values above.
        */}
       {showTooltip && (
-        /*
-         * Single Animated.View for the entire overlay — both the spotlight dim
-         * and the tooltip card fade in together once measurement is complete.
-         * This hides the instant-scroll position jump from the user and prevents
-         * the card from flashing over undimmed content.
-         */
-        <Animated.View
-          pointerEvents="box-none"
-          style={[StyleSheet.absoluteFillObject, s.overlayRoot, { opacity: spotlightOpacity }]}
+        <Modal
+          visible
+          transparent
+          statusBarTranslucent={true}
+          animationType="none"
+          onRequestClose={skipTour}
         >
-          {/* Dim mask + spotlight cutout */}
-          {highlightRect ? (
-            <Spotlight rect={highlightRect} onSkip={skipTour} />
-          ) : (
-            <TouchableOpacity
-              style={[StyleSheet.absoluteFillObject, s.backdrop]}
-              onPress={skipTour}
-              activeOpacity={1}
-            />
+          {/*
+           * Layer 1: Full-screen dim backdrop
+           * Visible immediately when the step activates (opacity = 1).
+           * Fades to 0 once the spotlight strips take over.
+           * pointerEvents="none" so it doesn't block the skip handler below.
+           */}
+          <Animated.View
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFillObject, { opacity: backdropOpacity, backgroundColor: DIM }]}
+          />
+
+          {/*
+           * Layer 2: Spotlight strips + highlight border
+           * Fades in (opacity 0→1) once measureInWindow() has settled.
+           * pointerEvents="box-none" so the Spotlight's children can receive
+           * taps (the skip TouchableOpacity inside it).
+           */}
+          {highlightRect && (
+            <Animated.View
+              pointerEvents="box-none"
+              style={[StyleSheet.absoluteFillObject, { opacity: spotlightOpacity }]}
+            >
+              <SpotlightStrips rect={highlightRect} />
+              {/* Green highlight border around the target element */}
+              <View
+                pointerEvents="none"
+                style={{
+                  position:    'absolute',
+                  top:         highlightRect.y,
+                  left:        highlightRect.x,
+                  width:       highlightRect.width,
+                  height:      highlightRect.height,
+                  borderRadius: 16,
+                  borderWidth:  2,
+                  borderColor:  '#16a34a',
+                }}
+              />
+            </Animated.View>
           )}
 
-          {/* Tooltip card — floats near element when space allows, otherwise bottom sheet */}
+          {/*
+           * Layer 3: Full-screen tap-to-skip touchable
+           * Sits above the backdrop/strips but below the card.
+           * Allows tapping anywhere on the dim area to skip the tour.
+           */}
+          <TouchableOpacity
+            style={StyleSheet.absoluteFillObject}
+            onPress={skipTour}
+            activeOpacity={0}
+          />
+
+          {/*
+           * Layer 4: Tooltip card
+           * Rendered on top of everything else in the Modal.
+           * Floats near the element when there is enough space; otherwise
+           * snaps to the bottom as a sheet.
+           */}
           <View
             style={[
               s.card,
@@ -211,29 +260,22 @@ export default function TourOverlay() {
               { backgroundColor: bg },
             ]}
           >
-            {/* Green progress bar at top of card */}
             <View style={s.progressBar} />
 
-            {/* Dots + counter */}
             <View style={s.dotsRow}>
               {TOUR_STEPS.map((_, i) => (
                 <View
                   key={i}
-                  style={[
-                    s.dot,
-                    {
-                      width: i === tourStepIndex ? 14 : 5,
-                      backgroundColor:
-                        i === tourStepIndex
-                          ? '#16a34a'
-                          : i < tourStepIndex
-                          ? '#86efac'
-                          : border,
-                    },
-                  ]}
+                  style={[s.dot, {
+                    width: i === tourStepIndex ? 14 : 5,
+                    backgroundColor:
+                      i === tourStepIndex ? '#16a34a'
+                      : i < tourStepIndex  ? '#86efac'
+                      : borderClr,
+                  }]}
                 />
               ))}
-              <Text style={[s.counter, { color: textSecondary }]}>
+              <Text style={[s.counter, { color: textSec }]}>
                 {tourStepIndex + 1} / {TOUR_STEPS.length}
               </Text>
             </View>
@@ -241,13 +283,13 @@ export default function TourOverlay() {
             <Text style={[s.title, { color: textPrimary }]}>
               {t((currentStep?.title ?? '') as any)}
             </Text>
-            <Text style={[s.body, { color: textSecondary }]}>
+            <Text style={[s.body, { color: textSec }]}>
               {t((currentStep?.body ?? '') as any)}
             </Text>
 
             <View style={s.actions}>
               <TouchableOpacity onPress={skipTour}>
-                <Text style={[s.skipTxt, { color: skipColor }]}>{t('tour.skip')}</Text>
+                <Text style={[s.skipTxt, { color: skipClr }]}>{t('tour.skip')}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleNext} style={s.nextBtn}>
                 <Text style={s.nextTxt}>
@@ -256,165 +298,73 @@ export default function TourOverlay() {
               </TouchableOpacity>
             </View>
           </View>
-        </Animated.View>
+        </Modal>
       )}
     </>
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const s = StyleSheet.create({
   // ── Offer screen ──
   offerRoot: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
+    flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32,
   },
-  mascot: {
-    width: 160,
-    height: 160,
-    marginBottom: 24,
-  },
+  mascot: { width: 160, height: 160, marginBottom: 24 },
   offerTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    marginBottom: 10,
-    textAlign: 'center',
+    fontSize: 26, fontWeight: '800', marginBottom: 10, textAlign: 'center',
   },
   offerDesc: {
-    fontSize: 15,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 32,
+    fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 32,
   },
   primaryBtn: {
-    backgroundColor: '#16a34a',
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 12,
-    shadowColor: '#16a34a',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: '#16a34a', borderRadius: 16, paddingVertical: 16,
+    paddingHorizontal: 32, width: '100%', alignItems: 'center', marginBottom: 12,
+    shadowColor: '#16a34a', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
-  primaryBtnTxt: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  primaryBtnTxt: { color: '#fff', fontSize: 16, fontWeight: '700' },
   secondaryBtn: {
-    borderWidth: 1,
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    width: '100%',
-    alignItems: 'center',
+    borderWidth: 1, borderRadius: 16, paddingVertical: 16,
+    paddingHorizontal: 32, width: '100%', alignItems: 'center',
   },
-  secondaryBtnTxt: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
+  secondaryBtnTxt: { fontSize: 15, fontWeight: '500' },
 
-  // ── Absolute overlay root ──
-  overlayRoot: {
-    zIndex: 9999,
-    elevation: 9999,
-  },
-
-  // ── Backdrop (no spotlight) ──
-  backdrop: {
-    backgroundColor: 'rgba(0,0,0,0.55)',
-  },
-
-  // ── Tooltip card base ──
+  // ── Tooltip card ──
   card: {
-    position: 'absolute',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
-    elevation: 12,
-    zIndex: 10000,
+    position: 'absolute', overflow: 'hidden',
+    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, elevation: 12,
   },
-  // Bottom sheet variant
   cardBottom: {
-    bottom: 0,
-    left: 0,
-    right: 0,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    shadowOffset: { width: 0, height: -4 },
-    paddingBottom: 32,
+    bottom: 0, left: 0, right: 0,
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    shadowOffset: { width: 0, height: -4 }, paddingBottom: 32,
   },
-  // Floating tooltip variant
   cardFloating: {
-    borderRadius: 20,
-    shadowOffset: { width: 0, height: 4 },
-    paddingBottom: 16,
+    borderRadius: 20, shadowOffset: { width: 0, height: 4 }, paddingBottom: 16,
   },
-  progressBar: {
-    height: 4,
-    backgroundColor: '#16a34a',
-  },
+  progressBar: { height: 4, backgroundColor: '#16a34a' },
   dotsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 4,
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 10,
+    flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap',
+    gap: 4, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 10,
   },
-  dot: {
-    height: 5,
-    borderRadius: 3,
-  },
-  counter: {
-    fontSize: 10,
-    fontWeight: '600',
-    marginLeft: 'auto',
-  },
+  dot: { height: 5, borderRadius: 3 },
+  counter: { fontSize: 10, fontWeight: '600', marginLeft: 'auto' },
   title: {
-    fontSize: 15,
-    fontWeight: '700',
-    paddingHorizontal: 16,
-    marginBottom: 6,
-    lineHeight: 20,
+    fontSize: 15, fontWeight: '700', paddingHorizontal: 16, marginBottom: 6, lineHeight: 20,
   },
-  body: {
-    fontSize: 13,
-    paddingHorizontal: 16,
-    marginBottom: 18,
-    lineHeight: 19,
-  },
+  body: { fontSize: 13, paddingHorizontal: 16, marginBottom: 18, lineHeight: 19 },
   actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16,
   },
-  skipTxt: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
+  skipTxt: { fontSize: 13, fontWeight: '500' },
   nextBtn: {
-    backgroundColor: '#16a34a',
-    borderRadius: 12,
-    paddingVertical: 10,
+    backgroundColor: '#16a34a', borderRadius: 12, paddingVertical: 10,
     paddingHorizontal: 22,
-    shadowColor: '#16a34a',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowColor: '#16a34a', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3, shadowRadius: 6, elevation: 3,
   },
-  nextTxt: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '700',
-  },
+  nextTxt: { color: '#fff', fontSize: 14, fontWeight: '700' },
 });
