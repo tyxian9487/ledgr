@@ -743,7 +743,7 @@ export default function TrendsScreen() {
           >
             <Lock size={18} color="#9ca3af" />
             <Text className="text-sm font-semibold text-gray-400">{t('trends.income_vs')}</Text>
-            <Text className="text-xs text-gray-400">Upgrade to Pro to unlock</Text>
+            <Text className="text-xs text-gray-400">{t('trends.upgrade_pro_unlock')}</Text>
           </TouchableOpacity>
         )}
 
