@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTour, useTourTarget } from '../../context/TourContext';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import {
   View,
   Text,
@@ -186,12 +186,19 @@ export default function BudgetScreen() {
   const actualIncome = getMonthIncome(now.getFullYear(), now.getMonth());
 
   const [activeTab, setActiveTab] = useState<'goals' | 'budget'>('goals');
-  const { currentStep } = useTour();
+  const { currentStep, tourActive, triggerMeasure } = useTour();
 
   useEffect(() => {
     if (currentStep?.id === 'budget-income') setActiveTab('budget');
     if (currentStep?.id === 'budget-goals') setActiveTab('goals');
   }, [currentStep?.id]);
+
+  // Re-trigger measurement when this tab gains focus after a cross-tab navigation.
+  useFocusEffect(useCallback(() => {
+    if (tourActive && currentStep?.tab === 'budget') {
+      triggerMeasure();
+    }
+  }, [tourActive, currentStep?.tab, triggerMeasure]));
 
   // Tour target refs
   const tourRefGoals  = useTourTarget('budget-goals', { scrollRef, scrollY: 0 });

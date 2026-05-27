@@ -60,6 +60,16 @@ interface TourContextType {
   declineTour: () => void;
   nextStep: (navigateToTab?: (tab: string) => void) => void;
   skipTour: () => void;
+  /**
+   * Incremented by triggerMeasure(). useTourTarget includes this in its
+   * dependency array so it re-runs whenever a tab screen signals "I am now
+   * fully settled and layout is stable."  This is the primary mechanism for
+   * re-measuring after cross-tab navigation: tab screens call triggerMeasure()
+   * from useFocusEffect, which fires AFTER all animations (including Reanimated
+   * UI-thread animations that are invisible to InteractionManager) complete.
+   */
+  measureTrigger: number;
+  triggerMeasure: () => void;
 }
 
 const TourContext = createContext<TourContextType>({
@@ -67,13 +77,22 @@ const TourContext = createContext<TourContextType>({
   showOffer: false, highlightRect: null,
   setHighlightRect: () => {}, acceptTour: () => {}, declineTour: () => {},
   nextStep: () => {}, skipTour: () => {},
+  measureTrigger: 0, triggerMeasure: () => {},
 });
 
 export function TourProvider({ children }: { children: ReactNode }) {
-  const [tourActive,     setTourActive]     = useState(false);
-  const [tourStepIndex,  setTourStepIndex]  = useState(-1);
-  const [showOffer,      setShowOffer]      = useState(false);
-  const [highlightRect,  setHighlightRect]  = useState<HighlightRect | null>(null);
+  const [tourActive,      setTourActive]     = useState(false);
+  const [tourStepIndex,   setTourStepIndex]  = useState(-1);
+  const [showOffer,       setShowOffer]      = useState(false);
+  const [highlightRect,   setHighlightRect]  = useState<HighlightRect | null>(null);
+  const [measureTrigger,  setMeasureTrigger] = useState(0);
+
+  // Called by tab screens from useFocusEffect once their layout is settled.
+  // Incrementing this counter causes useTourTarget (which lists it as a dep)
+  // to re-run its measurement sequence — critical for cross-tab navigation
+  // where the target screen's layout isn't ready when currentStep.id first
+  // changes (Reanimated/UI-thread animations bypass InteractionManager).
+  const triggerMeasure = useCallback(() => setMeasureTrigger(n => n + 1), []);
 
   useEffect(() => {
     (async () => {
@@ -150,6 +169,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
     <TourContext.Provider value={{
       tourActive, tourStepIndex, currentStep, showOffer, highlightRect,
       setHighlightRect, acceptTour, declineTour, nextStep, skipTour,
+      measureTrigger, triggerMeasure,
     }}>
       {children}
     </TourContext.Provider>
@@ -216,7 +236,7 @@ interface TourTargetOptions {
  *   them through optionsRef to guard against hypothetical future changes.
  */
 export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
-  const { currentStep, setHighlightRect } = useTour();
+  const { currentStep, setHighlightRect, measureTrigger } = useTour();
   const ref        = useRef<View>(null);
   // Always keep the latest options available inside the effect without
   // re-running the effect when they change (they are constants in practice).
@@ -225,6 +245,11 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
 
   useEffect(() => {
     if (currentStep?.id !== stepId) return;
+
+    // Clear any stale rect so the backdrop is shown while we re-measure.
+    // This is a no-op for the initial step trigger (nextStep already clears it)
+    // but matters when measureTrigger increments (re-measure after tab focus).
+    setHighlightRect(null);
 
     let cancelled = false;
 
@@ -418,9 +443,11 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
       cancelAnimationFrame(xRaf2);
       clearTimeout(xTimer);
     };
-    // options intentionally omitted — captured via optionsRef
+    // options intentionally omitted — captured via optionsRef.
+    // measureTrigger IS included: tab screens increment it from useFocusEffect
+    // once their layout is settled, causing a fresh measurement pass.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStep?.id, stepId, setHighlightRect]);
+  }, [currentStep?.id, stepId, setHighlightRect, measureTrigger]);
 
   return ref;
 }

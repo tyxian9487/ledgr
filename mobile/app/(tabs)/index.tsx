@@ -13,7 +13,7 @@ import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { usePurchases } from '../../context/PurchasesContext';
 import { usePaywall } from '../../context/PaywallContext';
-import { useTourTarget } from '../../context/TourContext';
+import { useTour, useTourTarget } from '../../context/TourContext';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, Transaction } from '../../types';
 import GreenCard from '../../components/home/GreenCard';
 import GoalTrackerCard from '../../components/home/GoalTrackerCard';
@@ -69,6 +69,14 @@ export default function HomeScreen() {
   const tourRefCapture   = useTourTarget('home-capture');
   const tourRefBudgetBtn = useTourTarget('home-budget-btn', { scrollRef, scrollY: 390 });
   const tourRefToggle    = useTourTarget('home-view-toggle', { scrollRef, scrollY: 720 });
+
+  // Re-trigger measurement when the home tab gains focus after a cross-tab navigation.
+  const { tourActive, currentStep: tourCurrentStep, triggerMeasure } = useTour();
+  useFocusEffect(useCallback(() => {
+    if (tourActive && tourCurrentStep?.tab === 'home') {
+      triggerMeasure();
+    }
+  }, [tourActive, tourCurrentStep?.tab, triggerMeasure]));
 
   const [showEntry, setShowEntry] = useState(false);
   const [entryPrefill, setEntryPrefill] = useState<{ type?: 'expense' | 'income'; amount?: number; category?: string; description?: string } | undefined>(undefined);

@@ -25,12 +25,13 @@
  *  6. Card is always visible at the bottom (or floats near element if space allows)
  */
 
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef, useEffect, useState } from 'react';
 import {
   Animated,
   Dimensions,
   Image,
   Modal,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -122,6 +123,15 @@ export default function TourOverlay() {
   const backdropOpacity  = useRef(new Animated.Value(1)).current;
   const spotlightOpacity = useRef(new Animated.Value(0)).current;
 
+  // ── Modal coordinate-space calibration ───────────────────────────────────────
+  // A 1×1 View placed at (top:0, left:0) inside the Modal lets us verify that
+  // the Modal's origin aligns with the app window's origin.  With
+  // statusBarTranslucent={true} both should be (0,0).  On some Android
+  // versions this flag doesn't work as expected, producing a y-offset equal
+  // to StatusBar.currentHeight; the calibration detects and corrects this.
+  const calibRef        = useRef<View>(null);
+  const [modalOffset, setModalOffset] = useState({ x: 0, y: 0 });
+
   // Reset animations every time the step changes (new measurement pending)
   useEffect(() => {
     backdropOpacity.setValue(1);
@@ -166,7 +176,19 @@ export default function TourOverlay() {
   const borderClr   = darkMode ? '#1f2937' : '#e5e7eb';
   const skipClr     = darkMode ? '#6b7280' : '#9ca3af';
 
-  const floatingPos = highlightRect ? getFloatingPos(highlightRect) : null;
+  // Apply calibration offset: if Modal origin is not at (0,0) in window space
+  // (e.g. statusBarTranslucent didn't work on this Android build), shift the
+  // spotlight coordinates so they land in the right place.
+  const correctedRect: typeof highlightRect = highlightRect
+    ? {
+        x:      highlightRect.x      - modalOffset.x,
+        y:      highlightRect.y      - modalOffset.y,
+        width:  highlightRect.width,
+        height: highlightRect.height,
+      }
+    : null;
+
+  const floatingPos = correctedRect ? getFloatingPos(correctedRect) : null;
   const isFloating  = floatingPos !== null;
 
   return (
@@ -223,21 +245,49 @@ export default function TourOverlay() {
            * pointerEvents="box-none" so the Spotlight's children can receive
            * taps (the skip TouchableOpacity inside it).
            */}
-          {highlightRect && (
+          {/*
+           * ── Calibration View ─────────────────────────────────────────────────
+           * Invisible 1×1 View anchored to the Modal's top-left corner.
+           * measureInWindow() on this View gives us the Modal origin in window
+           * space.  With statusBarTranslucent={true} we expect (0,0); any
+           * non-zero result is subtracted from the spotlight coordinates.
+           */}
+          <View
+            ref={calibRef}
+            pointerEvents="none"
+            style={{ position: 'absolute', top: 0, left: 0, width: 1, height: 1 }}
+            onLayout={() => {
+              calibRef.current?.measureInWindow((cx, cy) => {
+                if (Math.abs(cx - modalOffset.x) > 0.5 || Math.abs(cy - modalOffset.y) > 0.5) {
+                  if (__DEV__) {
+                    console.log(
+                      `[TourOverlay] Modal origin calibration:` +
+                      `  platform=${Platform.OS}` +
+                      `  origin=(${cx.toFixed(1)},${cy.toFixed(1)})` +
+                      `  (expected 0,0 — diff will be subtracted from spotlight)`
+                    );
+                  }
+                  setModalOffset({ x: cx, y: cy });
+                }
+              });
+            }}
+          />
+
+          {correctedRect && (
             <Animated.View
               pointerEvents="box-none"
               style={[StyleSheet.absoluteFillObject, { opacity: spotlightOpacity }]}
             >
-              <SpotlightStrips rect={highlightRect} />
+              <SpotlightStrips rect={correctedRect} />
               {/* Green highlight border around the target element */}
               <View
                 pointerEvents="none"
                 style={{
                   position:    'absolute',
-                  top:         highlightRect.y,
-                  left:        highlightRect.x,
-                  width:       highlightRect.width,
-                  height:      highlightRect.height,
+                  top:         correctedRect.y,
+                  left:        correctedRect.x,
+                  width:       correctedRect.width,
+                  height:      correctedRect.height,
                   borderRadius: 16,
                   borderWidth:  2,
                   borderColor:  '#16a34a',
@@ -247,25 +297,20 @@ export default function TourOverlay() {
               {/*
                * ── DEV ONLY: Debug border + coordinate readout ────────────────
                *
-               * A bright yellow dashed border shows the exact measured rect so
-               * you can visually verify it aligns with the spotlit component.
-               * The coordinate chip below the border mirrors the useTourTarget
-               * console output so you can cross-reference without a device log.
-               *
-               * Rendered on top of the green border — remove this entire block
-               * before shipping if you want a cleaner look, though it only
-               * appears in __DEV__ builds so it never reaches production.
+               * Yellow dashed border shows the corrected rect so you can verify
+               * alignment.  The chip shows both raw and corrected coords so you
+               * can see the calibration offset at a glance.
                */}
               {__DEV__ && (
                 <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
-                  {/* Dashed yellow outline — exact measured boundary */}
+                  {/* Dashed yellow outline — corrected measurement boundary */}
                   <View
                     style={{
                       position:    'absolute',
-                      top:         highlightRect.y - 3,
-                      left:        highlightRect.x - 3,
-                      width:       highlightRect.width  + 6,
-                      height:      highlightRect.height + 6,
+                      top:         correctedRect.y - 3,
+                      left:        correctedRect.x - 3,
+                      width:       correctedRect.width  + 6,
+                      height:      correctedRect.height + 6,
                       borderWidth: 2,
                       borderColor: '#facc15',
                       borderStyle: 'dashed',
@@ -276,8 +321,8 @@ export default function TourOverlay() {
                   <View
                     style={{
                       position:        'absolute',
-                      top:             highlightRect.y + highlightRect.height + 8,
-                      left:            highlightRect.x,
+                      top:             correctedRect.y + correctedRect.height + 8,
+                      left:            correctedRect.x,
                       backgroundColor: 'rgba(0,0,0,0.82)',
                       borderRadius:    4,
                       paddingHorizontal: 6,
@@ -294,7 +339,10 @@ export default function TourOverlay() {
                         lineHeight: 13,
                       }}
                     >
-                      {`x=${highlightRect.x.toFixed(0)}  y=${highlightRect.y.toFixed(0)}  ${highlightRect.width.toFixed(0)}×${highlightRect.height.toFixed(0)}`}
+                      {`raw=(${highlightRect!.x.toFixed(0)},${highlightRect!.y.toFixed(0)}) ` +
+                       `off=(${modalOffset.x.toFixed(0)},${modalOffset.y.toFixed(0)}) ` +
+                       `fin=(${correctedRect.x.toFixed(0)},${correctedRect.y.toFixed(0)}) ` +
+                       `${correctedRect.width.toFixed(0)}×${correctedRect.height.toFixed(0)}`}
                     </Text>
                   </View>
                 </View>
