@@ -737,6 +737,7 @@ export default function TrendsScreen() {
         ) : (
           <TouchableOpacity
             ref={tourRefIncomeVs}
+            collapsable={false}
             onPress={showPaywall}
             activeOpacity={0.8}
             className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl p-5 items-center gap-2"
