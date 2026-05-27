@@ -17,6 +17,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { CURRENCIES } from '../../types';
+import { getCurrencyDisplayName } from '../../utils/currency';
 import { ChevronRight, ChevronLeft, Check, Search, X, Camera } from 'lucide-react-native';
 
 const defaultAvatar = require('../../assets/m_expression_wink.png');
@@ -65,7 +66,7 @@ const TOTAL_STEPS = 5;
 
 export default function OnboardingScreen() {
   const { updateUserProfile, completeOnboarding, darkMode } = useApp();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   const bg = darkMode ? '#111827' : '#f9fafb';
   const card = darkMode ? '#1f2937' : '#ffffff';
@@ -113,11 +114,16 @@ export default function OnboardingScreen() {
   const initial = hasName ? name.trim().charAt(0).toUpperCase() : '?';
 
   const selectedCurrency = CURRENCIES.find(c => c.code === currency);
-  const filteredCurrencies = CURRENCIES.filter(c =>
-    !currencySearch ||
-    c.code.toLowerCase().includes(currencySearch.toLowerCase()) ||
-    c.name.toLowerCase().includes(currencySearch.toLowerCase()),
-  );
+  const filteredCurrencies = CURRENCIES.filter(c => {
+    if (!currencySearch) return true;
+    const q = currencySearch.toLowerCase();
+    const localized = getCurrencyDisplayName(c.code, language).toLowerCase();
+    return (
+      c.code.toLowerCase().includes(q) ||
+      c.name.toLowerCase().includes(q) ||
+      localized.includes(q)
+    );
+  });
 
   const STEP_TITLES = [
     t('onboard.setup'),
@@ -245,7 +251,7 @@ export default function OnboardingScreen() {
               >
                 <View>
                   <Text style={s.currencyCode}>{selectedCurrency?.code ?? 'USD'}</Text>
-                  <Text style={s.currencyName}>{selectedCurrency?.name ?? 'US Dollar'}</Text>
+                  <Text style={s.currencyName}>{getCurrencyDisplayName(selectedCurrency?.code ?? 'USD', language)}</Text>
                 </View>
                 <ChevronRight size={16} color="#9ca3af" />
               </TouchableOpacity>
@@ -447,7 +453,7 @@ export default function OnboardingScreen() {
                   style={[s.currencyRow, sel && s.currencyRowSel]}
                 >
                   <Text style={s.currencyRowCode}>{item.code}</Text>
-                  <Text style={[s.currencyRowName, sel && s.currencyRowNameSel]}>{item.name}</Text>
+                  <Text style={[s.currencyRowName, sel && s.currencyRowNameSel]}>{getCurrencyDisplayName(item.code, language)}</Text>
                   {sel && <Check size={15} color="#16a34a" />}
                 </TouchableOpacity>
               );

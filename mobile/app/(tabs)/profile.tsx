@@ -60,6 +60,7 @@ import {
   CURRENCIES,
   LANGUAGES,
 } from '../../types';
+import { getCurrencyDisplayName } from '../../utils/currency';
 import type { Transaction } from '../../types';
 import { computeBadges, computeStreaks, BADGES, BadgeDef } from '../../utils/achievements';
 import {
@@ -75,7 +76,7 @@ import StatusCelebration from '../../components/StatusCelebration';
 
 // ─── Score Ring ───────────────────────────────────────────────────────────────
 function ScoreRing({ score, onPress }: { score: number; onPress?: () => void }) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const color = score >= 80 ? '#22c55e' : score >= 60 ? '#eab308' : '#ef4444';
   const SIZE = 120;
   const BORDER = 10;
@@ -1179,12 +1180,16 @@ export default function ProfileScreen() {
               ) : null}
             </View>
             <ScrollView className="flex-1">
-              {CURRENCIES.filter(
-                c =>
-                  !currencySearch ||
-                  c.code.toLowerCase().includes(currencySearch.toLowerCase()) ||
-                  c.name.toLowerCase().includes(currencySearch.toLowerCase()),
-              ).map(c => {
+              {CURRENCIES.filter(c => {
+                  if (!currencySearch) return true;
+                  const q = currencySearch.toLowerCase();
+                  const localized = getCurrencyDisplayName(c.code, language).toLowerCase();
+                  return (
+                    c.code.toLowerCase().includes(q) ||
+                    c.name.toLowerCase().includes(q) ||
+                    localized.includes(q)
+                  );
+                }).map(c => {
                 const selected = (userProfile.currency || 'USD') === c.code;
                 return (
                   <TouchableOpacity
@@ -1205,7 +1210,7 @@ export default function ProfileScreen() {
                         selected ? 'font-semibold text-green-700' : 'text-gray-900 dark:text-white'
                       }`}
                     >
-                      {c.name}
+                      {getCurrencyDisplayName(c.code, language)}
                     </Text>
                     {selected ? (
                       <Text className="text-green-600 text-sm font-bold">✓</Text>
