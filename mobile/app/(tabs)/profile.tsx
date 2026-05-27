@@ -425,7 +425,7 @@ function SectionHeader({ label }: { label: string }) {
 
 // ─── Main Profile Screen ──────────────────────────────────────────────────────
 export default function ProfileScreen() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
   const {
@@ -441,6 +441,11 @@ export default function ProfileScreen() {
     deleteAccount,
   } = useApp();
   const { isPro } = usePurchases();
+
+  // ── Defensive defaults: guard against async load gap on first launch ────────
+  const safeLanguage = language ?? 'en';
+  const safeCurrency = userProfile?.currency ?? 'USD';
+  const safeProfile = userProfile ?? { name: 'User', email: '', avatar: null, plan: 'free', currency: 'USD', language: 'en' };
 
   async function pickAvatar() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -476,7 +481,7 @@ export default function ProfileScreen() {
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [editingName, setEditingName] = useState(false);
-  const [nameInput, setNameInput] = useState(userProfile.name);
+  const [nameInput, setNameInput] = useState(userProfile?.name ?? '');
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showFAQ, setShowFAQ] = useState(false);
@@ -730,15 +735,15 @@ export default function ProfileScreen() {
         {/* ── Avatar + Name ── */}
         <View className="items-center gap-2 pb-5">
           <TouchableOpacity onPress={pickAvatar} activeOpacity={0.85} style={{ position: 'relative' }}>
-            {userProfile.avatar ? (
+            {safeProfile.avatar ? (
               <Image
-                source={{ uri: userProfile.avatar }}
+                source={{ uri: safeProfile.avatar }}
                 style={{ width: 96, height: 96, borderRadius: 48 }}
               />
             ) : (
               <View className="w-24 h-24 rounded-full bg-green-600 items-center justify-center">
                 <Text className="text-white font-black text-3xl">
-                  {(userProfile.name || 'U').charAt(0).toUpperCase()}
+                  {(safeProfile.name || 'U').charAt(0).toUpperCase()}
                 </Text>
               </View>
             )}
@@ -767,12 +772,12 @@ export default function ProfileScreen() {
               onPress={() => setEditingName(true)}
               className="flex-row items-center gap-1.5"
             >
-              <Text className="text-lg font-bold text-gray-900 dark:text-white">{userProfile.name}</Text>
+              <Text className="text-lg font-bold text-gray-900 dark:text-white">{safeProfile.name}</Text>
               <Edit3 size={14} color="#9ca3af" />
             </TouchableOpacity>
           )}
 
-          <Text className="text-xs text-gray-500">{userProfile.email}</Text>
+          <Text className="text-xs text-gray-500">{safeProfile.email}</Text>
 
           {/* Plan pill */}
           {isPro ? (
@@ -980,14 +985,14 @@ export default function ProfileScreen() {
           <SettingsRow
             icon={<Globe size={16} color="#6b7280" />}
             label={t('profile.currency')}
-            value={`${userProfile.currency || 'USD'} · ${getCurrencySymbol()}`}
+            value={`${safeCurrency} · ${getCurrencySymbol()}`}
             onPress={() => setShowCurrency(true)}
           />
           <SettingsRow
             icon={<Text style={{ fontSize: 16 }}>🌐</Text>}
             label={t('profile.language')}
             value={
-              LANGUAGES.find(l => l.code === (userProfile.language || 'en'))?.nativeLabel ??
+              (LANGUAGES ?? []).find(l => l.code === (safeProfile.language ?? 'en'))?.nativeLabel ??
               'English'
             }
             onPress={() => setShowLanguage(true)}
@@ -1180,17 +1185,17 @@ export default function ProfileScreen() {
               ) : null}
             </View>
             <ScrollView className="flex-1">
-              {CURRENCIES.filter(c => {
+              {(CURRENCIES ?? []).filter(c => {
                   if (!currencySearch) return true;
                   const q = currencySearch.toLowerCase();
-                  const localized = getCurrencyDisplayName(c.code, language).toLowerCase();
+                  const localized = getCurrencyDisplayName(c.code, safeLanguage).toLowerCase();
                   return (
                     c.code.toLowerCase().includes(q) ||
                     c.name.toLowerCase().includes(q) ||
                     localized.includes(q)
                   );
                 }).map(c => {
-                const selected = (userProfile.currency || 'USD') === c.code;
+                const selected = safeCurrency === c.code;
                 return (
                   <TouchableOpacity
                     key={c.code}
@@ -1210,7 +1215,7 @@ export default function ProfileScreen() {
                         selected ? 'font-semibold text-green-700' : 'text-gray-900 dark:text-white'
                       }`}
                     >
-                      {getCurrencyDisplayName(c.code, language)}
+                      {getCurrencyDisplayName(c.code, safeLanguage)}
                     </Text>
                     {selected ? (
                       <Text className="text-green-600 text-sm font-bold">✓</Text>
@@ -1240,8 +1245,8 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </View>
             <ScrollView className="flex-1">
-              {LANGUAGES.map(lang => {
-                const selected = (userProfile.language || 'en') === lang.code;
+              {(LANGUAGES ?? []).map(lang => {
+                const selected = (safeProfile.language ?? 'en') === lang.code;
                 return (
                   <TouchableOpacity
                     key={lang.code}
