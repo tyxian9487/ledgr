@@ -115,24 +115,10 @@ export default function TourOverlay() {
     nextStep(navigateToTab);
   }, [nextStep, navigateToTab]);
 
-  if (!isAuthenticated || !hasCompletedOnboarding) return null;
-
-  const isLastStep = tourStepIndex === TOUR_STEPS.length - 1;
-  const onCorrectTab = currentStep?.tab === currentTab;
-  const showTooltip = tourActive && onCorrectTab && !!currentStep;
-
-  const bg = darkMode ? '#111827' : '#ffffff';
-  const textPrimary = darkMode ? '#f9fafb' : '#111827';
-  const textSecondary = darkMode ? '#9ca3af' : '#6b7280';
-  const border = darkMode ? '#1f2937' : '#e5e7eb';
-  const skipColor = darkMode ? '#6b7280' : '#9ca3af';
-
-  const floatingPos = highlightRect ? getFloatingPos(highlightRect) : null;
-  const isFloating = floatingPos !== null;
-
   // ── Spotlight fade-in ─────────────────────────────────────────────────────
-  // Reset to transparent whenever the step index changes (before new measurement
-  // arrives), then animate to opaque once highlightRect is set.
+  // MUST be before the early return so hook call count is always the same.
+  // Reset to transparent on every step change; animate to opaque once
+  // highlightRect is set (i.e. after measurement completes).
   const spotlightOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -150,6 +136,21 @@ export default function TourOverlay() {
       useNativeDriver: true,
     }).start();
   }, [highlightRect, spotlightOpacity]);
+
+  if (!isAuthenticated || !hasCompletedOnboarding) return null;
+
+  const isLastStep = tourStepIndex === TOUR_STEPS.length - 1;
+  const onCorrectTab = currentStep?.tab === currentTab;
+  const showTooltip = tourActive && onCorrectTab && !!currentStep;
+
+  const bg = darkMode ? '#111827' : '#ffffff';
+  const textPrimary = darkMode ? '#f9fafb' : '#111827';
+  const textSecondary = darkMode ? '#9ca3af' : '#6b7280';
+  const border = darkMode ? '#1f2937' : '#e5e7eb';
+  const skipColor = darkMode ? '#6b7280' : '#9ca3af';
+
+  const floatingPos = highlightRect ? getFloatingPos(highlightRect) : null;
+  const isFloating = floatingPos !== null;
 
   return (
     <>
