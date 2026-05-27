@@ -158,9 +158,9 @@ export default function SubscriptionSheet({ onClose }: { onClose: () => void }) 
                   className={`flex-1 py-3.5 rounded-xl items-center ${selectedPlan === 'annual' ? 'bg-white dark:bg-gray-700' : ''}`}
                   style={selectedPlan === 'annual' ? { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 } : {}}
                 >
-                  <Text className="text-[9px] font-black text-green-600 uppercase tracking-widest mb-0.5">Best Value · Save 50%</Text>
+                  <Text className="text-[9px] font-black text-green-600 uppercase tracking-widest mb-0.5">{t('sub.best_value')}</Text>
                   <Text className={`text-xl font-black ${selectedPlan === 'annual' ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>{annualPrice}</Text>
-                  <Text className={`text-xs mt-0.5 ${selectedPlan === 'annual' ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400'}`}>per year</Text>
+                  <Text className={`text-xs mt-0.5 ${selectedPlan === 'annual' ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400'}`}>{t('sub.per_year')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => setSelectedPlan('monthly')}
@@ -170,7 +170,7 @@ export default function SubscriptionSheet({ onClose }: { onClose: () => void }) 
                 >
                   <Text className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5"> </Text>
                   <Text className={`text-xl font-black ${selectedPlan === 'monthly' ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>{monthlyPrice}</Text>
-                  <Text className={`text-xs mt-0.5 ${selectedPlan === 'monthly' ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400'}`}>per month</Text>
+                  <Text className={`text-xs mt-0.5 ${selectedPlan === 'monthly' ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400'}`}>{t('sub.per_month')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -207,13 +207,13 @@ export default function SubscriptionSheet({ onClose }: { onClose: () => void }) 
                   <>
                     <Text className="text-white font-black text-base">
                       {selectedPlan === 'annual'
-                        ? `Get Annual — ${annualPrice}/yr`
-                        : `Get Monthly — ${monthlyPrice}/mo`}
+                        ? `${t('sub.get_annual')} — ${annualPrice}/yr`
+                        : `${t('sub.get_monthly')} — ${monthlyPrice}/mo`}
                     </Text>
                     <Text className="text-white/70 text-xs mt-0.5">
                       {selectedPlan === 'annual'
-                        ? `Billed ${annualPrice} once per year`
-                        : `Billed ${monthlyPrice} every month`}
+                        ? t('sub.billed_annually', { price: annualPrice })
+                        : t('sub.billed_monthly', { price: monthlyPrice })}
                     </Text>
                   </>
                 )}
@@ -240,7 +240,7 @@ export default function SubscriptionSheet({ onClose }: { onClose: () => void }) 
               className="items-center py-4 mb-4"
               activeOpacity={0.6}
             >
-              <Text className="text-xs text-gray-300 dark:text-gray-600">Maybe later</Text>
+              <Text className="text-xs text-gray-300 dark:text-gray-600">{t('sub.maybe_later')}</Text>
             </TouchableOpacity>
           </ScrollView>
         )}
