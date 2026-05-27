@@ -737,6 +737,16 @@ export const en = {
   'notif.tips_body_5': 'The 50/30/20 rule: 50% needs, 30% wants, 20% savings.',
   'notif.tips_body_6': 'Automate your savings to make it effortless and consistent.',
   'notif.tips_body_7': 'Avoid lifestyle inflation — save or invest your salary increases.',
+
+  // Subscription sheet CTA strings
+  'sub.best_value': 'Best Value · Save 50%',
+  'sub.per_year': 'per year',
+  'sub.per_month': 'per month',
+  'sub.get_annual': 'Get Annual',
+  'sub.get_monthly': 'Get Monthly',
+  'sub.billed_annually': 'Billed {price} once per year',
+  'sub.billed_monthly': 'Billed {price} every month',
+  'sub.maybe_later': 'Maybe later',
 } as const;
 
 export type TKey = keyof typeof en;
@@ -1093,6 +1103,14 @@ const zh: Record<TKey, string> = {
   'notif.tips_body_5': '50/30/20法则：50%必需品、30%想要、20%储蓄。',
   'notif.tips_body_6': '自动化您的储蓄，轻松保持一致。',
   'notif.tips_body_7': '避免生活方式通胀——将加薪收入存起来或投资。',
+  'sub.best_value': '最佳选择 · 节省50%',
+  'sub.per_year': '每年',
+  'sub.per_month': '每月',
+  'sub.get_annual': '选择年付',
+  'sub.get_monthly': '选择月付',
+  'sub.billed_annually': '每年一次收费 {price}',
+  'sub.billed_monthly': '每月收费 {price}',
+  'sub.maybe_later': '稍后再说',
 };
 
 const ja: Record<TKey, string> = {
@@ -1447,6 +1465,14 @@ const ja: Record<TKey, string> = {
   'notif.tips_body_5': '50/30/20ルール：50%必需品、30%娯楽、20%貯蓄。',
   'notif.tips_body_6': '貯蓄を自動化して、手間なく継続しましょう。',
   'notif.tips_body_7': '生活水準インフレを避け、昇給分は貯蓄や投資へ回しましょう。',
+  'sub.best_value': 'お得 · 50%節約',
+  'sub.per_year': '年払い',
+  'sub.per_month': '月払い',
+  'sub.get_annual': '年払いを選択',
+  'sub.get_monthly': '月払いを選択',
+  'sub.billed_annually': '年1回 {price} 請求',
+  'sub.billed_monthly': '毎月 {price} 請求',
+  'sub.maybe_later': 'あとで',
 };
 
 const ko: Record<TKey, string> = {
@@ -1802,6 +1828,14 @@ const ko: Record<TKey, string> = {
   'notif.tips_body_5': '50/30/20 규칙: 필수 50%, 원하는 것 30%, 저축 20%.',
   'notif.tips_body_6': '저축을 자동화하여 꾸준히 실천하세요.',
   'notif.tips_body_7': '생활 수준 인플레이션을 피하고, 급여 인상분은 저축하거나 투자하세요.',
+  'sub.best_value': '최고 가치 · 50% 절약',
+  'sub.per_year': '연간',
+  'sub.per_month': '월간',
+  'sub.get_annual': '연간 구독',
+  'sub.get_monthly': '월간 구독',
+  'sub.billed_annually': '연 1회 {price} 청구',
+  'sub.billed_monthly': '매월 {price} 청구',
+  'sub.maybe_later': '나중에',
 };
 
 const ms: Record<TKey, string> = {
@@ -2159,6 +2193,14 @@ const ms: Record<TKey, string> = {
   'notif.tips_body_5': 'Peraturan 50/30/20: 50% keperluan, 30% kehendak, 20% simpanan.',
   'notif.tips_body_6': 'Automatikkan simpanan anda untuk menjadikannya mudah dan konsisten.',
   'notif.tips_body_7': 'Elakkan inflasi gaya hidup — simpan atau laburkan kenaikan gaji anda.',
+  'sub.best_value': 'Nilai Terbaik · Jimat 50%',
+  'sub.per_year': 'setahun',
+  'sub.per_month': 'sebulan',
+  'sub.get_annual': 'Dapatkan Tahunan',
+  'sub.get_monthly': 'Dapatkan Bulanan',
+  'sub.billed_annually': 'Dibilkan {price} sekali setahun',
+  'sub.billed_monthly': 'Dibilkan {price} setiap bulan',
+  'sub.maybe_later': 'Kemudian',
 };
 
 export const translations: Record<string, Record<TKey, string>> = { en, zh, ja, ko, ms };

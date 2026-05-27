@@ -14,7 +14,6 @@ import type { HighlightRect } from '../context/TourContext';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../context/LanguageContext';
 
-const mascotImg = require('../assets/mascot.png');
 const mapMascotImg = require('../assets/m_map.png');
 
 const TAB_ROUTES: Record<string, string> = {
@@ -31,15 +30,38 @@ function pathnameToTab(pathname: string): string {
   return 'home';
 }
 
+/**
+ * Four-quadrant dim mask with a transparent cutout around `rect`.
+ * Rendered inside the same absolute overlay as the card — same coordinate
+ * space as measureInWindow, so no status-bar offset correction is needed.
+ */
 function Spotlight({ rect, onSkip }: { rect: HighlightRect; onSkip: () => void }) {
   const DIM = 'rgba(0,0,0,0.72)';
   return (
     <>
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: rect.y, backgroundColor: DIM }} />
-      <View style={{ position: 'absolute', top: rect.y, left: 0, width: rect.x, height: rect.height, backgroundColor: DIM }} />
-      <View style={{ position: 'absolute', top: rect.y, left: rect.x + rect.width, right: 0, height: rect.height, backgroundColor: DIM }} />
-      <View style={{ position: 'absolute', top: rect.y + rect.height, left: 0, right: 0, bottom: 0, backgroundColor: DIM }} />
-      <View style={{ position: 'absolute', top: rect.y, left: rect.x, width: rect.width, height: rect.height, borderRadius: 16, borderWidth: 2, borderColor: '#16a34a' }} pointerEvents="none" />
+      {/* top strip */}
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: rect.y, backgroundColor: DIM }} pointerEvents="none" />
+      {/* left strip beside cutout */}
+      <View style={{ position: 'absolute', top: rect.y, left: 0, width: rect.x, height: rect.height, backgroundColor: DIM }} pointerEvents="none" />
+      {/* right strip beside cutout */}
+      <View style={{ position: 'absolute', top: rect.y, left: rect.x + rect.width, right: 0, height: rect.height, backgroundColor: DIM }} pointerEvents="none" />
+      {/* bottom strip */}
+      <View style={{ position: 'absolute', top: rect.y + rect.height, left: 0, right: 0, bottom: 0, backgroundColor: DIM }} pointerEvents="none" />
+      {/* green highlight border */}
+      <View
+        style={{
+          position: 'absolute',
+          top: rect.y,
+          left: rect.x,
+          width: rect.width,
+          height: rect.height,
+          borderRadius: 16,
+          borderWidth: 2,
+          borderColor: '#16a34a',
+        }}
+        pointerEvents="none"
+      />
+      {/* full-screen tap-to-skip — sits behind the card but covers the dim area */}
       <TouchableOpacity style={StyleSheet.absoluteFillObject} onPress={onSkip} activeOpacity={0} />
     </>
   );
@@ -63,8 +85,17 @@ function getFloatingPos(rect: HighlightRect): { top?: number; bottom?: number; l
 }
 
 export default function TourOverlay() {
-  const { tourActive, tourStepIndex, currentStep, showOffer, highlightRect, acceptTour, declineTour, nextStep, skipTour } =
-    useTour();
+  const {
+    tourActive,
+    tourStepIndex,
+    currentStep,
+    showOffer,
+    highlightRect,
+    acceptTour,
+    declineTour,
+    nextStep,
+    skipTour,
+  } = useTour();
   const { isAuthenticated, hasCompletedOnboarding, darkMode } = useApp();
   const { t } = useTranslation();
   const router = useRouter();
@@ -95,20 +126,17 @@ export default function TourOverlay() {
   const border = darkMode ? '#1f2937' : '#e5e7eb';
   const skipColor = darkMode ? '#6b7280' : '#9ca3af';
 
-  // Compute floating position; fall back to bottom sheet when no rect or not enough space
   const floatingPos = highlightRect ? getFloatingPos(highlightRect) : null;
   const isFloating = floatingPos !== null;
 
   return (
     <>
-      {/* ── Quick Tour Offer ── */}
+      {/* ── Quick Tour Offer (full-screen Modal is fine here — no coordinate matching needed) ── */}
       <Modal visible={showOffer} transparent={false} animationType="fade">
         <View style={[s.offerRoot, { backgroundColor: bg }]}>
           <Image source={mapMascotImg} style={s.mascot} resizeMode="contain" />
           <Text style={[s.offerTitle, { color: textPrimary }]}>{t('tour.title')}</Text>
-          <Text style={[s.offerDesc, { color: textSecondary }]}>
-            {t('tour.desc')}
-          </Text>
+          <Text style={[s.offerDesc, { color: textSecondary }]}>{t('tour.desc')}</Text>
           <TouchableOpacity onPress={acceptTour} activeOpacity={0.85} style={s.primaryBtn}>
             <Text style={s.primaryBtnTxt}>{t('tour.offer_start')}</Text>
           </TouchableOpacity>
@@ -118,63 +146,89 @@ export default function TourOverlay() {
         </View>
       </Modal>
 
-      {/* ── Tour Tooltip ── */}
-      <Modal
-        visible={showTooltip}
-        transparent
-        animationType="fade"
-        statusBarTranslucent={true}
-        onRequestClose={skipTour}
-      >
-        {/* Backdrop */}
-        {highlightRect
-          ? <Spotlight rect={highlightRect} onSkip={skipTour} />
-          : <TouchableOpacity style={s.backdrop} onPress={skipTour} activeOpacity={1} />
-        }
+      {/*
+       * ── Tour Tooltip Overlay ──
+       *
+       * IMPORTANT: This is NOT a Modal. It is a plain absolute View rendered in the
+       * same React Native root as the app content. This guarantees the coordinate
+       * space matches what measureInWindow() returns, so the spotlight cutout aligns
+       * perfectly with the highlighted element regardless of status-bar height or
+       * Android window-inset mode.
+       *
+       * High elevation/zIndex ensures it sits on top of the navigation stack and tab bar.
+       */}
+      {showTooltip && (
+        <View
+          pointerEvents="box-none"
+          style={[StyleSheet.absoluteFillObject, s.overlayRoot]}
+        >
+          {/* Dim mask + spotlight cutout */}
+          {highlightRect ? (
+            <Spotlight rect={highlightRect} onSkip={skipTour} />
+          ) : (
+            <TouchableOpacity
+              style={[StyleSheet.absoluteFillObject, s.backdrop]}
+              onPress={skipTour}
+              activeOpacity={1}
+            />
+          )}
 
-        {/* Card — floats near the highlighted element when possible */}
-        <View style={[
-          s.card,
-          isFloating ? s.cardFloating : s.cardBottom,
-          isFloating ? floatingPos! : undefined,
-          { backgroundColor: bg },
-        ]}>
-          {/* Green gradient bar */}
-          <View style={s.progressBar} />
+          {/* Tooltip card — floats near element when space allows, otherwise bottom sheet */}
+          <View
+            style={[
+              s.card,
+              isFloating ? s.cardFloating : s.cardBottom,
+              isFloating ? (floatingPos as object) : undefined,
+              { backgroundColor: bg },
+            ]}
+          >
+            {/* Green progress bar at top of card */}
+            <View style={s.progressBar} />
 
-          {/* Dots + counter */}
-          <View style={s.dotsRow}>
-            {TOUR_STEPS.map((_, i) => (
-              <View
-                key={i}
-                style={[
-                  s.dot,
-                  {
-                    width: i === tourStepIndex ? 14 : 5,
-                    backgroundColor:
-                      i === tourStepIndex ? '#16a34a' : i < tourStepIndex ? '#86efac' : border,
-                  },
-                ]}
-              />
-            ))}
-            <Text style={[s.counter, { color: textSecondary }]}>
-              {tourStepIndex + 1} / {TOUR_STEPS.length}
+            {/* Dots + counter */}
+            <View style={s.dotsRow}>
+              {TOUR_STEPS.map((_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    s.dot,
+                    {
+                      width: i === tourStepIndex ? 14 : 5,
+                      backgroundColor:
+                        i === tourStepIndex
+                          ? '#16a34a'
+                          : i < tourStepIndex
+                          ? '#86efac'
+                          : border,
+                    },
+                  ]}
+                />
+              ))}
+              <Text style={[s.counter, { color: textSecondary }]}>
+                {tourStepIndex + 1} / {TOUR_STEPS.length}
+              </Text>
+            </View>
+
+            <Text style={[s.title, { color: textPrimary }]}>
+              {t((currentStep?.title ?? '') as any)}
             </Text>
-          </View>
+            <Text style={[s.body, { color: textSecondary }]}>
+              {t((currentStep?.body ?? '') as any)}
+            </Text>
 
-          <Text style={[s.title, { color: textPrimary }]}>{t((currentStep?.title ?? '') as any)}</Text>
-          <Text style={[s.body, { color: textSecondary }]}>{t((currentStep?.body ?? '') as any)}</Text>
-
-          <View style={s.actions}>
-            <TouchableOpacity onPress={skipTour}>
-              <Text style={[s.skipTxt, { color: skipColor }]}>{t('tour.skip')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleNext} style={s.nextBtn}>
-              <Text style={s.nextTxt}>{isLastStep ? t('tour.finish') : t('tour.next')}</Text>
-            </TouchableOpacity>
+            <View style={s.actions}>
+              <TouchableOpacity onPress={skipTour}>
+                <Text style={[s.skipTxt, { color: skipColor }]}>{t('tour.skip')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleNext} style={s.nextBtn}>
+                <Text style={s.nextTxt}>
+                  {isLastStep ? t('tour.finish') : t('tour.next')}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </Modal>
+      )}
     </>
   );
 }
@@ -236,11 +290,18 @@ const s = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // ── Tooltip base ──
+  // ── Absolute overlay root ──
+  overlayRoot: {
+    zIndex: 9999,
+    elevation: 9999,
+  },
+
+  // ── Backdrop (no spotlight) ──
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.55)',
   },
+
+  // ── Tooltip card base ──
   card: {
     position: 'absolute',
     overflow: 'hidden',
@@ -248,8 +309,9 @@ const s = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 16,
     elevation: 12,
+    zIndex: 10000,
   },
-  // Bottom sheet variant (no highlight rect or fallback)
+  // Bottom sheet variant
   cardBottom: {
     bottom: 0,
     left: 0,
@@ -259,7 +321,7 @@ const s = StyleSheet.create({
     shadowOffset: { width: 0, height: -4 },
     paddingBottom: 32,
   },
-  // Floating tooltip variant (positioned near element)
+  // Floating tooltip variant
   cardFloating: {
     borderRadius: 20,
     shadowOffset: { width: 0, height: 4 },
