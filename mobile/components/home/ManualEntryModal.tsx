@@ -146,7 +146,7 @@ function CalendarDateModal({
             </TouchableOpacity>
             <View className="items-center">
               <Text className="text-base font-bold text-gray-900 dark:text-white">
-                {viewDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+                {t(`month.${['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'][month]}` as any)} {year}
               </Text>
               <Text className="text-xs text-gray-400">{t('tx.select_date')}</Text>
             </View>
