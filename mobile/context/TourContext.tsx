@@ -266,34 +266,37 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
     }
 
     let cancelled = false;
-    const measure = (extraScroll = 0) => {
+    const measure = (extraScroll = 0, attempt = 0) => {
       if (cancelled) return;
       ref.current?.measureInWindow((x, y, w, h) => {
         if (cancelled) return;
-        if (w > 0 && h > 0) {
-          const screenHeight = Dimensions.get('window').height;
-          const tooltipTop = screenHeight - 260;
-          const bottom = y + h + 12;
-
-          if (options.scrollRef && extraScroll === 0 && bottom > tooltipTop) {
-            const nextY = Math.max(0, initialScrollY + (bottom - tooltipTop) + 24);
-            options.scrollRef.current?.scrollTo({ y: nextY, animated: true });
-            setTimeout(() => measure(nextY - initialScrollY), 450);
-            return;
-          }
-
-          setHighlightRect({
-            x: Math.max(0, x - 4),
-            y: Math.max(0, y - 4),
-            width: w + 8,
-            height: h + 8,
-          });
+        // Element not laid out yet — retry up to 2 more times
+        if (w === 0 || h === 0) {
+          if (attempt < 2) setTimeout(() => measure(extraScroll, attempt + 1), 300);
+          return;
         }
+        const screenHeight = Dimensions.get('window').height;
+        const tooltipTop = screenHeight - 260;
+        const bottom = y + h + 12;
+
+        if (options.scrollRef && extraScroll === 0 && bottom > tooltipTop) {
+          const nextY = Math.max(0, initialScrollY + (bottom - tooltipTop) + 24);
+          options.scrollRef.current?.scrollTo({ y: nextY, animated: true });
+          setTimeout(() => measure(nextY - initialScrollY, 0), 500);
+          return;
+        }
+
+        setHighlightRect({
+          x: Math.max(0, x - 4),
+          y: Math.max(0, y - 4),
+          width: w + 8,
+          height: h + 8,
+        });
       });
     };
 
     const task = InteractionManager.runAfterInteractions(() => {
-      setTimeout(() => measure(), options.scrollRef ? 850 : 250);
+      setTimeout(() => measure(), options.scrollRef ? 700 : 250);
     });
 
     return () => {

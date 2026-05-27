@@ -123,6 +123,7 @@ export default function TourOverlay() {
         visible={showTooltip}
         transparent
         animationType="fade"
+        statusBarTranslucent={true}
         onRequestClose={skipTour}
       >
         {/* Backdrop */}

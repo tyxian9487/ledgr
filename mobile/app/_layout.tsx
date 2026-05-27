@@ -285,23 +285,23 @@ export default function RootLayout() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <PurchasesProvider>
-            <PaywallProvider>
             <AppProvider>
               <TourProvider>
                 <LanguageProvider>
-                  <RootStatusBar translucent={true} />
-                  <OAuthCallbackHandler />
-                  <DarkModeBridge />
-                  <EntitlementSyncBridge />
-                  <NotificationPermissionRequester />
-                  <NotificationWatcher />
-                  <NavigationGuard />
-                  <TourOverlay />
-                  <ConsentBanner />
+                  <PaywallProvider>
+                    <RootStatusBar translucent={true} />
+                    <OAuthCallbackHandler />
+                    <DarkModeBridge />
+                    <EntitlementSyncBridge />
+                    <NotificationPermissionRequester />
+                    <NotificationWatcher />
+                    <NavigationGuard />
+                    <TourOverlay />
+                    <ConsentBanner />
+                  </PaywallProvider>
                 </LanguageProvider>
               </TourProvider>
             </AppProvider>
-            </PaywallProvider>
           </PurchasesProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>
