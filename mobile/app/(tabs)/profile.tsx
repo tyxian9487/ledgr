@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTourTarget } from '../../context/TourContext';
+import { useTour, useTourTarget } from '../../context/TourContext';
 import CategoryManagerSheet from '../../components/CategoryManagerSheet';
 import {
   View,
@@ -20,7 +20,7 @@ const happyMascotImg = require('../../assets/m_expression_happy.png');
 const winkMascotImg  = require('../../assets/m_expression_wink.png');
 const sadMascotImg   = require('../../assets/m_expression_sad.png');
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import {
   Moon,
@@ -495,6 +495,14 @@ export default function ProfileScreen() {
   const [showStatusCelebration, setShowStatusCelebration] = useState(false);
   const [seenBadgeIds, setSeenBadgeIds] = useState<Set<string>>(new Set());
   const [seenBadgesLoaded, setSeenBadgesLoaded] = useState(false);
+
+  // Re-trigger measurement when this tab gains focus after a cross-tab navigation.
+  const { tourActive, currentStep: tourCurrentStep, triggerMeasure } = useTour();
+  useFocusEffect(useCallback(() => {
+    if (tourActive && tourCurrentStep?.tab === 'profile') {
+      triggerMeasure();
+    }
+  }, [tourActive, tourCurrentStep?.tab, triggerMeasure]));
 
   // Tour target refs
   const tourRefStreak     = useTourTarget('profile-streak', { scrollRef, scrollY: 120 });

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,8 @@ import {
   Modal,
   Image,
 } from 'react-native';
-import { useTourTarget } from '../../context/TourContext';
+import { useFocusEffect } from 'expo-router';
+import { useTour, useTourTarget } from '../../context/TourContext';
 
 const magnifierImg = require('../../assets/m_magnifier.png');
 import Svg, { Circle, Path, Line, Text as SvgText } from 'react-native-svg';
@@ -404,6 +405,17 @@ export default function TrendsScreen() {
   const tourRefMonthly    = useTourTarget('trends-monthly', { scrollRef, scrollY: 230 });
   const tourRefCategories = useTourTarget('trends-categories', { scrollRef, scrollY: 430 });
   const tourRefIncomeVs   = useTourTarget('trends-income-vs', { scrollRef, scrollY: 650 });
+
+  // Re-trigger measurement when this tab gains focus after a cross-tab navigation.
+  // useFocusEffect fires once the screen is fully visible (including after Reanimated
+  // and React Navigation animations complete), so this is a more reliable signal
+  // than InteractionManager.runAfterInteractions() which only tracks JS-thread interactions.
+  const { tourActive, currentStep, triggerMeasure } = useTour();
+  useFocusEffect(useCallback(() => {
+    if (tourActive && currentStep?.tab === 'trends') {
+      triggerMeasure();
+    }
+  }, [tourActive, currentStep?.tab, triggerMeasure]));
 
   const [view, setView] = useState<'spending' | 'income'>('spending');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
