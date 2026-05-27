@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode, RefObject } from 'react';
-import { Dimensions, InteractionManager, ScrollView, View } from 'react-native';
+import { Dimensions, ScrollView, View } from 'react-native';
 
 export interface HighlightRect { x: number; y: number; width: number; height: number; }
 
@@ -260,29 +260,63 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
 
   useEffect(() => {
     if (currentStep?.id !== stepId) return;
-    const initialScrollY = options.scrollY ?? 0;
-    if (options.scrollRef) {
-      options.scrollRef.current?.scrollTo({ y: initialScrollY, animated: true });
-    }
 
     let cancelled = false;
-    const measure = (extraScroll = 0, attempt = 0) => {
+    let raf1 = 0, raf2 = 0;
+    let retryTimer = 0;
+    const initialScrollY = options.scrollY ?? 0;
+
+    // ── Step 1: instant scroll (no animation) ───────────────────────────────
+    // Using animated:false makes the scroll synchronous — no variable-duration
+    // animation to race against. The user never sees the jump because the dim
+    // overlay is already rendering while measurement is pending.
+    if (options.scrollRef) {
+      options.scrollRef.current?.scrollTo({ y: initialScrollY, animated: false });
+    }
+
+    // ── Step 2: wait for React + native layout to commit the new position ───
+    // Two rAFs: (1) after current frame paints, (2) after new layout commits.
+    // An extra 80 ms safety buffer handles Android's deferred shadow-tree flush
+    // on older devices or long scroll distances.
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        if (cancelled) return;
+        retryTimer = setTimeout(() => {
+          if (!cancelled) doMeasure(0);
+        }, 80) as unknown as number;
+      });
+    });
+
+    // ── Step 3: measure with retry ──────────────────────────────────────────
+    // Retries up to 10 × 60 ms if the element hasn't been laid out yet.
+    function doMeasure(attempt: number) {
       if (cancelled) return;
       ref.current?.measureInWindow((x, y, w, h) => {
         if (cancelled) return;
-        // Element not laid out yet — retry up to 2 more times
-        if (w === 0 || h === 0) {
-          if (attempt < 2) setTimeout(() => measure(extraScroll, attempt + 1), 300);
+
+        if ((w === 0 || h === 0) && attempt < 10) {
+          retryTimer = setTimeout(() => doMeasure(attempt + 1), 60) as unknown as number;
           return;
         }
-        const screenHeight = Dimensions.get('window').height;
-        const tooltipTop = screenHeight - 260;
-        const bottom = y + h + 12;
+        if (w === 0 || h === 0) return; // element not on screen; give up
 
-        if (options.scrollRef && extraScroll === 0 && bottom > tooltipTop) {
-          const nextY = Math.max(0, initialScrollY + (bottom - tooltipTop) + 24);
-          options.scrollRef.current?.scrollTo({ y: nextY, animated: true });
-          setTimeout(() => measure(nextY - initialScrollY, 0), 500);
+        // ── Step 4: additional scroll if element is too close to where the
+        // tooltip card will appear (bottom ~240 px of screen) ───────────────
+        const screenHeight = Dimensions.get('window').height;
+        const TOOLTIP_H = 240;
+        const MARGIN = 16;
+        if (options.scrollRef && (y + h + MARGIN) > (screenHeight - TOOLTIP_H)) {
+          const extra = (y + h + MARGIN) - (screenHeight - TOOLTIP_H);
+          options.scrollRef.current?.scrollTo({
+            y: initialScrollY + extra,
+            animated: false,
+          });
+          // Re-measure after the additional scroll commits
+          raf1 = requestAnimationFrame(() => {
+            raf2 = requestAnimationFrame(() => {
+              if (!cancelled) doMeasure(0);
+            });
+          });
           return;
         }
 
@@ -293,17 +327,15 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
           height: h + 8,
         });
       });
-    };
-
-    const task = InteractionManager.runAfterInteractions(() => {
-      setTimeout(() => measure(), options.scrollRef ? 700 : 250);
-    });
+    }
 
     return () => {
       cancelled = true;
-      task.cancel();
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      clearTimeout(retryTimer);
     };
-  }, [currentStep?.id, options.scrollRef, options.scrollY, stepId, setHighlightRect]);
+  }, [currentStep?.id, stepId, options.scrollRef, options.scrollY, setHighlightRect]);
 
   return ref;
 }
