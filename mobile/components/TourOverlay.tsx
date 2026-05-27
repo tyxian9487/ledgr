@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Image,
   StyleSheet,
   Dimensions,
+  Animated,
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useTour, TOUR_STEPS } from '../context/TourContext';
@@ -129,6 +130,27 @@ export default function TourOverlay() {
   const floatingPos = highlightRect ? getFloatingPos(highlightRect) : null;
   const isFloating = floatingPos !== null;
 
+  // ── Spotlight fade-in ─────────────────────────────────────────────────────
+  // Reset to transparent whenever the step index changes (before new measurement
+  // arrives), then animate to opaque once highlightRect is set.
+  const spotlightOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    spotlightOpacity.setValue(0);
+  }, [tourStepIndex, spotlightOpacity]);
+
+  useEffect(() => {
+    if (!highlightRect) {
+      spotlightOpacity.setValue(0);
+      return;
+    }
+    Animated.timing(spotlightOpacity, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [highlightRect, spotlightOpacity]);
+
   return (
     <>
       {/* ── Quick Tour Offer (full-screen Modal is fine here — no coordinate matching needed) ── */}
@@ -149,18 +171,24 @@ export default function TourOverlay() {
       {/*
        * ── Tour Tooltip Overlay ──
        *
-       * IMPORTANT: This is NOT a Modal. It is a plain absolute View rendered in the
-       * same React Native root as the app content. This guarantees the coordinate
-       * space matches what measureInWindow() returns, so the spotlight cutout aligns
-       * perfectly with the highlighted element regardless of status-bar height or
-       * Android window-inset mode.
+       * NOT a Modal — rendered as a plain absolute View in the same React Native
+       * root as all app content. measureInWindow() and this overlay share the same
+       * coordinate space, so the spotlight cutout aligns perfectly with the target
+       * element on every Android device, regardless of status-bar height.
        *
-       * High elevation/zIndex ensures it sits on top of the navigation stack and tab bar.
+       * The Animated.View for the dim/spotlight fades in after the measurement
+       * completes, hiding the instant scroll jump from the user.
        */}
       {showTooltip && (
-        <View
+        /*
+         * Single Animated.View for the entire overlay — both the spotlight dim
+         * and the tooltip card fade in together once measurement is complete.
+         * This hides the instant-scroll position jump from the user and prevents
+         * the card from flashing over undimmed content.
+         */
+        <Animated.View
           pointerEvents="box-none"
-          style={[StyleSheet.absoluteFillObject, s.overlayRoot]}
+          style={[StyleSheet.absoluteFillObject, s.overlayRoot, { opacity: spotlightOpacity }]}
         >
           {/* Dim mask + spotlight cutout */}
           {highlightRect ? (
@@ -227,7 +255,7 @@ export default function TourOverlay() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </Animated.View>
       )}
     </>
   );
