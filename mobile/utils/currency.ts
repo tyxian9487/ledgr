@@ -1,4 +1,5 @@
 import { CURRENCIES } from '../types';
+import { translations } from '../i18n/translations';
 
 export function getCurrencyDisplayName(code: string, locale = 'en'): string {
   try {
@@ -15,6 +16,16 @@ export function getCurrencyDisplayName(code: string, locale = 'en'): string {
     }
   } catch (e) {
     // ignore and fallback
+  }
+
+  // Fallback: check our i18n translation table for `currency.<CODE>` keys
+  try {
+    const dict = translations[locale] ?? translations.en;
+    const key = `currency.${code}` as any;
+    const translated = dict[key];
+    if (translated) return translated;
+  } catch (e) {
+    // ignore and fall back to English names from CURRENCIES
   }
 
   const found = CURRENCIES.find(c => c.code === code);
