@@ -37,7 +37,11 @@ function formatDayLabel(dateStr: string, t: (key: any, params?: Record<string, s
   if (dateStr === toStr(today)) return t('common.today');
   if (dateStr === toStr(yesterday)) return t('common.yesterday');
   const diffDays = Math.floor((today.getTime() - d.getTime()) / 86400000);
-  if (diffDays < 7) return d.toLocaleDateString(undefined, { weekday: 'long' });
+  if (diffDays < 7) {
+    const dayIndex = d.getDay();
+    const dayKeys = ['day.sunday', 'day.monday', 'day.tuesday', 'day.wednesday', 'day.thursday', 'day.friday', 'day.saturday'];
+    return t(dayKeys[dayIndex] as any);
+  }
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
@@ -69,10 +73,10 @@ export function CalendarModal({
   const [calMonth, setCalMonth] = useState(month);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const dayHeaders = useMemo(
-    () => Array.from({ length: 7 }, (_, i) =>
-      new Date(1970, 0, 4 + i).toLocaleDateString(undefined, { weekday: 'short' }),
+    () => ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'].map(key =>
+      t(`day.${key}` as any),
     ),
-    [],
+    [t],
   );
 
   // Sync when parent month changes
@@ -460,7 +464,9 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
         const isExp = expanded[dateStr] === true;
         const label = formatDayLabel(dateStr, t);
         const d = new Date(dateStr + 'T12:00:00');
-        const dayName = d.toLocaleDateString(undefined, { weekday: 'short' });
+        const dayIndex = d.getDay();
+        const dayKeys = ['day.sun', 'day.mon', 'day.tue', 'day.wed', 'day.thu', 'day.fri', 'day.sat'];
+        const dayName = t(dayKeys[dayIndex] as any);
         const dayNum = String(d.getDate());
 
         return (

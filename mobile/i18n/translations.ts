@@ -418,6 +418,12 @@ export const en = {
   'month.may.short': 'MAY', 'month.jun.short': 'JUN', 'month.jul.short': 'JUL', 'month.aug.short': 'AUG',
   'month.sep.short': 'SEP', 'month.oct.short': 'OCT', 'month.nov.short': 'NOV', 'month.dec.short': 'DEC',
 
+  // Weekdays (short)
+  'day.sun': 'Sun', 'day.mon': 'Mon', 'day.tue': 'Tue', 'day.wed': 'Wed', 'day.thu': 'Thu', 'day.fri': 'Fri', 'day.sat': 'Sat',
+
+  // Weekdays (full)
+  'day.sunday': 'Sunday', 'day.monday': 'Monday', 'day.tuesday': 'Tuesday', 'day.wednesday': 'Wednesday', 'day.thursday': 'Thursday', 'day.friday': 'Friday', 'day.saturday': 'Saturday',
+
   // Misc extras
   'misc.no_tx_month': 'No transactions this month',
   'misc.recurring': 'Recurring',
@@ -961,6 +967,8 @@ const zh: Record<TKey, string> = {
   'month.jan.short': '1月', 'month.feb.short': '2月', 'month.mar.short': '3月', 'month.apr.short': '4月',
   'month.may.short': '5月', 'month.jun.short': '6月', 'month.jul.short': '7月', 'month.aug.short': '8月',
   'month.sep.short': '9月', 'month.oct.short': '10月', 'month.nov.short': '11月', 'month.dec.short': '12月',
+  'day.sun': '周日', 'day.mon': '周一', 'day.tue': '周二', 'day.wed': '周三', 'day.thu': '周四', 'day.fri': '周五', 'day.sat': '周六',
+  'day.sunday': '星期日', 'day.monday': '星期一', 'day.tuesday': '星期二', 'day.wednesday': '星期三', 'day.thursday': '星期四', 'day.friday': '星期五', 'day.saturday': '星期六',
   'misc.no_tx_month': '本月暂无记录', 'misc.recurring': '自动扣款',
   'tour.title': '快速导览？', 'tour.desc': '我们将在约 2 分钟内带您了解 Kachingo 的关键功能。随时可跳过。',
   'tour.offer_start': '带我参观 →', 'tour.offer_skip': '暂时跳过',
