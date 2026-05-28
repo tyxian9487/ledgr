@@ -1,4 +1,4 @@
-import { useState, useRef, RefObject } from 'react';
+import { useState, useRef } from 'react';
 import { Alert, View, Text, TouchableOpacity } from 'react-native';
 import Svg, { Circle, Circle as SvgCircle, Path, Text as SvgText } from 'react-native-svg';
 import { ChevronLeft, ChevronRight, ChevronDown, Share2, ArrowLeftRight } from 'lucide-react-native';
@@ -6,6 +6,7 @@ import { captureRef } from 'react-native-view-shot';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, FinancialStatus } from '../../types';
+import TourHighlight from '../TourHighlight';
 import ShareCardView from './ShareCardView';
 
 interface Props {
@@ -14,7 +15,7 @@ interface Props {
   onPrevMonth: () => void;
   onNextMonth: () => void;
   onYearChange?: (year: number) => void;
-  statsRef?: RefObject<View>;
+  statsHighlightActive?: boolean;
 }
 
 const MONTH_KEYS = [
@@ -141,7 +142,7 @@ const STATUS_CONFIG = {
   critical:  { Coin: CopperCoin, textColor: '#f97316', score: '<60' },
 } as const;
 
-export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYearChange, statsRef }: Props) {
+export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYearChange, statsHighlightActive }: Props) {
   const { getMonthTransactions, getMonthIncome, getMonthExpenses, formatCurrency } = useApp();
   const { t } = useTranslation();
   const shareCardRef = useRef<View>(null);
@@ -332,7 +333,8 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
       </View>
 
       {/* Income / Remaining row */}
-      <View ref={statsRef} collapsable={false} className="mx-4 mb-4 flex-row gap-3">
+      <TourHighlight active={statsHighlightActive ?? false} style={{ marginHorizontal: 16, marginBottom: 16 }} borderRadius={12}>
+        <View className="flex-row gap-3">
         <TouchableOpacity
           className="flex-1 bg-white/15 rounded-2xl p-3"
           onPress={() => { setShowIncome(v => !v); setSelectedSliceId(null); }}
@@ -364,7 +366,8 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
             )}
           </View>
         </View>
-      </View>
+        </View>
+      </TourHighlight>
     </View>
 
     {/* Off-screen share card — captured as PNG when share button is pressed */}

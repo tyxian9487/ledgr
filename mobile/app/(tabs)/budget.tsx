@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTour, useTourTarget } from '../../context/TourContext';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
+import TourHighlight from '../../components/TourHighlight';
 import {
   View,
   Text,
@@ -186,23 +187,15 @@ export default function BudgetScreen() {
   const actualIncome = getMonthIncome(now.getFullYear(), now.getMonth());
 
   const [activeTab, setActiveTab] = useState<'goals' | 'budget'>('goals');
-  const { currentStep, tourActive, triggerMeasure, remeasure } = useTour();
+  const { currentStep } = useTour();
 
   useEffect(() => {
     if (currentStep?.id === 'budget-income') setActiveTab('budget');
     if (currentStep?.id === 'budget-goals') setActiveTab('goals');
   }, [currentStep?.id]);
 
-  // Re-trigger measurement when this tab gains focus after a cross-tab navigation.
-  useFocusEffect(useCallback(() => {
-    if (tourActive && currentStep?.tab === 'budget') {
-      triggerMeasure();
-    }
-  }, [tourActive, currentStep?.tab, triggerMeasure]));
-
-  // Tour target refs
-  const tourRefGoals  = useTourTarget('budget-goals', { scrollRef, scrollY: 0 });
-  const tourRefIncome = useTourTarget('budget-income', { scrollRef, scrollY: 260 });
+  const goalsActive  = useTourTarget('budget-goals',  { scrollRef, scrollY: 0 });
+  const incomeActive = useTourTarget('budget-income', { scrollRef, scrollY: 260 });
   const [incomeInput, setIncomeInput] = useState(
     budget.expectedIncome > 0 ? String(budget.expectedIncome) : actualIncome > 0 ? String(Math.round(actualIncome)) : '',
   );
@@ -394,8 +387,6 @@ export default function BudgetScreen() {
         className="flex-1 px-5 pt-5"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
-        onScroll={tourActive ? remeasure : undefined}
-        scrollEventThrottle={tourActive ? 100 : 0}
       >
 
         {/* ── GOALS TAB ── */}
@@ -424,7 +415,7 @@ export default function BudgetScreen() {
             )}
 
             {/* Monthly Savings Goal toggle */}
-            <View ref={tourRefGoals} collapsable={false} className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-4">
+            <TourHighlight active={goalsActive} borderRadius={24} style={{ marginBottom: 16 }}><View className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden">
               <View className="px-5 py-4">
                 <View className="flex-row items-center justify-between mb-3">
                   <View className="flex-row items-center gap-2">
@@ -475,7 +466,7 @@ export default function BudgetScreen() {
                   </>
                 )}
               </View>
-            </View>
+            </View></TourHighlight>
 
             {/* Active custom goals */}
             {activeCustomGoals.map((goal) => {
@@ -565,7 +556,7 @@ export default function BudgetScreen() {
         {activeTab === 'budget' && (
           <>
             {/* Income input */}
-            <View ref={tourRefIncome} collapsable={false} className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800 mb-4">
+            <TourHighlight active={incomeActive} borderRadius={24} style={{ marginBottom: 16 }}><View className="bg-white dark:bg-gray-900 rounded-3xl p-5 border border-gray-100 dark:border-gray-800">
               <View className="flex-row items-center justify-between mb-2">
                 <Text className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                   {t('budget.expected_income')}
@@ -614,7 +605,7 @@ export default function BudgetScreen() {
                   ✓ {t('budget.allocation_generated')} · {t('budget.savings_locked', { pct: savingsEnabled && savingsAmt > 0 ? Math.round((savingsAmt / income) * 100) : 0 })}
                 </Text>
               )}
-            </View>
+            </View></TourHighlight>
 
             {/* Budget mascot — shown before the user has analyzed their budget */}
             {!analyzed && (

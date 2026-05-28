@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput, Image, InteractionManager,
 } from 'react-native';
+// InteractionManager kept — used in useFocusEffect scroll-reset below
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -13,7 +14,8 @@ import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { usePurchases } from '../../context/PurchasesContext';
 import { usePaywall } from '../../context/PaywallContext';
-import { useTour, useTourTarget } from '../../context/TourContext';
+import { useTourTarget } from '../../context/TourContext';
+import TourHighlight from '../../components/TourHighlight';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, Transaction } from '../../types';
 import GreenCard from '../../components/home/GreenCard';
 import GoalTrackerCard from '../../components/home/GoalTrackerCard';
@@ -62,20 +64,13 @@ export default function HomeScreen() {
   const { isPro } = usePurchases();
   const { showPaywall } = usePaywall();
 
-  // Tour target refs
-  const tourRefGreenCard = useTourTarget('home-green-card', { scrollRef, scrollY: 0 });
-  const tourRefStats     = useTourTarget('home-stats', { scrollRef, scrollY: 260 });
-  const tourRefAddTx     = useTourTarget('home-add-tx', { scrollRef, scrollY: 390 });
-  const tourRefCapture   = useTourTarget('home-capture');
-  const tourRefBudgetBtn = useTourTarget('home-budget-btn', { scrollRef, scrollY: 390 });
-  const tourRefToggle    = useTourTarget('home-view-toggle', { scrollRef, scrollY: 720 });
-
-  const { tourActive, currentStep: tourCurrentStep, triggerMeasure, remeasure } = useTour();
-  useFocusEffect(useCallback(() => {
-    if (tourActive && tourCurrentStep?.tab === 'home') {
-      triggerMeasure();
-    }
-  }, [tourActive, tourCurrentStep?.tab, triggerMeasure]));
+  // Tour step activation (boolean per step — highlights via TourHighlight, no coordinates)
+  const greenCardActive = useTourTarget('home-green-card', { scrollRef, scrollY: 0 });
+  const statsActive     = useTourTarget('home-stats',       { scrollRef, scrollY: 260 });
+  const addTxActive     = useTourTarget('home-add-tx',      { scrollRef, scrollY: 390 });
+  const captureActive   = useTourTarget('home-capture');
+  const budgetBtnActive = useTourTarget('home-budget-btn',  { scrollRef, scrollY: 390 });
+  const toggleActive    = useTourTarget('home-view-toggle', { scrollRef, scrollY: 720 });
 
   const [showEntry, setShowEntry] = useState(false);
   const [entryPrefill, setEntryPrefill] = useState<{ type?: 'expense' | 'income'; amount?: number; category?: string; description?: string } | undefined>(undefined);
@@ -180,8 +175,6 @@ export default function HomeScreen() {
         className="flex-1"
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        onScroll={tourActive ? remeasure : undefined}
-        scrollEventThrottle={tourActive ? 100 : 0}
       >
 
         {/* ── Header ── */}
@@ -189,16 +182,6 @@ export default function HomeScreen() {
           <View>
             <Text className="text-xs text-gray-400 dark:text-gray-500 font-medium">{t(getGreeting())}</Text>
             <Text className="text-xl font-black text-gray-900 dark:text-white">{t('home.my_finances')}</Text>
-            {__DEV__ && (
-              <TouchableOpacity
-                onPress={() => router.push('/debug-tour' as any)}
-                style={{ marginTop: 2 }}
-              >
-                <Text style={{ fontSize: 9, color: '#f59e0b', fontWeight: '700' }}>
-                  🔧 Debug Spotlight
-                </Text>
-              </TouchableOpacity>
-            )}
           </View>
           <TouchableOpacity
             onPress={() => router.push('/(tabs)/profile')}
@@ -219,16 +202,16 @@ export default function HomeScreen() {
         </View>
 
         {/* ── Green Summary Card ── */}
-        <View ref={tourRefGreenCard} collapsable={false} style={{ marginHorizontal: 16 }}>
+        <TourHighlight active={greenCardActive} style={{ marginHorizontal: 16 }}>
           <GreenCard
             year={viewYear}
             month={viewMonth}
             onPrevMonth={prevMonth}
             onNextMonth={nextMonth}
             onYearChange={setViewYear}
-            statsRef={tourRefStats}
+            statsHighlightActive={statsActive}
           />
-        </View>
+        </TourHighlight>
 
         {/* ── Goal Tracker Card ── */}
         <View style={{ marginHorizontal: 16 }}>
@@ -239,7 +222,7 @@ export default function HomeScreen() {
         <View className="mx-4 mt-4 gap-y-3">
           <View className="flex-row gap-3">
             {/* Add Transaction */}
-            <View ref={tourRefAddTx} collapsable={false} style={{ flex: 1 }}>
+            <TourHighlight active={addTxActive} style={{ flex: 1 }} borderRadius={18}>
             <TouchableOpacity
               onPress={() => setShowEntry(true)}
               activeOpacity={0.8}
@@ -252,10 +235,10 @@ export default function HomeScreen() {
                 {t('home.add_transaction')}
               </Text>
             </TouchableOpacity>
-            </View>
+            </TourHighlight>
 
             {/* Budget status */}
-            <View ref={tourRefBudgetBtn} collapsable={false} style={{ flex: 1 }}>
+            <TourHighlight active={budgetBtnActive} style={{ flex: 1 }} borderRadius={18}>
             <TouchableOpacity
               onPress={() => router.push('/(tabs)/budget')}
               activeOpacity={0.8}
@@ -296,7 +279,7 @@ export default function HomeScreen() {
                   : <TrendingUp size={14} color="#22c55e" />
               )}
             </TouchableOpacity>
-            </View>
+            </TourHighlight>
           </View>
 
           {/* Search + Filter row */}
@@ -493,7 +476,7 @@ export default function HomeScreen() {
               ? 'Calendar'
               : t('common.categories')}
           </Text>
-          <View ref={tourRefToggle} collapsable={false} className="flex-row items-center gap-1">
+          <TourHighlight active={toggleActive} borderRadius={8}><View className="flex-row items-center gap-1">
             {activeFilterCount > 0 && (
               <TouchableOpacity onPress={clearFilters} className="mr-2">
                 <Text className="text-xs font-semibold text-green-600">{t('home.clear')}</Text>
@@ -517,7 +500,7 @@ export default function HomeScreen() {
             >
               <CalendarDays size={16} color={viewMode === 'calendar' ? '#16a34a' : '#9ca3af'} />
             </TouchableOpacity>
-          </View>
+          </View></TourHighlight>
         </View>
 
         {/* ── Transaction List ── */}
@@ -540,7 +523,7 @@ export default function HomeScreen() {
       />
 
       {/* ── Camera FAB ── */}
-      <View ref={tourRefCapture} collapsable={false} className="absolute bottom-6 right-5">
+      <TourHighlight active={captureActive} style={{ position: 'absolute', bottom: 24, right: 20 }} borderRadius={28}>
         <TouchableOpacity
           onPress={() => { if (!isPro) { showPaywall(); return; } router.push('/capture'); }}
           className="w-14 h-14 bg-green-600 rounded-full items-center justify-center shadow-lg"
@@ -549,7 +532,7 @@ export default function HomeScreen() {
         >
           <Camera size={22} color="white" />
         </TouchableOpacity>
-      </View>
+      </TourHighlight>
 
       {viewMode === 'calendar' && (
         <CalendarModal

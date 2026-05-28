@@ -1,6 +1,7 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTour, useTourTarget } from '../../context/TourContext';
+import { useTourTarget } from '../../context/TourContext';
+import TourHighlight from '../../components/TourHighlight';
 import CategoryManagerSheet from '../../components/CategoryManagerSheet';
 import {
   View,
@@ -20,7 +21,7 @@ const happyMascotImg = require('../../assets/m_expression_happy.png');
 const winkMascotImg  = require('../../assets/m_expression_wink.png');
 const sadMascotImg   = require('../../assets/m_expression_sad.png');
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import {
   Moon,
@@ -497,16 +498,8 @@ export default function ProfileScreen() {
   const [seenBadgesLoaded, setSeenBadgesLoaded] = useState(false);
 
   // Re-trigger measurement when this tab gains focus after a cross-tab navigation.
-  const { tourActive, currentStep: tourCurrentStep, triggerMeasure, remeasure } = useTour();
-  useFocusEffect(useCallback(() => {
-    if (tourActive && tourCurrentStep?.tab === 'profile') {
-      triggerMeasure();
-    }
-  }, [tourActive, tourCurrentStep?.tab, triggerMeasure]));
-
-  // Tour target refs
-  const tourRefStreak     = useTourTarget('profile-streak', { scrollRef, scrollY: 120 });
-  const tourRefAssessment = useTourTarget('profile-assessment', { scrollRef, scrollY: 520 });
+  const streakActive     = useTourTarget('profile-streak',     { scrollRef, scrollY: 120 });
+  const assessmentActive = useTourTarget('profile-assessment', { scrollRef, scrollY: 520 });
 
   // ── Financial score ────────────────────────────────────────────────────────
   const currentYear = new Date().getFullYear();
@@ -723,8 +716,6 @@ export default function ProfileScreen() {
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
-        onScroll={tourActive ? remeasure : undefined}
-        scrollEventThrottle={tourActive ? 100 : 0}
       >
 
         {/* ── Header ── */}
@@ -812,7 +803,7 @@ export default function ProfileScreen() {
         <SectionHeader label={t('profile.achievements')} />
 
         {/* Budget Streak */}
-        <View ref={tourRefStreak} collapsable={false} style={{ marginHorizontal: 16 }}>
+        <TourHighlight active={streakActive} style={{ marginHorizontal: 16 }} borderRadius={16}>
           <BudgetStreakCard transactions={transactions} />
         </View>
 
@@ -845,7 +836,7 @@ export default function ProfileScreen() {
           <Text className="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-3">
             {earnedBadgeIds.size}/{BADGES.length} {t('achieve.unlocked')}
           </Text>
-        </View>
+        </View></TourHighlight>
 
         {/* Achievements link */}
         <TouchableOpacity
@@ -864,7 +855,7 @@ export default function ProfileScreen() {
 
         {/* ── FINANCIAL ASSESSMENT ── */}
         <SectionHeader label={t('profile.assessment')} />
-        <View ref={tourRefAssessment} collapsable={false} className="mx-4 mb-5">
+        <TourHighlight active={assessmentActive} style={{ marginHorizontal: 16, marginBottom: 20 }} borderRadius={16}><View>
           {/* Income / Expense year cards */}
           <View className="flex-row gap-3 mb-3">
             <View className="flex-1 bg-green-50 rounded-2xl p-4 border border-green-100">
@@ -944,7 +935,7 @@ export default function ProfileScreen() {
             <BarChart2 size={16} color="#fff" />
             <Text className="text-white font-bold text-sm">{t('profile.generate_report')}</Text>
           </TouchableOpacity>
-        </View>
+        </View></TourHighlight>
 
         {/* ── ACCOUNT ── */}
         <SectionHeader label={t('profile.account')} />
