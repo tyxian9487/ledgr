@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert, Modal, ScrollView } from 'react-native';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, Alert, Modal, ScrollView, PanResponder, Animated } from 'react-native';
 import { Trash2, Edit2, RefreshCw, ChevronDown, ChevronRight, ChevronLeft, X } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
@@ -120,25 +120,78 @@ export function CalendarModal({
 
   const cellWidth = `${100 / 7}%` as any;
 
+  // ── Swipe-to-dismiss ──────────────────────────────────────────────────────────
+  const translateY = useRef(new Animated.Value(0)).current;
+
+  // Reset sheet position each time the modal mounts
+  useEffect(() => { translateY.setValue(0); }, []);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      // Activate only on downward vertical swipes (not taps, not horizontal)
+      onMoveShouldSetPanResponder: (_, { dy, dx }) =>
+        dy > 8 && Math.abs(dy) > Math.abs(dx) * 1.5,
+      onPanResponderMove: (_, { dy }) => {
+        if (dy > 0) translateY.setValue(dy);
+      },
+      onPanResponderRelease: (_, { dy, vy }) => {
+        if (dy > 130 || vy > 1.2) {
+          // Flick or drag past threshold → slide out then close
+          Animated.timing(translateY, {
+            toValue: 700, duration: 220, useNativeDriver: true,
+          }).start(() => onClose());
+        } else {
+          // Not far enough → snap back
+          Animated.spring(translateY, {
+            toValue: 0, tension: 80, friction: 12, useNativeDriver: true,
+          }).start();
+        }
+      },
+    }),
+  ).current;
+
+  // Backdrop fades from 0.5 → 0 as the sheet is pulled down
+  const backdropOpacity = translateY.interpolate({
+    inputRange: [0, 300],
+    outputRange: [0.5, 0],
+    extrapolate: 'clamp',
+  });
+
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-        <View style={{ backgroundColor: c.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28 }}>
-          {/* Drag handle */}
-          <View style={{ width: 36, height: 4, backgroundColor: c.handle, borderRadius: 2, alignSelf: 'center', marginTop: 12, marginBottom: 16 }} />
+      <Animated.View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'black', opacity: backdropOpacity }}
+        pointerEvents="none" />
 
-          {/* Month navigation */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 16 }}>
-            <TouchableOpacity onPress={prevMonth} style={{ padding: 8 }}>
-              <ChevronLeft size={20} color={c.icon} />
-            </TouchableOpacity>
-            <Text style={{ fontSize: 17, fontWeight: '700', color: c.textPrimary }}>
-              {t(`month.${MONTH_KEYS[calMonth]}` as any)} {calYear}
-            </Text>
-            <TouchableOpacity onPress={nextMonth} style={{ padding: 8 }}>
-              <ChevronRight size={20} color={c.icon} />
-            </TouchableOpacity>
-          </View>
+      <Animated.View
+        style={{
+          position: 'absolute', left: 0, right: 0, bottom: 0,
+          backgroundColor: c.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28,
+          transform: [{ translateY }],
+        }}
+      >
+        {/* Drag handle — pan responder lives here so calendar taps aren't swallowed */}
+        <View
+          {...panResponder.panHandlers}
+          style={{ alignItems: 'center', paddingTop: 12, paddingBottom: 16 }}
+        >
+          <View style={{ width: 36, height: 4, backgroundColor: c.handle, borderRadius: 2 }} />
+        </View>
+
+        {/* Month navigation — also draggable */}
+        <View
+          {...panResponder.panHandlers}
+          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 16 }}
+        >
+          <TouchableOpacity onPress={prevMonth} style={{ padding: 8 }}>
+            <ChevronLeft size={20} color={c.icon} />
+          </TouchableOpacity>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: c.textPrimary }}>
+            {t(`month.${MONTH_KEYS[calMonth]}` as any)} {calYear}
+          </Text>
+          <TouchableOpacity onPress={nextMonth} style={{ padding: 8 }}>
+            <ChevronRight size={20} color={c.icon} />
+          </TouchableOpacity>
+        </View>
 
           {/* Day headers */}
           <View style={{ flexDirection: 'row', paddingHorizontal: 10, marginBottom: 4 }}>
@@ -237,8 +290,7 @@ export function CalendarModal({
               <X size={18} color={c.closeIcon} />
             </View>
           </TouchableOpacity>
-        </View>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }
