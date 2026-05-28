@@ -910,9 +910,9 @@ export default function ProfileScreen() {
             </View>
             <View className="flex-row gap-4 justify-center">
               {[
-                { color: '#22c55e', range: '80–100', label: 'Excellent' },
-                { color: '#eab308', range: '60–79', label: 'Fair' },
-                { color: '#ef4444', range: '0–59', label: 'Critical' },
+                { color: '#22c55e', range: '80–100', label: t('profile.assessment_excellent') },
+                { color: '#eab308', range: '60–79', label: t('profile.assessment_fair') },
+                { color: '#ef4444', range: '0–59', label: t('profile.assessment_critical') },
               ].map(b => (
                 <View key={b.label} className="items-center">
                   <View className="w-3 h-3 rounded-full mb-1" style={{ backgroundColor: b.color }} />
