@@ -499,7 +499,7 @@ export default function ProfileScreen() {
 
   // Re-trigger measurement when this tab gains focus after a cross-tab navigation.
   const streakActive     = useTourTarget('profile-streak',     { scrollRef, scrollY: 120 });
-  const assessmentActive = useTourTarget('profile-assessment', { scrollRef, scrollY: 520 });
+  const assessmentActive = useTourTarget('profile-assessment', { scrollRef, scrollY: 780 });
 
   // ── Financial score ────────────────────────────────────────────────────────
   const currentYear = new Date().getFullYear();

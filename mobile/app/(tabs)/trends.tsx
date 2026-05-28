@@ -406,7 +406,7 @@ export default function TrendsScreen() {
   const topActive        = useTourTarget('trends-top',        { scrollRef, scrollY: 0 });
   const monthlyActive    = useTourTarget('trends-monthly',    { scrollRef, scrollY: 230 });
   const categoriesActive = useTourTarget('trends-categories', { scrollRef, scrollY: 430 });
-  const incomeVsActive   = useTourTarget('trends-income-vs',  { scrollRef, scrollY: 650 });
+  const incomeVsActive   = useTourTarget('trends-income-vs',  { scrollRef, scrollY: 950 });
 
   const [view, setView] = useState<'spending' | 'income'>('spending');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
