@@ -1,21 +1,35 @@
+/**
+ * TourOverlay — contextual onboarding card (bottom-sheet style)
+ *
+ * ARCHITECTURE
+ * ────────────
+ * NO spotlight masks.  NO coordinate measurements.  NO Modal for the tour.
+ *
+ * The card is a regular View pinned to the bottom of the screen via
+ * position:absolute.  It renders at the root layout level (sibling to the
+ * tab navigator) so it overlays tab content without any Portal gymnastics.
+ *
+ * Visual attention is directed by TourHighlight — a wrapper component that
+ * animates a glow border on the target using absoluteFillObject (local coords,
+ * no window measurement).
+ *
+ * The offer screen (first-launch prompt) still uses a full-screen Modal since
+ * it has no coordinate dependency.
+ */
+
 import { useCallback, useRef, useEffect } from 'react';
 import {
   Animated,
-  Dimensions,
   Image,
   Modal,
-  Platform,
-  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import Svg, { Defs, Mask, Rect } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
 import { useTour, TOUR_STEPS } from '../context/TourContext';
-import type { HighlightRect } from '../context/TourContext';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../context/LanguageContext';
 
@@ -35,143 +49,19 @@ function pathnameToTab(p: string) {
   return 'home';
 }
 
-// ─── SVG mask spotlight ───────────────────────────────────────────────────────
-// Creates a proper transparent cutout in the dim overlay.  The SVG Mask
-// concept: white pixels in the mask = opaque (show the dim), black pixels =
-// transparent (reveal the underlying screen = the spotlight hole).
-
-function SpotlightMask({ rect }: { rect: HighlightRect }) {
-  const { width: W, height: H } = Dimensions.get('window');
-  const { x, y, width: w, height: h } = rect;
-  const rx = 16;
-  return (
-    <Svg
-      style={StyleSheet.absoluteFillObject}
-      width={W}
-      height={H}
-      pointerEvents="none"
-    >
-      <Defs>
-        <Mask id="spotlight_mask" x="0" y="0" width={W} height={H}>
-          {/* White = dim is visible here */}
-          <Rect x={0} y={0} width={W} height={H} fill="white" />
-          {/* Black = dim is transparent here (the spotlight cutout) */}
-          <Rect x={x} y={y} width={w} height={h} rx={rx} fill="black" />
-        </Mask>
-      </Defs>
-      {/* The dim overlay; the mask punches a hole for the spotlight */}
-      <Rect
-        x={0} y={0} width={W} height={H}
-        fill="rgba(0,0,0,0.72)"
-        mask="url(#spotlight_mask)"
-      />
-    </Svg>
-  );
-}
-
-// ─── Debug overlay — THREE simultaneous rectangles ───────────────────────────
-//
-// Renders inside the Modal (same coord space as the spotlight).
-//
-//  🟥 RED   — highlightRect (padded) = the spotlight bounds as committed
-//  🟨 YELLOW — rawMeasureRect = the raw measureInWindow() result (no padding)
-//
-// Outside the Modal, TourOverlay also renders:
-//  🟦 BLUE  — same highlightRect but as a direct absolutePosition View
-//             (no Modal). If BLUE aligns with the target but RED is wrong,
-//             the Modal coordinate space is the culprit.
-
-interface DebugInModalProps {
-  highlightRect: HighlightRect;
-  rawRect: HighlightRect | null;
-  insets: { top: number; bottom: number };
-}
-
-function DebugInModal({ highlightRect: rect, rawRect, insets }: DebugInModalProps) {
-  const { width: W, height: H } = Dimensions.get('window');
-  const sbH = StatusBar.currentHeight ?? 0;
-
-  return (
-    <View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { width: W, height: H }]}>
-      {/* RED — highlightRect (padded spotlight bounds) */}
-      <View
-        style={{
-          position: 'absolute', top: rect.y, left: rect.x,
-          width: rect.width, height: rect.height,
-          borderWidth: 2, borderColor: '#f87171', borderRadius: 18, borderStyle: 'dashed',
-        }}
-      />
-
-      {/* YELLOW — raw measureInWindow result (no padding) */}
-      {rawRect && (
-        <View
-          style={{
-            position: 'absolute', top: rawRect.y, left: rawRect.x,
-            width: rawRect.width, height: rawRect.height,
-            borderWidth: 2, borderColor: '#facc15', borderRadius: 4,
-          }}
-        />
-      )}
-
-      {/* Coordinate chip */}
-      <View
-        style={{
-          position: 'absolute',
-          top: rect.y + rect.height + 6,
-          left: Math.max(4, rect.x),
-          backgroundColor: 'rgba(0,0,0,0.9)',
-          borderRadius: 4,
-          paddingHorizontal: 6,
-          paddingVertical: 3,
-        }}
-      >
-        <Text style={dbg.chip}>
-          {`spotlight=(${rect.x.toFixed(0)},${rect.y.toFixed(0)}) ${rect.width.toFixed(0)}×${rect.height.toFixed(0)}`}
-        </Text>
-        {rawRect && (
-          <Text style={[dbg.chip, { color: '#facc15' }]}>
-            {`raw=(${rawRect.x.toFixed(0)},${rawRect.y.toFixed(0)}) ${rawRect.width.toFixed(0)}×${rawRect.height.toFixed(0)}`}
-          </Text>
-        )}
-        <Text style={[dbg.chip, { color: '#94a3b8' }]}>
-          {`win=${W.toFixed(0)}×${H.toFixed(0)} sb=${sbH} saT=${insets.top.toFixed(0)} saB=${insets.bottom.toFixed(0)}`}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-const dbg = StyleSheet.create({
-  chip: { color: '#f87171', fontSize: 9, fontFamily: 'monospace', lineHeight: 13 },
-});
-
-// ─── Floating card position ───────────────────────────────────────────────────
-
-const CARD_EST_H = 220;
-const CARD_GAP   = 12;
-
-function getFloatingPos(rect: HighlightRect) {
-  const { height: screenH } = Dimensions.get('window');
-  const spaceAbove = rect.y - CARD_GAP;
-  const spaceBelow = screenH - (rect.y + rect.height) - CARD_GAP;
-  if (spaceAbove >= CARD_EST_H) return { bottom: screenH - rect.y + CARD_GAP, left: 12, right: 12 };
-  if (spaceBelow >= CARD_EST_H) return { top: rect.y + rect.height + CARD_GAP, left: 12, right: 12 };
-  return null;
-}
-
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function TourOverlay() {
   const {
-    tourActive, tourStepIndex, currentStep, showOffer, highlightRect, rawMeasureRect,
+    tourActive, tourStepIndex, currentStep, showOffer,
     acceptTour, declineTour, nextStep, skipTour,
   } = useTour();
   const { isAuthenticated, hasCompletedOnboarding, darkMode } = useApp();
   const { t }      = useTranslation();
   const router     = useRouter();
   const pathname   = usePathname();
-  const currentTab = pathnameToTab(pathname);
   const insets     = useSafeAreaInsets();
+  const currentTab = pathnameToTab(pathname);
 
   const navigateToTab = useCallback((tab: string) => {
     const route = TAB_ROUTES[tab];
@@ -180,55 +70,42 @@ export default function TourOverlay() {
 
   const handleNext = useCallback(() => nextStep(navigateToTab), [nextStep, navigateToTab]);
 
-  // backdropOpacity: 1 = full dim (measuring), fades to 0 when spotlight appears
-  // spotlightOpacity: 0 → 1 when rect is ready
-  const backdropOpacity  = useRef(new Animated.Value(1)).current;
-  const spotlightOpacity = useRef(new Animated.Value(0)).current;
+  // ── Card slide-up animation ─────────────────────────────────────────────────
+  const cardY       = useRef(new Animated.Value(300)).current;
+  const cardOpacity = useRef(new Animated.Value(0)).current;
+
+  const onCorrectTab = currentStep?.tab === currentTab;
+  const showCard     = tourActive && onCorrectTab && !!currentStep;
 
   useEffect(() => {
-    backdropOpacity.setValue(1);
-    spotlightOpacity.setValue(0);
-  }, [tourStepIndex, backdropOpacity, spotlightOpacity]);
-
-  useEffect(() => {
-    if (!highlightRect) {
-      backdropOpacity.setValue(1);
-      spotlightOpacity.setValue(0);
-      return;
+    if (showCard) {
+      Animated.parallel([
+        Animated.spring(cardY,       { toValue: 0,   tension: 70, friction: 11, useNativeDriver: true }),
+        Animated.timing(cardOpacity, { toValue: 1,   duration: 220,             useNativeDriver: true }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(cardY,       { toValue: 240, duration: 220, useNativeDriver: true }),
+        Animated.timing(cardOpacity, { toValue: 0,   duration: 180, useNativeDriver: true }),
+      ]).start();
     }
-    if (__DEV__) {
-      const { width: wW, height: wH } = Dimensions.get('window');
-      console.log(
-        `[TourOverlay] spotlight` +
-        `  x=${highlightRect.x.toFixed(0)} y=${highlightRect.y.toFixed(0)}` +
-        `  w=${highlightRect.width.toFixed(0)} h=${highlightRect.height.toFixed(0)}` +
-        `  (window ${wW}×${wH})`
-      );
-    }
-    Animated.parallel([
-      Animated.timing(backdropOpacity,  { toValue: 0, duration: 200, useNativeDriver: true }),
-      Animated.timing(spotlightOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-    ]).start();
-  }, [highlightRect, backdropOpacity, spotlightOpacity]);
+  }, [showCard, tourStepIndex]);
 
+  // ── Early return (after all hooks) ─────────────────────────────────────────
   if (!isAuthenticated || !hasCompletedOnboarding) return null;
 
-  const isLastStep   = tourStepIndex === TOUR_STEPS.length - 1;
-  const onCorrectTab = currentStep?.tab === currentTab;
-  const showTooltip  = tourActive && onCorrectTab && !!currentStep;
+  const isLastStep = tourStepIndex === TOUR_STEPS.length - 1;
 
   const bg          = darkMode ? '#111827' : '#ffffff';
   const textPrimary = darkMode ? '#f9fafb' : '#111827';
   const textSec     = darkMode ? '#9ca3af' : '#6b7280';
   const borderClr   = darkMode ? '#1f2937' : '#e5e7eb';
   const skipClr     = darkMode ? '#6b7280' : '#9ca3af';
-
-  const floatingPos = highlightRect ? getFloatingPos(highlightRect) : null;
-  const isFloating  = floatingPos !== null;
+  const cardBorder  = darkMode ? '#1f2937' : '#f0fdf4';
 
   return (
     <>
-      {/* ── Tour offer (full-screen, no coordinate dependency) ── */}
+      {/* ── First-launch tour offer (full-screen modal, no coord dependency) ── */}
       <Modal visible={showOffer} transparent={false} animationType="fade">
         <View style={[s.offerRoot, { backgroundColor: bg }]}>
           <Image source={mapMascotImg} style={s.mascot} resizeMode="contain" />
@@ -244,177 +121,72 @@ export default function TourOverlay() {
       </Modal>
 
       {/*
-       * ── Tour spotlight Modal ──────────────────────────────────────────────────
+       * ── Onboarding card ────────────────────────────────────────────────────
        *
-       * statusBarTranslucent={true} on Android makes the Modal origin y=0 equal
-       * to the physical top of the screen, matching the coordinate space of
-       * measureInWindow().  Without this, Android offsets the Modal by
-       * StatusBar.currentHeight, causing the spotlight to appear too low.
+       * position:absolute at the root level — sits above the tab bar and tab
+       * content without any Modal, Portal, or coordinate measurement.
+       *
+       * The card bottom edge sits ABOVE the tab bar:
+       *   bottom = tabBarHeight (≈ 60 + insets.bottom)
+       *
+       * No dark overlay.  The target component highlights itself via
+       * TourHighlight (glow border using absoluteFillObject).
        */}
-      {showTooltip && (
-        <Modal
-          visible
-          transparent
-          statusBarTranslucent={true}
-          animationType="none"
-          onRequestClose={skipTour}
-        >
-          {/* Layer 1: Full-screen dim while measuring (fades out when rect ready) */}
-          <Animated.View
-            pointerEvents="none"
-            style={[StyleSheet.absoluteFillObject, { opacity: backdropOpacity, backgroundColor: 'rgba(0,0,0,0.72)' }]}
-          />
+      <Animated.View
+        style={[
+          s.card,
+          {
+            bottom:          64 + insets.bottom,
+            backgroundColor: bg,
+            borderColor:     cardBorder,
+            opacity:         cardOpacity,
+            transform:       [{ translateY: cardY }],
+          },
+        ]}
+        pointerEvents={showCard ? 'box-none' : 'none'}
+      >
+        {/* Green accent bar */}
+        <View style={s.accentBar} />
 
-          {/* Layer 2: SVG mask spotlight + optional debug overlay */}
-          {highlightRect && (
-            <Animated.View
-              pointerEvents="box-none"
-              style={[StyleSheet.absoluteFillObject, { opacity: spotlightOpacity }]}
-            >
-              {/* SVG mask creates a proper transparent hole — no strip artefacts */}
-              <SpotlightMask rect={highlightRect} />
-
-              {/* Green border around the spotlight cutout */}
-              <View
-                pointerEvents="none"
-                style={{
-                  position:     'absolute',
-                  top:          highlightRect.y,
-                  left:         highlightRect.x,
-                  width:        highlightRect.width,
-                  height:       highlightRect.height,
-                  borderRadius: 16,
-                  borderWidth:  2,
-                  borderColor:  '#16a34a',
-                }}
-              />
-
-              {/* DEV: RED + YELLOW debug borders inside Modal */}
-              {__DEV__ && (
-                <DebugInModal
-                  highlightRect={highlightRect}
-                  rawRect={rawMeasureRect}
-                  insets={insets}
-                />
-              )}
-            </Animated.View>
-          )}
-
-          {/* Layer 3: Full-screen tap-to-skip */}
-          <TouchableOpacity
-            style={StyleSheet.absoluteFillObject}
-            onPress={skipTour}
-            activeOpacity={0}
-          />
-
-          {/* Layer 4: Tooltip card */}
-          <View
-            style={[
-              s.card,
-              isFloating ? s.cardFloating : s.cardBottom,
-              isFloating ? (floatingPos as object) : undefined,
-              { backgroundColor: bg },
-            ]}
-          >
-            <View style={s.progressBar} />
-
-            <View style={s.dotsRow}>
-              {TOUR_STEPS.map((_, i) => (
-                <View
-                  key={i}
-                  style={[s.dot, {
-                    width: i === tourStepIndex ? 14 : 5,
-                    backgroundColor:
-                      i === tourStepIndex ? '#16a34a'
-                      : i < tourStepIndex  ? '#86efac'
-                      : borderClr,
-                  }]}
-                />
-              ))}
-              <Text style={[s.counter, { color: textSec }]}>
-                {tourStepIndex + 1} / {TOUR_STEPS.length}
-              </Text>
-            </View>
-
-            <Text style={[s.title, { color: textPrimary }]}>
-              {t((currentStep?.title ?? '') as any)}
-            </Text>
-            <Text style={[s.body, { color: textSec }]}>
-              {t((currentStep?.body ?? '') as any)}
-            </Text>
-
-            <View style={s.actions}>
-              <TouchableOpacity onPress={skipTour}>
-                <Text style={[s.skipTxt, { color: skipClr }]}>{t('tour.skip')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleNext} style={s.nextBtn}>
-                <Text style={s.nextTxt}>
-                  {isLastStep ? t('tour.finish') : t('tour.next')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-      )}
-
-      {/*
-       * DEV ONLY: BLUE direct overlay — same highlightRect rendered as a
-       * regular absolute-positioned View OUTSIDE any Modal.
-       *
-       * TourOverlay is rendered at the app root level, so "absolute" here
-       * means relative to GestureHandlerRootView (the outermost native view).
-       *
-       * INTERPRETATION:
-       *   BLUE aligns with target, RED (Modal) does NOT
-       *     → Modal coordinate space is wrong (statusBarTranslucent not working)
-       *   RED aligns, BLUE does NOT
-       *     → Root-level absolute positioning is shifted
-       *       (GestureHandlerRootView or SafeAreaProvider adds offset)
-       *   Neither aligns
-       *     → measureInWindow() itself returns wrong coords
-       *       (wrong native node, parent transform, PixelRatio)
-       *   Both align
-       *     → coordinate systems are correct; bug is elsewhere (timing, wrong ref)
-       */}
-      {__DEV__ && showTooltip && highlightRect && (
-        <View
-          pointerEvents="none"
-          style={[
-            StyleSheet.absoluteFillObject,
-            { zIndex: 9999 },
-          ]}
-        >
-          {/* BLUE — direct (no Modal) */}
-          <View
-            style={{
-              position: 'absolute',
-              top:  highlightRect.y,
-              left: highlightRect.x,
-              width:  highlightRect.width,
-              height: highlightRect.height,
-              borderWidth: 2,
-              borderColor: '#60a5fa',
-              borderRadius: 18,
-              borderStyle: 'dashed',
-            }}
-          />
-          {/* CYAN — raw measureInWindow (no padding), direct */}
-          {rawMeasureRect && (
+        {/* Progress dots + counter */}
+        <View style={s.dotsRow}>
+          {TOUR_STEPS.map((_, i) => (
             <View
-              style={{
-                position: 'absolute',
-                top:  rawMeasureRect.y,
-                left: rawMeasureRect.x,
-                width:  rawMeasureRect.width,
-                height: rawMeasureRect.height,
-                borderWidth: 1,
-                borderColor: '#22d3ee',
-                borderRadius: 4,
-              }}
+              key={i}
+              style={[s.dot, {
+                width: i === tourStepIndex ? 14 : 5,
+                backgroundColor:
+                  i === tourStepIndex ? '#16a34a'
+                  : i < tourStepIndex  ? '#86efac'
+                  : borderClr,
+              }]}
             />
-          )}
+          ))}
+          <Text style={[s.counter, { color: textSec }]}>
+            {tourStepIndex + 1} / {TOUR_STEPS.length}
+          </Text>
         </View>
-      )}
+
+        {/* Step content */}
+        <Text style={[s.title, { color: textPrimary }]}>
+          {t((currentStep?.title ?? '') as any)}
+        </Text>
+        <Text style={[s.body, { color: textSec }]}>
+          {t((currentStep?.body ?? '') as any)}
+        </Text>
+
+        {/* Actions */}
+        <View style={s.actions}>
+          <TouchableOpacity onPress={skipTour} hitSlop={8}>
+            <Text style={[s.skipTxt, { color: skipClr }]}>{t('tour.skip')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleNext} style={s.nextBtn} activeOpacity={0.85}>
+            <Text style={s.nextTxt}>
+              {isLastStep ? t('tour.finish') : t('tour.next')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
     </>
   );
 }
@@ -422,60 +194,54 @@ export default function TourOverlay() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
+  // ── Offer screen ──
   offerRoot: {
     flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32,
   },
   mascot: { width: 160, height: 160, marginBottom: 24 },
-  offerTitle: {
-    fontSize: 26, fontWeight: '800', marginBottom: 10, textAlign: 'center',
-  },
-  offerDesc: {
-    fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 32,
-  },
+  offerTitle: { fontSize: 26, fontWeight: '800', marginBottom: 10, textAlign: 'center' },
+  offerDesc:  { fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 32 },
   primaryBtn: {
     backgroundColor: '#16a34a', borderRadius: 16, paddingVertical: 16,
     paddingHorizontal: 32, width: '100%', alignItems: 'center', marginBottom: 12,
     shadowColor: '#16a34a', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
-  primaryBtnTxt: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  secondaryBtn: {
-    borderWidth: 1, borderRadius: 16, paddingVertical: 16,
-    paddingHorizontal: 32, width: '100%', alignItems: 'center',
-  },
-  secondaryBtnTxt: { fontSize: 15, fontWeight: '500' },
+  primaryBtnTxt:  { color: '#fff', fontSize: 16, fontWeight: '700' },
+  secondaryBtn:   { borderWidth: 1, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 32, width: '100%', alignItems: 'center' },
+  secondaryBtnTxt:{ fontSize: 15, fontWeight: '500' },
 
+  // ── Tour card ──
   card: {
-    position: 'absolute', overflow: 'hidden',
-    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, elevation: 12,
+    position:   'absolute',
+    left:        12,
+    right:       12,
+    borderRadius: 20,
+    borderWidth:  1,
+    overflow:    'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.12,
+    shadowRadius:  16,
+    elevation:     10,
+    zIndex:        1000,
   },
-  cardBottom: {
-    bottom: 0, left: 0, right: 0,
-    borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    shadowOffset: { width: 0, height: -4 }, paddingBottom: 32,
-  },
-  cardFloating: {
-    borderRadius: 20, shadowOffset: { width: 0, height: 4 }, paddingBottom: 16,
-  },
-  progressBar: { height: 4, backgroundColor: '#16a34a' },
+  accentBar: { height: 4, backgroundColor: '#16a34a' },
   dotsRow: {
     flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap',
-    gap: 4, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 10,
+    gap: 4, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8,
   },
-  dot: { height: 5, borderRadius: 3 },
+  dot:     { height: 5, borderRadius: 3 },
   counter: { fontSize: 10, fontWeight: '600', marginLeft: 'auto' },
-  title: {
-    fontSize: 15, fontWeight: '700', paddingHorizontal: 16, marginBottom: 6, lineHeight: 20,
-  },
-  body: { fontSize: 13, paddingHorizontal: 16, marginBottom: 18, lineHeight: 19 },
+  title:   { fontSize: 15, fontWeight: '700', paddingHorizontal: 16, marginBottom: 5, lineHeight: 20 },
+  body:    { fontSize: 13, paddingHorizontal: 16, marginBottom: 16, lineHeight: 19 },
   actions: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 16, paddingBottom: 18,
   },
   skipTxt: { fontSize: 13, fontWeight: '500' },
   nextBtn: {
-    backgroundColor: '#16a34a', borderRadius: 12, paddingVertical: 10,
-    paddingHorizontal: 22,
+    backgroundColor: '#16a34a', borderRadius: 12, paddingVertical: 10, paddingHorizontal: 22,
     shadowColor: '#16a34a', shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3, shadowRadius: 6, elevation: 3,
   },

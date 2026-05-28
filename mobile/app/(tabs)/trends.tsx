@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,8 @@ import {
   Modal,
   Image,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
-import { useTour, useTourTarget } from '../../context/TourContext';
+import { useTourTarget } from '../../context/TourContext';
+import TourHighlight from '../../components/TourHighlight';
 
 const magnifierImg = require('../../assets/m_magnifier.png');
 import Svg, { Circle, Path, Line, Text as SvgText } from 'react-native-svg';
@@ -403,22 +403,10 @@ export default function TrendsScreen() {
   const { isPro } = usePurchases();
   const { showPaywall } = usePaywall();
 
-  // Tour target refs
-  const tourRefTop        = useTourTarget('trends-top', { scrollRef, scrollY: 0 });
-  const tourRefMonthly    = useTourTarget('trends-monthly', { scrollRef, scrollY: 230 });
-  const tourRefCategories = useTourTarget('trends-categories', { scrollRef, scrollY: 430 });
-  const tourRefIncomeVs   = useTourTarget('trends-income-vs', { scrollRef, scrollY: 650 });
-
-  // Re-trigger measurement when this tab gains focus after a cross-tab navigation.
-  // useFocusEffect fires once the screen is fully visible (including after Reanimated
-  // and React Navigation animations complete), so this is a more reliable signal
-  // than InteractionManager.runAfterInteractions() which only tracks JS-thread interactions.
-  const { tourActive, currentStep, triggerMeasure, remeasure } = useTour();
-  useFocusEffect(useCallback(() => {
-    if (tourActive && currentStep?.tab === 'trends') {
-      triggerMeasure();
-    }
-  }, [tourActive, currentStep?.tab, triggerMeasure]));
+  const topActive        = useTourTarget('trends-top',        { scrollRef, scrollY: 0 });
+  const monthlyActive    = useTourTarget('trends-monthly',    { scrollRef, scrollY: 230 });
+  const categoriesActive = useTourTarget('trends-categories', { scrollRef, scrollY: 430 });
+  const incomeVsActive   = useTourTarget('trends-income-vs',  { scrollRef, scrollY: 650 });
 
   const [view, setView] = useState<'spending' | 'income'>('spending');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -494,8 +482,6 @@ export default function TrendsScreen() {
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
-        onScroll={tourActive ? remeasure : undefined}
-        scrollEventThrottle={tourActive ? 100 : 0}
       >
 
         {/* ── Header ── */}
@@ -508,7 +494,7 @@ export default function TrendsScreen() {
         </View>
 
         {/* ── Summary Cards ── */}
-        <View ref={tourRefTop} collapsable={false} className="mx-4 mt-1 flex-row gap-3">
+        <TourHighlight active={topActive} style={{ marginHorizontal: 16, marginTop: 4 }} borderRadius={16}><View className="flex-row gap-3">
           {/* Spending card */}
           <View className="flex-1 bg-red-500 rounded-2xl p-4">
             <Text className="text-[10px] text-red-100 font-bold uppercase tracking-widest mb-1">
@@ -562,10 +548,10 @@ export default function TrendsScreen() {
               </View>
             )}
           </View>
-        </View>
+        </View></TourHighlight>
 
         {/* ── Monthly Bar Chart ── */}
-        <View ref={tourRefMonthly} collapsable={false} className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl p-5">
+        <TourHighlight active={monthlyActive} style={{ marginHorizontal: 16, marginTop: 16 }} borderRadius={16}><View className="bg-white dark:bg-gray-900 rounded-2xl p-5">
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-sm font-bold text-gray-900 dark:text-white">
               {t('trends.monthly_overview')}
@@ -634,10 +620,10 @@ export default function TrendsScreen() {
               );
             })}
           </View>
-        </View>
+        </View></TourHighlight>
 
         {/* ── Category Breakdown ── */}
-        <View ref={tourRefCategories} collapsable={false} className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden">
+        <TourHighlight active={categoriesActive} style={{ marginHorizontal: 16, marginTop: 16 }} borderRadius={16}><View className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden">
           <View className="flex-row items-center justify-between px-5 pt-5 pb-3">
             <Text className="text-sm font-bold text-gray-900 dark:text-white">
               {t('common.categories')}
@@ -705,11 +691,11 @@ export default function TrendsScreen() {
               )}
             </>
           )}
-        </View>
+        </View></TourHighlight>
 
         {/* ── Income vs Expenses ── */}
         {isPro ? (
-          <View ref={tourRefIncomeVs} collapsable={false} className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl p-5">
+          <TourHighlight active={incomeVsActive} style={{ marginHorizontal: 16, marginTop: 16 }} borderRadius={16}><View className="bg-white dark:bg-gray-900 rounded-2xl p-5">
             <Text className="text-sm font-bold text-gray-900 dark:text-white mb-4">
               {t('trends.income_vs')}
             </Text>
@@ -768,19 +754,19 @@ export default function TrendsScreen() {
                 <Text className="text-[11px] text-gray-400">{t('common.expenses')}</Text>
               </View>
             </View>
-          </View>
+          </View></TourHighlight>
         ) : (
-          <TouchableOpacity
-            ref={tourRefIncomeVs}
-            collapsable={false}
-            onPress={showPaywall}
-            activeOpacity={0.8}
-            className="mx-4 mt-4 bg-white dark:bg-gray-900 rounded-2xl p-5 items-center gap-2"
-          >
-            <Lock size={18} color="#9ca3af" />
-            <Text className="text-sm font-semibold text-gray-400">{t('trends.income_vs')}</Text>
-            <Text className="text-xs text-gray-400">{t('trends.upgrade_pro_unlock')}</Text>
-          </TouchableOpacity>
+          <TourHighlight active={incomeVsActive} style={{ marginHorizontal: 16, marginTop: 16 }} borderRadius={16}>
+            <TouchableOpacity
+              onPress={showPaywall}
+              activeOpacity={0.8}
+              className="bg-white dark:bg-gray-900 rounded-2xl p-5 items-center gap-2"
+            >
+              <Lock size={18} color="#9ca3af" />
+              <Text className="text-sm font-semibold text-gray-400">{t('trends.income_vs')}</Text>
+              <Text className="text-xs text-gray-400">{t('trends.upgrade_pro_unlock')}</Text>
+            </TouchableOpacity>
+          </TourHighlight>
         )}
 
       </ScrollView>
