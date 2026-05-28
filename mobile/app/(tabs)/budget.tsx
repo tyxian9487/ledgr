@@ -190,12 +190,14 @@ export default function BudgetScreen() {
   const { currentStep } = useTour();
 
   useEffect(() => {
-    if (currentStep?.id === 'budget-income') setActiveTab('budget');
-    if (currentStep?.id === 'budget-goals') setActiveTab('goals');
+    if (currentStep?.id === 'budget-income')      setActiveTab('budget');
+    if (currentStep?.id === 'budget-goals')       setActiveTab('goals');
+    if (currentStep?.id === 'budget-custom-goal') setActiveTab('goals');
   }, [currentStep?.id]);
 
-  const goalsActive  = useTourTarget('budget-goals',  { scrollRef, scrollY: 0 });
-  const incomeActive = useTourTarget('budget-income', { scrollRef, scrollY: 260 });
+  const goalsActive      = useTourTarget('budget-goals',       { scrollRef, scrollY: 0 });
+  const customGoalActive = useTourTarget('budget-custom-goal', { scrollRef, scrollY: 220 });
+  const incomeActive     = useTourTarget('budget-income',      { scrollRef, scrollY: 260 });
   const [incomeInput, setIncomeInput] = useState(
     budget.expectedIncome > 0 ? String(budget.expectedIncome) : actualIncome > 0 ? String(Math.round(actualIncome)) : '',
   );
@@ -536,19 +538,21 @@ export default function BudgetScreen() {
             </View>
 
             {/* Add Goal */}
-            <TouchableOpacity
-              onPress={() => {
-                if (!isPro && (budget.customGoals?.length ?? 0) >= 1) { showPaywall(); return; }
-                router.push('/goal/new' as any);
-              }}
-              className="w-full flex-row items-center gap-3 px-1 py-3 mb-4"
-              activeOpacity={0.7}
-            >
-              <View className="w-11 h-11 rounded-2xl items-center justify-center flex-shrink-0" style={{ backgroundColor: '#22c55e25' }}>
-                <Plus size={20} color="#22c55e" strokeWidth={1.8} />
-              </View>
-              <Text className="text-sm font-semibold" style={{ color: '#22c55e' }}>{t('budget.add_goal')}</Text>
-            </TouchableOpacity>
+            <TourHighlight active={customGoalActive} borderRadius={16} style={{ marginBottom: 16 }}>
+              <TouchableOpacity
+                onPress={() => {
+                  if (!isPro && (budget.customGoals?.length ?? 0) >= 1) { showPaywall(); return; }
+                  router.push('/goal/new' as any);
+                }}
+                className="w-full flex-row items-center gap-3 px-1 py-3"
+                activeOpacity={0.7}
+              >
+                <View className="w-11 h-11 rounded-2xl items-center justify-center flex-shrink-0" style={{ backgroundColor: '#22c55e25' }}>
+                  <Plus size={20} color="#22c55e" strokeWidth={1.8} />
+                </View>
+                <Text className="text-sm font-semibold" style={{ color: '#22c55e' }}>{t('budget.add_goal')}</Text>
+              </TouchableOpacity>
+            </TourHighlight>
           </>
         )}
 

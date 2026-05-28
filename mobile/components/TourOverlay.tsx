@@ -136,7 +136,11 @@ export default function TourOverlay() {
         style={[
           s.card,
           {
-            bottom:          64 + insets.bottom,
+            // For steps whose target sits near the bottom (e.g. capture FAB),
+            // raise the card so it doesn't block the highlighted element.
+            bottom: currentStep?.id === 'home-capture'
+              ? 120 + insets.bottom
+              : 64  + insets.bottom,
             backgroundColor: bg,
             borderColor:     cardBorder,
             opacity:         cardOpacity,

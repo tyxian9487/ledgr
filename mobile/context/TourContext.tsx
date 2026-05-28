@@ -35,8 +35,9 @@ export const TOUR_STEPS: TourStep[] = [
     title: 'tour.guide_to_budget.title', body: 'tour.guide_to_budget.body',
     isGuide: true, guideTab: 'budget',
   },
-  { id: 'budget-income', tab: 'budget',  title: 'tour.budget_income.title', body: 'tour.budget_income.body' },
-  { id: 'budget-goals',  tab: 'budget',  title: 'tour.budget_goals.title',  body: 'tour.budget_goals.body' },
+  { id: 'budget-income',      tab: 'budget', title: 'tour.budget_income.title',      body: 'tour.budget_income.body' },
+  { id: 'budget-goals',       tab: 'budget', title: 'tour.budget_goals.title',       body: 'tour.budget_goals.body' },
+  { id: 'budget-custom-goal', tab: 'budget', title: 'tour.budget_custom_goal.title', body: 'tour.budget_custom_goal.body' },
   {
     id: 'guide-to-profile', tab: 'budget',
     title: 'tour.guide_to_profile.title', body: 'tour.guide_to_profile.body',

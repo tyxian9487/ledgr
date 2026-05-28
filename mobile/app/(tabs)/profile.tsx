@@ -70,6 +70,7 @@ import {
   loadNotifPrefs,
   saveNotifPrefs,
   syncNotificationSettings,
+  sendLanguagePreviewNotification,
   getTranslationFunction,
 } from '../../utils/notifications';
 import BadgeCelebration from '../../components/BadgeCelebration';
@@ -499,7 +500,7 @@ export default function ProfileScreen() {
 
   // Re-trigger measurement when this tab gains focus after a cross-tab navigation.
   const streakActive     = useTourTarget('profile-streak',     { scrollRef, scrollY: 120 });
-  const assessmentActive = useTourTarget('profile-assessment', { scrollRef, scrollY: 520 });
+  const assessmentActive = useTourTarget('profile-assessment', { scrollRef, scrollY: 780 });
 
   // ── Financial score ────────────────────────────────────────────────────────
   const currentYear = new Date().getFullYear();
@@ -1252,10 +1253,16 @@ export default function ProfileScreen() {
                     key={lang.code}
                     onPress={async () => {
                       updateUserProfile({ language: lang.code });
-                      // Re-sync notifications with the new language
+                      // Re-schedule all recurring notifications in the new language
+                      // (uses correct weekly/daily trigger types so none fire immediately).
+                      // Then fire ONE immediate preview tip so the user can see
+                      // how notifications look in the selected language.
                       const prefs = await loadNotifPrefs();
-                      const t = await getTranslationFunction(lang.code);
-                      await syncNotificationSettings(prefs, t);
+                      const tFn = await getTranslationFunction(lang.code);
+                      await syncNotificationSettings(prefs, tFn);
+                      if (prefs.tips) {
+                        await sendLanguagePreviewNotification(lang.code);
+                      }
                       setShowLanguage(false);
                     }}
                     className={`flex-row items-center gap-4 px-5 py-4 border-b border-gray-50 dark:border-gray-900 ${
