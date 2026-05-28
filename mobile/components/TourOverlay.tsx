@@ -4,12 +4,15 @@ import {
   Dimensions,
   Image,
   Modal,
+  Platform,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
 import Svg, { Defs, Mask, Rect } from 'react-native-svg';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
 import { useTour, TOUR_STEPS } from '../context/TourContext';
 import type { HighlightRect } from '../context/TourContext';
@@ -66,47 +69,81 @@ function SpotlightMask({ rect }: { rect: HighlightRect }) {
   );
 }
 
-// ─── Debug overlay (always visible in DEV until alignment is confirmed) ───────
+// ─── Debug overlay — THREE simultaneous rectangles ───────────────────────────
+//
+// Renders inside the Modal (same coord space as the spotlight).
+//
+//  🟥 RED   — highlightRect (padded) = the spotlight bounds as committed
+//  🟨 YELLOW — rawMeasureRect = the raw measureInWindow() result (no padding)
+//
+// Outside the Modal, TourOverlay also renders:
+//  🟦 BLUE  — same highlightRect but as a direct absolutePosition View
+//             (no Modal). If BLUE aligns with the target but RED is wrong,
+//             the Modal coordinate space is the culprit.
 
-function DebugOverlay({ rect }: { rect: HighlightRect }) {
+interface DebugInModalProps {
+  highlightRect: HighlightRect;
+  rawRect: HighlightRect | null;
+  insets: { top: number; bottom: number };
+}
+
+function DebugInModal({ highlightRect: rect, rawRect, insets }: DebugInModalProps) {
   const { width: W, height: H } = Dimensions.get('window');
+  const sbH = StatusBar.currentHeight ?? 0;
+
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { width: W, height: H }]}>
-      {/* Yellow dashed border — the exact spotlight rect as committed */}
+      {/* RED — highlightRect (padded spotlight bounds) */}
       <View
         style={{
-          position:    'absolute',
-          top:         rect.y - 2,
-          left:        rect.x - 2,
-          width:       rect.width  + 4,
-          height:      rect.height + 4,
-          borderWidth: 2,
-          borderColor: '#facc15',
-          borderStyle: 'dashed',
-          borderRadius: 18,
+          position: 'absolute', top: rect.y, left: rect.x,
+          width: rect.width, height: rect.height,
+          borderWidth: 2, borderColor: '#f87171', borderRadius: 18, borderStyle: 'dashed',
         }}
       />
+
+      {/* YELLOW — raw measureInWindow result (no padding) */}
+      {rawRect && (
+        <View
+          style={{
+            position: 'absolute', top: rawRect.y, left: rawRect.x,
+            width: rawRect.width, height: rawRect.height,
+            borderWidth: 2, borderColor: '#facc15', borderRadius: 4,
+          }}
+        />
+      )}
+
       {/* Coordinate chip */}
       <View
         style={{
-          position:          'absolute',
-          top:               rect.y + rect.height + 6,
-          left:              rect.x,
-          backgroundColor:   'rgba(0,0,0,0.85)',
-          borderRadius:      4,
+          position: 'absolute',
+          top: rect.y + rect.height + 6,
+          left: Math.max(4, rect.x),
+          backgroundColor: 'rgba(0,0,0,0.9)',
+          borderRadius: 4,
           paddingHorizontal: 6,
-          paddingVertical:   3,
+          paddingVertical: 3,
         }}
       >
-        <Text
-          style={{ color: '#facc15', fontSize: 9, fontFamily: 'monospace', lineHeight: 13 }}
-        >
-          {`(${rect.x.toFixed(0)}, ${rect.y.toFixed(0)})  ${rect.width.toFixed(0)}×${rect.height.toFixed(0)}`}
+        <Text style={dbg.chip}>
+          {`spotlight=(${rect.x.toFixed(0)},${rect.y.toFixed(0)}) ${rect.width.toFixed(0)}×${rect.height.toFixed(0)}`}
+        </Text>
+        {rawRect && (
+          <Text style={[dbg.chip, { color: '#facc15' }]}>
+            {`raw=(${rawRect.x.toFixed(0)},${rawRect.y.toFixed(0)}) ${rawRect.width.toFixed(0)}×${rawRect.height.toFixed(0)}`}
+          </Text>
+        )}
+        <Text style={[dbg.chip, { color: '#94a3b8' }]}>
+          {`win=${W.toFixed(0)}×${H.toFixed(0)} sb=${sbH} saT=${insets.top.toFixed(0)} saB=${insets.bottom.toFixed(0)}`}
         </Text>
       </View>
     </View>
   );
 }
+
+const dbg = StyleSheet.create({
+  chip: { color: '#f87171', fontSize: 9, fontFamily: 'monospace', lineHeight: 13 },
+});
 
 // ─── Floating card position ───────────────────────────────────────────────────
 
@@ -126,7 +163,7 @@ function getFloatingPos(rect: HighlightRect) {
 
 export default function TourOverlay() {
   const {
-    tourActive, tourStepIndex, currentStep, showOffer, highlightRect,
+    tourActive, tourStepIndex, currentStep, showOffer, highlightRect, rawMeasureRect,
     acceptTour, declineTour, nextStep, skipTour,
   } = useTour();
   const { isAuthenticated, hasCompletedOnboarding, darkMode } = useApp();
@@ -134,6 +171,7 @@ export default function TourOverlay() {
   const router     = useRouter();
   const pathname   = usePathname();
   const currentTab = pathnameToTab(pathname);
+  const insets     = useSafeAreaInsets();
 
   const navigateToTab = useCallback((tab: string) => {
     const route = TAB_ROUTES[tab];
@@ -251,8 +289,14 @@ export default function TourOverlay() {
                 }}
               />
 
-              {/* Permanent DEV debug overlay — stays until alignment is confirmed */}
-              {__DEV__ && <DebugOverlay rect={highlightRect} />}
+              {/* DEV: RED + YELLOW debug borders inside Modal */}
+              {__DEV__ && (
+                <DebugInModal
+                  highlightRect={highlightRect}
+                  rawRect={rawMeasureRect}
+                  insets={insets}
+                />
+              )}
             </Animated.View>
           )}
 
@@ -311,6 +355,65 @@ export default function TourOverlay() {
             </View>
           </View>
         </Modal>
+      )}
+
+      {/*
+       * DEV ONLY: BLUE direct overlay — same highlightRect rendered as a
+       * regular absolute-positioned View OUTSIDE any Modal.
+       *
+       * TourOverlay is rendered at the app root level, so "absolute" here
+       * means relative to GestureHandlerRootView (the outermost native view).
+       *
+       * INTERPRETATION:
+       *   BLUE aligns with target, RED (Modal) does NOT
+       *     → Modal coordinate space is wrong (statusBarTranslucent not working)
+       *   RED aligns, BLUE does NOT
+       *     → Root-level absolute positioning is shifted
+       *       (GestureHandlerRootView or SafeAreaProvider adds offset)
+       *   Neither aligns
+       *     → measureInWindow() itself returns wrong coords
+       *       (wrong native node, parent transform, PixelRatio)
+       *   Both align
+       *     → coordinate systems are correct; bug is elsewhere (timing, wrong ref)
+       */}
+      {__DEV__ && showTooltip && highlightRect && (
+        <View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFillObject,
+            { zIndex: 9999 },
+          ]}
+        >
+          {/* BLUE — direct (no Modal) */}
+          <View
+            style={{
+              position: 'absolute',
+              top:  highlightRect.y,
+              left: highlightRect.x,
+              width:  highlightRect.width,
+              height: highlightRect.height,
+              borderWidth: 2,
+              borderColor: '#60a5fa',
+              borderRadius: 18,
+              borderStyle: 'dashed',
+            }}
+          />
+          {/* CYAN — raw measureInWindow (no padding), direct */}
+          {rawMeasureRect && (
+            <View
+              style={{
+                position: 'absolute',
+                top:  rawMeasureRect.y,
+                left: rawMeasureRect.x,
+                width:  rawMeasureRect.width,
+                height: rawMeasureRect.height,
+                borderWidth: 1,
+                borderColor: '#22d3ee',
+                borderRadius: 4,
+              }}
+            />
+          )}
+        </View>
       )}
     </>
   );

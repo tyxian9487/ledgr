@@ -56,6 +56,13 @@ interface TourContextType {
   showOffer: boolean;
   highlightRect: HighlightRect | null;
   setHighlightRect: (rect: HighlightRect | null) => void;
+  /**
+   * The raw measureInWindow() result — stored separately so the debug overlay
+   * can show it alongside the padded highlightRect without re-measuring.
+   * null until the first successful measurement for the current step.
+   */
+  rawMeasureRect: HighlightRect | null;
+  setRawMeasureRect: (rect: HighlightRect | null) => void;
   acceptTour: () => void;
   declineTour: () => void;
   nextStep: (navigateToTab?: (tab: string) => void) => void;
@@ -76,8 +83,9 @@ interface TourContextType {
 
 const TourContext = createContext<TourContextType>({
   tourActive: false, tourStepIndex: -1, currentStep: null,
-  showOffer: false, highlightRect: null,
-  setHighlightRect: () => {}, acceptTour: () => {}, declineTour: () => {},
+  showOffer: false, highlightRect: null, setHighlightRect: () => {},
+  rawMeasureRect: null, setRawMeasureRect: () => {},
+  acceptTour: () => {}, declineTour: () => {},
   nextStep: () => {}, skipTour: () => {},
   measureTrigger: 0, triggerMeasure: () => {},
   registerScrollRemeasure: () => {}, remeasure: () => {},
@@ -88,6 +96,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const [tourStepIndex,   setTourStepIndex]  = useState(-1);
   const [showOffer,       setShowOffer]      = useState(false);
   const [highlightRect,   setHighlightRect]  = useState<HighlightRect | null>(null);
+  const [rawMeasureRect,  setRawMeasureRect] = useState<HighlightRect | null>(null);
   const [measureTrigger,  setMeasureTrigger] = useState(0);
 
   const triggerMeasure = useCallback(() => setMeasureTrigger(n => n + 1), []);
@@ -175,7 +184,8 @@ export function TourProvider({ children }: { children: ReactNode }) {
   return (
     <TourContext.Provider value={{
       tourActive, tourStepIndex, currentStep, showOffer, highlightRect,
-      setHighlightRect, acceptTour, declineTour, nextStep, skipTour,
+      setHighlightRect, rawMeasureRect, setRawMeasureRect,
+      acceptTour, declineTour, nextStep, skipTour,
       measureTrigger, triggerMeasure,
       registerScrollRemeasure, remeasure,
     }}>
@@ -234,7 +244,7 @@ interface TourTargetOptions {
  */
 export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
   const {
-    currentStep, setHighlightRect, measureTrigger,
+    currentStep, setHighlightRect, setRawMeasureRect, measureTrigger,
     registerScrollRemeasure,
   } = useTour();
 
@@ -249,6 +259,7 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
     if (currentStep?.id !== stepId) return;
 
     setHighlightRect(null);
+    setRawMeasureRect(null);
 
     let cancelled = false;
     let raf1 = 0, raf2 = 0, timer = 0;
@@ -264,6 +275,7 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
       if (cancelled) return;
       ref.current?.measureInWindow((x, y, w, h) => {
         if (cancelled || w === 0 || h === 0) return;
+        setRawMeasureRect({ x, y, width: w, height: h });
         setHighlightRect({
           x:      Math.max(0, x - 4),
           y:      Math.max(0, y - 4),
@@ -402,6 +414,7 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
         }
 
         // ── Phase 5: Commit ───────────────────────────────────────────────────
+        const rawRect = { x, y, width: w, height: h };
         const rect = {
           x:      Math.max(0, x - 4),
           y:      Math.max(0, y - 4),
@@ -412,12 +425,13 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
         if (__DEV__) {
           console.log(
             `[Tour] ✓ "${stepId}" committed` +
-            `  rect=(${rect.x.toFixed(0)},${rect.y.toFixed(0)})` +
-            `  ${rect.width.toFixed(0)}×${rect.height.toFixed(0)}` +
+            `  raw=(${x.toFixed(0)},${y.toFixed(0)}) ${w.toFixed(0)}×${h.toFixed(0)}` +
+            `  padded=(${rect.x.toFixed(0)},${rect.y.toFixed(0)}) ${rect.width.toFixed(0)}×${rect.height.toFixed(0)}` +
             `  attempts=${attempt + 1}`
           );
         }
 
+        setRawMeasureRect(rawRect);
         setHighlightRect(rect);
       });
     }
@@ -425,6 +439,7 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
     return () => {
       cancelled = true;
       registerScrollRemeasure(null);
+      setRawMeasureRect(null);
       interactionTask?.cancel();
       cancelAnimationFrame(raf1);
       cancelAnimationFrame(raf2);
@@ -435,7 +450,7 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
     };
     // options intentionally omitted — captured via optionsRef.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStep?.id, stepId, setHighlightRect, measureTrigger, registerScrollRemeasure]);
+  }, [currentStep?.id, stepId, setHighlightRect, setRawMeasureRect, measureTrigger, registerScrollRemeasure]);
 
   return ref;
 }

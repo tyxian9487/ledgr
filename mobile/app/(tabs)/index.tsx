@@ -189,6 +189,16 @@ export default function HomeScreen() {
           <View>
             <Text className="text-xs text-gray-400 dark:text-gray-500 font-medium">{t(getGreeting())}</Text>
             <Text className="text-xl font-black text-gray-900 dark:text-white">{t('home.my_finances')}</Text>
+            {__DEV__ && (
+              <TouchableOpacity
+                onPress={() => router.push('/debug-tour' as any)}
+                style={{ marginTop: 2 }}
+              >
+                <Text style={{ fontSize: 9, color: '#f59e0b', fontWeight: '700' }}>
+                  🔧 Debug Spotlight
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
           <TouchableOpacity
             onPress={() => router.push('/(tabs)/profile')}
