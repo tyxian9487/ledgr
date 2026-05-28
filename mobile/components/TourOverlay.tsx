@@ -22,16 +22,29 @@ import {
   Animated,
   Image,
   Modal,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
 import { useTour, TOUR_STEPS } from '../context/TourContext';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../context/LanguageContext';
+
+// Steps whose highlighted element sits near the bottom — raise the card so
+// it doesn't cover the glow.
+function getCardBottom(stepId: string | undefined, insetBottom: number): number {
+  switch (stepId) {
+    case 'home-capture':       return 200 + insetBottom;
+    case 'trends-income-vs':   return 210 + insetBottom;
+    case 'budget-custom-goal': return 185 + insetBottom;
+    default:                   return 64  + insetBottom;
+  }
+}
 
 const mapMascotImg = require('../assets/m_map.png');
 
@@ -120,27 +133,23 @@ export default function TourOverlay() {
         </View>
       </Modal>
 
-      {/*
-       * ── Onboarding card ────────────────────────────────────────────────────
-       *
-       * position:absolute at the root level — sits above the tab bar and tab
-       * content without any Modal, Portal, or coordinate measurement.
-       *
-       * The card bottom edge sits ABOVE the tab bar:
-       *   bottom = tabBarHeight (≈ 60 + insets.bottom)
-       *
-       * No dark overlay.  The target component highlights itself via
-       * TourHighlight (glow border using absoluteFillObject).
-       */}
+      {/* Blur / dim backdrop — fades in with the card */}
+      <Animated.View
+        pointerEvents="none"
+        style={[StyleSheet.absoluteFillObject, { opacity: cardOpacity }]}
+      >
+        {Platform.OS === 'ios'
+          ? <BlurView intensity={35} tint={darkMode ? 'dark' : 'default'} style={StyleSheet.absoluteFill} />
+          : <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.45)' }]} />
+        }
+      </Animated.View>
+
+      {/* ── Onboarding card ──────────────────────────────────────────────── */}
       <Animated.View
         style={[
           s.card,
           {
-            // For steps whose target sits near the bottom (e.g. capture FAB),
-            // raise the card so it doesn't block the highlighted element.
-            bottom: currentStep?.id === 'home-capture'
-              ? 120 + insets.bottom
-              : 64  + insets.bottom,
+            bottom:          getCardBottom(currentStep?.id, insets.bottom),
             backgroundColor: bg,
             borderColor:     cardBorder,
             opacity:         cardOpacity,
