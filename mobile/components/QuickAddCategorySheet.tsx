@@ -25,7 +25,7 @@ interface Props {
 export default function QuickAddCategorySheet({ visible, defaultType, editMode, onSave, onClose }: Props) {
   const { addCustomCategory, updateCustomCategory } = useApp();
   const { t } = useTranslation();
-  const { bottom } = useSafeAreaInsets();
+  const { bottom, top } = useSafeAreaInsets();
 
   const [type, setType] = useState<'expense' | 'income'>(defaultType);
   const [label, setLabel] = useState('');
@@ -68,7 +68,7 @@ export default function QuickAddCategorySheet({ visible, defaultType, editMode, 
     >
       <View className="flex-1 bg-white dark:bg-gray-900">
         {/* Drag pill */}
-        <View className="items-center pt-3 pb-1">
+        <View className="items-center pb-1" style={{ paddingTop: Math.max(12, top) }}>
           <View className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
         </View>
 
