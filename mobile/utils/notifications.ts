@@ -119,18 +119,17 @@ export async function syncNotificationSettings(prefs: NotifPrefs, t?: (key: stri
   const granted = await requestNotificationPermissionIfNeeded();
   if (!granted) return;
 
-  // Fallback translation function if not provided
   const translate = t || ((key: string) => key);
 
   const ids: string[] = [];
   if (prefs.weeklySummary) {
-    // Sunday night (weekday 1 = Sunday in Expo Calendar trigger)
+    // Sunday night — type:'weekly' required by Expo SDK 55; weekday 1 = Sunday
     ids.push(await scheduleManagedNotification(
       {
         title: translate('notif.weekly_summary'),
         body: translate('notif.weekly_summary_body'),
       },
-      { weekday: 1, hour: 21, minute: 0, repeats: true },
+      { type: 'weekly', weekday: 1, hour: 21, minute: 0 },
     ));
   }
   if (prefs.streakReminders) {
@@ -140,11 +139,14 @@ export async function syncNotificationSettings(prefs: NotifPrefs, t?: (key: stri
         title: translate('notif.streak_reminders'),
         body: translate('notif.streak_reminders_body'),
       },
-      { hour: 20, minute: 0, repeats: true },
+      { type: 'daily', hour: 20, minute: 0 },
     ));
   }
   if (prefs.tips) {
-    // One tip per day of week (7 tips rotating), each at 09:00
+    // One tip per day of week (7 tips rotating), each at 09:00.
+    // type:'weekly' is required — the old { weekday, hour, repeats:true } format
+    // lacks an explicit type, which Expo SDK 55 treats as invalid and falls back
+    // to immediate delivery, causing all 7 to fire at once.
     const tipTitle = translate('notif.tips');
     const tipBodies = [
       translate('notif.tips_body_1'),
@@ -158,11 +160,31 @@ export async function syncNotificationSettings(prefs: NotifPrefs, t?: (key: stri
     for (let i = 0; i < 7; i++) {
       ids.push(await scheduleManagedNotification(
         { title: tipTitle, body: tipBodies[i] },
-        { weekday: i + 1, hour: 9, minute: 0, repeats: true },
+        { type: 'weekly', weekday: i + 1, hour: 9, minute: 0 },
       ));
     }
   }
   await AsyncStorage.setItem(SCHEDULED_IDS_KEY, JSON.stringify(ids));
+}
+
+/**
+ * Fires a single immediate tip notification in the given language so the user
+ * can preview what translated notifications look like without waiting for the
+ * next scheduled slot.  Called only on explicit language change.
+ */
+export async function sendLanguagePreviewNotification(lang: string): Promise<void> {
+  const granted = await requestNotificationPermissionIfNeeded();
+  if (!granted) return;
+  const Notifications = await getNotifications();
+  const translate = await getTranslationFunction(lang);
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: translate('notif.tips'),
+      body:  translate('notif.tips_body_1'),
+      sound: true,
+    },
+    trigger: null, // deliver immediately
+  });
 }
 
 export async function sendBudgetAlertOnce(key: string, title: string, body: string): Promise<void> {
