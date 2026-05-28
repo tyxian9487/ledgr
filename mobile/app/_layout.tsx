@@ -27,6 +27,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import ConsentBanner from '../components/ConsentBanner';
 import TourOverlay from '../components/TourOverlay';
 import NotificationWatcher from '../components/NotificationWatcher';
+import SoundPlayer from '../components/SoundPlayer';
 import { useColorScheme } from 'nativewind';
 import { supabase, handleOAuthRedirect } from '../utils/supabase';
 import {
@@ -295,6 +296,7 @@ export default function RootLayout() {
                     <EntitlementSyncBridge />
                     <NotificationPermissionRequester />
                     <NotificationWatcher />
+                    <SoundPlayer />
                     <NavigationGuard />
                     <TourOverlay />
                     <ConsentBanner />
