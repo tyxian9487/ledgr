@@ -186,7 +186,7 @@ export default function BudgetScreen() {
   const actualIncome = getMonthIncome(now.getFullYear(), now.getMonth());
 
   const [activeTab, setActiveTab] = useState<'goals' | 'budget'>('goals');
-  const { currentStep, tourActive, triggerMeasure } = useTour();
+  const { currentStep, tourActive, triggerMeasure, remeasure } = useTour();
 
   useEffect(() => {
     if (currentStep?.id === 'budget-income') setActiveTab('budget');
@@ -389,7 +389,14 @@ export default function BudgetScreen() {
         ))}
       </View>
 
-      <ScrollView ref={scrollRef} className="flex-1 px-5 pt-5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView
+        ref={scrollRef}
+        className="flex-1 px-5 pt-5"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        onScroll={tourActive ? remeasure : undefined}
+        scrollEventThrottle={tourActive ? 100 : 0}
+      >
 
         {/* ── GOALS TAB ── */}
         {activeTab === 'goals' && (

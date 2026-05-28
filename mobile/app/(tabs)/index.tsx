@@ -70,8 +70,7 @@ export default function HomeScreen() {
   const tourRefBudgetBtn = useTourTarget('home-budget-btn', { scrollRef, scrollY: 390 });
   const tourRefToggle    = useTourTarget('home-view-toggle', { scrollRef, scrollY: 720 });
 
-  // Re-trigger measurement when the home tab gains focus after a cross-tab navigation.
-  const { tourActive, currentStep: tourCurrentStep, triggerMeasure } = useTour();
+  const { tourActive, currentStep: tourCurrentStep, triggerMeasure, remeasure } = useTour();
   useFocusEffect(useCallback(() => {
     if (tourActive && tourCurrentStep?.tab === 'home') {
       triggerMeasure();
@@ -176,7 +175,14 @@ export default function HomeScreen() {
       className="flex-1 bg-gray-50 dark:bg-gray-950"
       edges={['top']}
     >
-      <ScrollView ref={scrollRef} className="flex-1" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        ref={scrollRef}
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        onScroll={tourActive ? remeasure : undefined}
+        scrollEventThrottle={tourActive ? 100 : 0}
+      >
 
         {/* ── Header ── */}
         <View className="px-5 pt-3 pb-2 flex-row items-center justify-between">

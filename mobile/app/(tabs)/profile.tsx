@@ -497,7 +497,7 @@ export default function ProfileScreen() {
   const [seenBadgesLoaded, setSeenBadgesLoaded] = useState(false);
 
   // Re-trigger measurement when this tab gains focus after a cross-tab navigation.
-  const { tourActive, currentStep: tourCurrentStep, triggerMeasure } = useTour();
+  const { tourActive, currentStep: tourCurrentStep, triggerMeasure, remeasure } = useTour();
   useFocusEffect(useCallback(() => {
     if (tourActive && tourCurrentStep?.tab === 'profile') {
       triggerMeasure();
@@ -723,6 +723,8 @@ export default function ProfileScreen() {
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
+        onScroll={tourActive ? remeasure : undefined}
+        scrollEventThrottle={tourActive ? 100 : 0}
       >
 
         {/* ── Header ── */}

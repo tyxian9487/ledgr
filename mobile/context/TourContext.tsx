@@ -60,16 +60,18 @@ interface TourContextType {
   declineTour: () => void;
   nextStep: (navigateToTab?: (tab: string) => void) => void;
   skipTour: () => void;
-  /**
-   * Incremented by triggerMeasure(). useTourTarget includes this in its
-   * dependency array so it re-runs whenever a tab screen signals "I am now
-   * fully settled and layout is stable."  This is the primary mechanism for
-   * re-measuring after cross-tab navigation: tab screens call triggerMeasure()
-   * from useFocusEffect, which fires AFTER all animations (including Reanimated
-   * UI-thread animations that are invisible to InteractionManager) complete.
-   */
+  /** Incremented by triggerMeasure() — forces useTourTarget to re-run its full measurement sequence. */
   measureTrigger: number;
   triggerMeasure: () => void;
+  /**
+   * Registers a lightweight re-measure callback for the currently active tour
+   * target. Called by useTourTarget; cleared on step change or unmount.
+   * Tab screens' onScroll handlers invoke remeasure() to keep the spotlight
+   * position correct while the user (or the tour code) scrolls.
+   */
+  registerScrollRemeasure: (fn: (() => void) | null) => void;
+  /** Invoke the currently registered scroll-remeasure callback. */
+  remeasure: () => void;
 }
 
 const TourContext = createContext<TourContextType>({
@@ -78,6 +80,7 @@ const TourContext = createContext<TourContextType>({
   setHighlightRect: () => {}, acceptTour: () => {}, declineTour: () => {},
   nextStep: () => {}, skipTour: () => {},
   measureTrigger: 0, triggerMeasure: () => {},
+  registerScrollRemeasure: () => {}, remeasure: () => {},
 });
 
 export function TourProvider({ children }: { children: ReactNode }) {
@@ -87,12 +90,16 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const [highlightRect,   setHighlightRect]  = useState<HighlightRect | null>(null);
   const [measureTrigger,  setMeasureTrigger] = useState(0);
 
-  // Called by tab screens from useFocusEffect once their layout is settled.
-  // Incrementing this counter causes useTourTarget (which lists it as a dep)
-  // to re-run its measurement sequence — critical for cross-tab navigation
-  // where the target screen's layout isn't ready when currentStep.id first
-  // changes (Reanimated/UI-thread animations bypass InteractionManager).
   const triggerMeasure = useCallback(() => setMeasureTrigger(n => n + 1), []);
+
+  // Holds the active step's lightweight "re-measure on scroll" callback.
+  const scrollRemeasureCb = useRef<(() => void) | null>(null);
+  const registerScrollRemeasure = useCallback((fn: (() => void) | null) => {
+    scrollRemeasureCb.current = fn;
+  }, []);
+  const remeasure = useCallback(() => {
+    scrollRemeasureCb.current?.();
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -170,6 +177,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
       tourActive, tourStepIndex, currentStep, showOffer, highlightRect,
       setHighlightRect, acceptTour, declineTour, nextStep, skipTour,
       measureTrigger, triggerMeasure,
+      registerScrollRemeasure, remeasure,
     }}>
       {children}
     </TourContext.Provider>
@@ -181,7 +189,7 @@ export function useTour() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// useTourTarget — attach to a View that should be spotlit during a given step
+// useTourTarget — attach to a native View that should be spotlit during a step
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface TourTargetOptions {
@@ -190,81 +198,81 @@ interface TourTargetOptions {
 }
 
 /**
- * HOW THE MEASUREMENT WORKS
+ * MEASUREMENT ARCHITECTURE
  * ─────────────────────────
  *
+ * All coordinates come from measureInWindow() which returns window-space coords
+ * (y=0 = physical screen top, behind the translucent status bar).  The tour
+ * Modal uses statusBarTranslucent={true} so its origin is also (0,0).  Both
+ * coordinate systems are identical — no manual offset correction is needed.
+ *
+ * The ref MUST be attached to a native View with collapsable={false}.  Attaching
+ * to TouchableOpacity or other composite components can produce wrong native
+ * node handles on Android.
+ *
  * PHASE 0 — InteractionManager gate
- *   React Navigation registers tab-switch gestures and animations as
- *   InteractionManager interactions.  By waiting for runAfterInteractions()
- *   before doing anything, we guarantee that the active tab's layout is
- *   fully committed before we attempt to measure.  This is the primary fix
- *   for misalignment after guide steps that navigate between tabs.
+ *   Waits for tab-switch animations registered with InteractionManager to finish.
  *
  * PHASE 1 — Instant scroll  (animated: false)
- *   We scroll to the hard-coded scrollY with NO animation.  Animated scrolls
- *   on Android have variable durations (200–600 ms); measuring mid-animation
- *   gives the mid-animation position, not the final one.
- *   With animated:false the native command is synchronous on the native side
- *   but still crosses the JS→native bridge asynchronously (1–3 frames).
+ *   Scrolls to the target position synchronously on the native side.
  *
  * PHASE 2 — Double rAF + platform-specific settle
- *   rAF 1: flush the current JS render cycle
- *   rAF 2: wait for the subsequent native layout pass
- *   settle: extra safety margin — 180 ms on Android (slower bridge + shadow
- *           tree), 80 ms on iOS.
+ *   rAF1 flushes JS cycle, rAF2 waits for the native layout pass, then a
+ *   settle delay allows the native scroll to commit (180 ms Android, 80 ms iOS).
  *
  * PHASE 3 — 2-consecutive-stable poll
- *   We require TWO consecutive measureInWindow() calls (50 ms apart) that
- *   agree within 1 px before committing.  A single stable pair is enough to
- *   survive bridge-batching artefacts.  Maximum poll window: 12 × 55 ms ≈
- *   660 ms (never hit on a real device for normal scroll depths).
+ *   Requires two measureInWindow() readings within 1 px of each other before
+ *   committing the rect.  Guards against bridge-batching artefacts.
  *
  * PHASE 4 — Tooltip-card overflow correction
- *   If the element's bottom edge would be hidden behind the floating tooltip
- *   card, we do a second instant scroll + fresh stability pass using
- *   *dedicated* RAF handles so the main raf1/raf2 variables are not corrupted.
+ *   Extra scroll if the element is hidden behind the floating card.
  *
- * COORDINATE SYSTEM
- *   measureInWindow() returns window-space coords (y=0 = physical top of
- *   screen, behind the translucent status bar).  The tour Modal uses
- *   statusBarTranslucent={true}, so its origin is also y=0.  Both spaces
- *   are identical — no offset correction is needed.
- *
- * options ARE NOT in the dependency array.
- *   The values are always stable per-step (hardcoded numbers, stable useRef
- *   objects).  Listing them would add noise without benefit.  We capture
- *   them through optionsRef to guard against hypothetical future changes.
+ * PHASE 5 — Commit + register quick-remeasure
+ *   Sets highlightRect and registers a lightweight remeasure callback so that
+ *   tab screens can call remeasure() from their onScroll handlers to keep the
+ *   spotlight aligned during scroll without re-running the full settling sequence.
  */
 export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
-  const { currentStep, setHighlightRect, measureTrigger } = useTour();
+  const {
+    currentStep, setHighlightRect, measureTrigger,
+    registerScrollRemeasure,
+  } = useTour();
+
   const ref        = useRef<View>(null);
-  // Always keep the latest options available inside the effect without
-  // re-running the effect when they change (they are constants in practice).
   const optionsRef = useRef<TourTargetOptions>(options);
   optionsRef.current = options;
 
   useEffect(() => {
+    // Only the active step's useTourTarget runs the measurement sequence.
+    // We deliberately do NOT clear registerScrollRemeasure here for the
+    // non-active case — that would wipe the active step's registration.
     if (currentStep?.id !== stepId) return;
 
-    // Clear any stale rect so the backdrop is shown while we re-measure.
-    // This is a no-op for the initial step trigger (nextStep already clears it)
-    // but matters when measureTrigger increments (re-measure after tab focus).
     setHighlightRect(null);
 
     let cancelled = false;
-
-    // Handles for Phase 1/2
     let raf1 = 0, raf2 = 0, timer = 0;
-    // Dedicated handles for Phase 4 extra-scroll — never share with Phase 1/2
-    // to avoid corrupting the cleanup closure.
     let xRaf1 = 0, xRaf2 = 0, xTimer = 0;
-    // InteractionManager cancellation token
     let interactionTask: { cancel(): void } | null = null;
 
-    // Platform-aware settle time: Android's JS→native bridge and shadow-tree
-    // flush are slower than iOS (especially on mid-range devices).
     const SETTLE_MS = Platform.OS === 'android' ? 180 : 80;
     const POLL_MS   = 55;
+
+    // Lightweight re-measure called on every scroll event — no settling needed
+    // because the view is already laid out; we just need its new window position.
+    const quickMeasure = () => {
+      if (cancelled) return;
+      ref.current?.measureInWindow((x, y, w, h) => {
+        if (cancelled || w === 0 || h === 0) return;
+        setHighlightRect({
+          x:      Math.max(0, x - 4),
+          y:      Math.max(0, y - 4),
+          width:  w + 8,
+          height: h + 8,
+        });
+      });
+    };
+    registerScrollRemeasure(quickMeasure);
 
     if (__DEV__) {
       const win = Dimensions.get('window');
@@ -277,7 +285,7 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
       );
     }
 
-    // ── Phase 0: Wait for all pending interactions (tab transitions) ──────────
+    // ── Phase 0: Wait for pending tab-switch animations ───────────────────────
     interactionTask = InteractionManager.runAfterInteractions(() => {
       if (cancelled) return;
 
@@ -285,15 +293,6 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
 
       // ── Phase 1: Instant scroll ───────────────────────────────────────────
       if (scrollRef?.current) {
-        if (__DEV__) {
-          scrollRef.current.measure((rx, ry, rw, rh, rpx, rpy) => {
-            console.log(
-              `[Tour]   ScrollView on screen:` +
-              ` pageX=${rpx?.toFixed(0)} pageY=${rpy?.toFixed(0)}` +
-              ` w=${rw?.toFixed(0)} h=${rh?.toFixed(0)}`
-            );
-          });
-        }
         scrollRef.current.scrollTo({ y: targetY, animated: false });
       }
 
@@ -309,10 +308,6 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
     });
 
     // ── Phase 3: Stability-based measurement ─────────────────────────────────
-    //
-    // We require 2 consecutive stable samples (stableCount must reach 1)
-    // before committing.  This guards against bridge-batching where two
-    // quick measurements both return the pre-scroll position (false stable).
     function pollForStability(
       attempt:     number,
       prev:        { x: number; y: number } | null,
@@ -335,7 +330,6 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
           );
         }
 
-        // Not laid out yet — wait and retry
         if (w === 0 || h === 0) {
           if (attempt < 12) {
             timer = setTimeout(
@@ -343,12 +337,11 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
               POLL_MS,
             ) as unknown as number;
           } else if (__DEV__) {
-            console.warn(`[Tour] ✗ ${stepId}: element has zero size after 12 attempts`);
+            console.warn(`[Tour] ✗ ${stepId}: zero-size after 12 attempts`);
           }
           return;
         }
 
-        // First measurement — record position, wait for next sample
         if (prev === null) {
           timer = setTimeout(
             () => pollForStability(attempt + 1, { x, y }, 0),
@@ -360,7 +353,6 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
         const drift = Math.abs(x - prev.x) + Math.abs(y - prev.y);
 
         if (drift > 1) {
-          // Still moving — reset stable counter
           if (attempt < 12) {
             timer = setTimeout(
               () => pollForStability(attempt + 1, { x, y }, 0),
@@ -370,7 +362,6 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
           return;
         }
 
-        // Position is stable in this sample; need one more to confirm
         if (stableCount < 1) {
           timer = setTimeout(
             () => pollForStability(attempt + 1, { x, y }, stableCount + 1),
@@ -386,19 +377,17 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
 
         const { scrollRef: sRef, scrollY: baseY = 0 } = optionsRef.current;
         if (sRef?.current && (y + h + MARGIN) > (screenH - CARD_H)) {
-          const overhang  = (y + h + MARGIN) - (screenH - CARD_H);
+          const overhang   = (y + h + MARGIN) - (screenH - CARD_H);
           const newScrollY = baseY + overhang;
 
           if (__DEV__) {
             console.log(
-              `[Tour]   element obscured: overhang=${overhang.toFixed(0)}px` +
-              ` → extra scroll to y=${newScrollY.toFixed(0)}`
+              `[Tour]   obscured: overhang=${overhang.toFixed(0)} → extra scroll y=${newScrollY.toFixed(0)}`
             );
           }
 
           sRef.current.scrollTo({ y: newScrollY, animated: false });
 
-          // Use DEDICATED handles so raf1/raf2 are not overwritten
           xRaf1 = requestAnimationFrame(() => {
             xRaf2 = requestAnimationFrame(() => {
               if (!cancelled) {
@@ -435,6 +424,7 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
 
     return () => {
       cancelled = true;
+      registerScrollRemeasure(null);
       interactionTask?.cancel();
       cancelAnimationFrame(raf1);
       cancelAnimationFrame(raf2);
@@ -444,10 +434,8 @@ export function useTourTarget(stepId: string, options: TourTargetOptions = {}) {
       clearTimeout(xTimer);
     };
     // options intentionally omitted — captured via optionsRef.
-    // measureTrigger IS included: tab screens increment it from useFocusEffect
-    // once their layout is settled, causing a fresh measurement pass.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStep?.id, stepId, setHighlightRect, measureTrigger]);
+  }, [currentStep?.id, stepId, setHighlightRect, measureTrigger, registerScrollRemeasure]);
 
   return ref;
 }

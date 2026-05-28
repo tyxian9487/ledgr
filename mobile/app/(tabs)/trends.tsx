@@ -413,7 +413,7 @@ export default function TrendsScreen() {
   // useFocusEffect fires once the screen is fully visible (including after Reanimated
   // and React Navigation animations complete), so this is a more reliable signal
   // than InteractionManager.runAfterInteractions() which only tracks JS-thread interactions.
-  const { tourActive, currentStep, triggerMeasure } = useTour();
+  const { tourActive, currentStep, triggerMeasure, remeasure } = useTour();
   useFocusEffect(useCallback(() => {
     if (tourActive && currentStep?.tab === 'trends') {
       triggerMeasure();
@@ -489,7 +489,14 @@ export default function TrendsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 dark:bg-gray-950" edges={['top']}>
-      <ScrollView ref={scrollRef} className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView
+        ref={scrollRef}
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        onScroll={tourActive ? remeasure : undefined}
+        scrollEventThrottle={tourActive ? 100 : 0}
+      >
 
         {/* ── Header ── */}
         <View className="px-5 pt-4 pb-2 flex-row items-center justify-between">
