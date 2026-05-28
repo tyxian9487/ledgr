@@ -15,6 +15,7 @@ import { useTranslation } from '../../context/LanguageContext';
 import { COLOR_OPTIONS, ICON_OPTIONS } from '../../types';
 import CategoryIcon, { CategoryIconRaw } from '../../components/home/CategoryIcon';
 import { durationDaysFromMonths } from '../../utils/goals';
+import { playGoalSetSound } from '../../utils/sounds';
 
 const DURATION_PRESETS = [
   { label: '1M', months: 1, key: 'gform.dur_1m' },
@@ -68,6 +69,7 @@ export default function NewGoalScreen() {
       durationDays: durationDaysFromMonths(resolvedMonths),
       startDate: new Date().toISOString(),
     });
+    playGoalSetSound();
     router.back();
   }
 

@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme, NativeModules, Platform } from 'react-native';
 import { Transaction, UserProfile, BudgetSettings, AutoDebitPeriod, CustomCategory, CustomGoal, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../types';
 import { initMixpanel, trackEvent, identifyUser, resetAnalytics } from '../utils/analytics';
+import { playTransactionSound } from '../utils/sounds';
 import { supabase } from '../utils/supabase';
 
 function advanceDate(date: Date, period: AutoDebitPeriod): Date {
@@ -493,6 +494,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     setTransactions(prev => [...transactionsToAdd, ...prev]);
+    playTransactionSound();
     trackEvent('transaction_added', {
       type: t.type,
       category: t.category,
