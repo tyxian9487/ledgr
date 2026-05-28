@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Haptics from 'expo-haptics';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../context/LanguageContext';
 import { computeBadges } from '../utils/achievements';
 import { sendBudgetAlertOnce } from '../utils/notifications';
+import { playBadgeSound } from '../utils/sounds';
 
 interface BadgeRef {
   id: string;
@@ -49,7 +49,7 @@ export default function NotificationWatcher() {
     if (shouldCelebrate) {
       const badge = newlyEarned[newlyEarned.length - 1];
       setPendingBadge({ id: badge.id, icon: badge.icon });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      playBadgeSound();
     }
   }, [transactions, budget, isAuthenticated, seenLoaded]);
 
