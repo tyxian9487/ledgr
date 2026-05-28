@@ -805,7 +805,6 @@ export default function ProfileScreen() {
         {/* Budget Streak */}
         <TourHighlight active={streakActive} style={{ marginHorizontal: 16 }} borderRadius={16}>
           <BudgetStreakCard transactions={transactions} />
-        </View>
 
         {/* Badges */}
         <View className="mx-4 bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm border border-gray-50 dark:border-gray-800 mb-2">
