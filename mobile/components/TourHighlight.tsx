@@ -1,23 +1,15 @@
 /**
  * TourHighlight — wraps a component with an animated glow border.
  *
- * ARCHITECTURE
- * ────────────
- * The glow is an absoluteFillObject View layered ON TOP of children.
- * Positioning is purely local — no window coordinates, no measurement,
- * no overlay portals.  Works correctly inside ScrollViews, nested layouts,
- * and on any Android device regardless of status-bar or inset behaviour.
- *
- * ANIMATION
- * ─────────
- * active=true  → fade in over 350 ms, then pulse between 45% and 100% opacity
- * active=false → fade out over 250 ms
- * Uses useNativeDriver:true (opacity only) for smooth 60 fps on both platforms.
+ * When active it also calls measureInWindow to report the element's
+ * screen-space frame to TourContext so TourOverlay can punch a spotlight
+ * hole in the blur/dim overlay — keeping this component visible and unblurred.
  */
 
 import { useRef, useEffect, ReactNode } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import type { ViewStyle } from 'react-native';
+import { useTour } from '../context/TourContext';
 
 interface Props {
   active: boolean;
@@ -28,16 +20,17 @@ interface Props {
 }
 
 export default function TourHighlight({ active, children, style, borderRadius = 16 }: Props) {
+  const { setSpotlightFrame } = useTour();
   const glowAnim = useRef(new Animated.Value(0)).current;
   const loopRef  = useRef<Animated.CompositeAnimation | null>(null);
+  const viewRef  = useRef<View>(null);
 
+  // ── Glow animation ──────────────────────────────────────────────────────────
   useEffect(() => {
-    // Stop any running loop before starting a new animation
     loopRef.current?.stop();
     loopRef.current = null;
 
     if (active) {
-      // Fade in, then begin the pulse loop
       Animated.timing(glowAnim, {
         toValue: 1, duration: 350, useNativeDriver: true,
       }).start(({ finished }) => {
@@ -56,20 +49,31 @@ export default function TourHighlight({ active, children, style, borderRadius = 
       }).start();
     }
 
-    return () => {
-      loopRef.current?.stop();
-    };
+    return () => { loopRef.current?.stop(); };
   }, [active, glowAnim]);
 
+  // ── Spotlight measurement ───────────────────────────────────────────────────
+  // When this step becomes active, measure the element's window-relative frame
+  // and push it into TourContext so the overlay can reveal it unblurred.
+  useEffect(() => {
+    if (!active) {
+      setSpotlightFrame(null);
+      return;
+    }
+    // Small delay: let tab navigation / scroll animations settle first.
+    const timer = setTimeout(() => {
+      viewRef.current?.measureInWindow((x, y, w, h) => {
+        if (w > 0 && h > 0) {
+          setSpotlightFrame({ x, y, w, h, r: borderRadius });
+        }
+      });
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [active, borderRadius, setSpotlightFrame]);
+
   return (
-    <View style={style}>
+    <View ref={viewRef} style={style}>
       {children}
-      {/*
-       * The overlay is an Animated.View with the glow border.
-       * absoluteFillObject (top:0 left:0 right:0 bottom:0) fills the parent
-       * exactly — no coordinate calculation required.
-       * pointerEvents="none" so taps fall through to the wrapped component.
-       */}
       <Animated.View
         pointerEvents="none"
         style={[
@@ -84,14 +88,12 @@ export default function TourHighlight({ active, children, style, borderRadius = 
 
 const s = StyleSheet.create({
   glowBorder: {
-    borderWidth:  2,
-    borderColor:  '#16a34a',
-    // Static shadow — visible once the overlay fades in (shadow is not animated,
-    // only opacity is, which keeps the native driver path clean).
-    shadowColor:  '#16a34a',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.7,
-    shadowRadius:  10,
-    elevation:     6,
+    borderWidth:   2,
+    borderColor:   '#16a34a',
+    shadowColor:   '#16a34a',
+    shadowOffset:  { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius:  12,
+    elevation:     8,
   },
 });

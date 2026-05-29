@@ -14,6 +14,14 @@ export interface TourStep {
   guideTab?: 'home' | 'trends' | 'budget' | 'profile';
 }
 
+export interface SpotlightFrame {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  r: number;
+}
+
 export const TOUR_STEPS: TourStep[] = [
   { id: 'home-green-card',  tab: 'home',    title: 'tour.home_green_card.title',  body: 'tour.home_green_card.body' },
   { id: 'home-stats',       tab: 'home',    title: 'tour.home_stats.title',        body: 'tour.home_stats.body' },
@@ -60,17 +68,21 @@ interface TourContextType {
   declineTour: () => void;
   nextStep: (navigateToTab?: (tab: string) => void) => void;
   skipTour: () => void;
+  spotlightFrame: SpotlightFrame | null;
+  setSpotlightFrame: (frame: SpotlightFrame | null) => void;
 }
 
 const TourContext = createContext<TourContextType>({
   tourActive: false, tourStepIndex: -1, currentStep: null, showOffer: false,
   acceptTour: () => {}, declineTour: () => {}, nextStep: () => {}, skipTour: () => {},
+  spotlightFrame: null, setSpotlightFrame: () => {},
 });
 
 export function TourProvider({ children }: { children: ReactNode }) {
   const [tourActive,    setTourActive]    = useState(false);
   const [tourStepIndex, setTourStepIndex] = useState(-1);
   const [showOffer,     setShowOffer]     = useState(false);
+  const [spotlightFrame, setSpotlightFrame] = useState<SpotlightFrame | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -145,6 +157,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
     <TourContext.Provider value={{
       tourActive, tourStepIndex, currentStep, showOffer,
       acceptTour, declineTour, nextStep, skipTour,
+      spotlightFrame, setSpotlightFrame,
     }}>
       {children}
     </TourContext.Provider>
