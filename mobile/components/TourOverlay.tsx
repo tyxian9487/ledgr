@@ -16,10 +16,11 @@ import {
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
-import { useTour, TOUR_STEPS } from '../context/TourContext';
+import { useTour, TOUR_STEPS, SpotlightFrame } from '../context/TourContext';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../context/LanguageContext';
 
@@ -39,7 +40,17 @@ function pathnameToTab(p: string) {
   return 'home';
 }
 
-function getCardBottom(stepId: string | undefined, insetBottom: number): number {
+// When the spotlight frame is known, float the card 24 px above the element.
+// Falls back to per-step fixed offsets for the first ~350 ms before measurement.
+function getCardBottom(
+  frame: SpotlightFrame | null,
+  stepId: string | undefined,
+  screenH: number,
+  insetBottom: number,
+): number {
+  if (frame) {
+    return screenH - frame.y + 24;
+  }
   switch (stepId) {
     case 'home-capture':       return 200 + insetBottom;
     case 'trends-income-vs':   return 220 + insetBottom;
@@ -54,13 +65,15 @@ export default function TourOverlay() {
   const {
     tourActive, tourStepIndex, currentStep, showOffer,
     acceptTour, declineTour, nextStep, skipTour,
+    spotlightFrame,
   } = useTour();
   const { isAuthenticated, hasCompletedOnboarding, darkMode } = useApp();
-  const { t }      = useTranslation();
-  const router     = useRouter();
-  const pathname   = usePathname();
-  const insets     = useSafeAreaInsets();
-  const currentTab = pathnameToTab(pathname);
+  const { t }                   = useTranslation();
+  const router                  = useRouter();
+  const pathname                = usePathname();
+  const insets                  = useSafeAreaInsets();
+  const { height: screenH }     = useWindowDimensions();
+  const currentTab              = pathnameToTab(pathname);
 
   const navigateToTab = useCallback((tab: string) => {
     const route = TAB_ROUTES[tab];
@@ -124,7 +137,7 @@ export default function TourOverlay() {
         style={[
           s.card,
           {
-            bottom:          getCardBottom(currentStep?.id, insets.bottom),
+            bottom:          getCardBottom(spotlightFrame, currentStep?.id, screenH, insets.bottom),
             backgroundColor: bg,
             borderColor:     cardBorder,
             opacity:         cardOpacity,
