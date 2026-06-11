@@ -81,6 +81,7 @@ import {
   syncNotificationSettings,
   sendLanguagePreviewNotification,
   getTranslationFunction,
+  schedulePaymentReminderNotifications,
 } from '../../utils/notifications';
 import BadgeCelebration from '../../components/BadgeCelebration';
 import StatusCelebration from '../../components/StatusCelebration';
@@ -253,6 +254,7 @@ function LegalSheet({ type, onClose }: { type: 'terms' | 'privacy'; onClose: () 
 // ─── Notifications Sheet ──────────────────────────────────────────────────────
 function NotificationsSheet({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
+  const { transactions } = useApp();
   const [prefs, setPrefs] = useState<NotifPrefs>(DEFAULT_PREFS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -268,6 +270,7 @@ function NotificationsSheet({ onClose }: { onClose: () => void }) {
     setSaving(true);
     try {
       await saveNotifPrefs(prefs);
+      await schedulePaymentReminderNotifications(transactions, prefs);
       Alert.alert('', t('notif.saved'), [{ text: t('common.ok'), onPress: onClose }]);
     } finally {
       setSaving(false);
@@ -298,6 +301,12 @@ function NotificationsSheet({ onClose }: { onClose: () => void }) {
       icon: '💡',
       title: t('notif.tips'),
       desc: t('notif.tips_desc'),
+    },
+    {
+      key: 'paymentReminders',
+      icon: '💳',
+      title: t('notif.payment_reminders'),
+      desc: t('notif.payment_reminders_desc'),
     },
   ];
 
@@ -1279,7 +1288,7 @@ export default function ProfileScreen() {
           </View>
         </Modal>
 
-        <Text className="text-center text-[11px] text-gray-300 pb-8">{t('misc.version')}</Text>
+        <Text className="text-center text-[11px] text-gray-300 pb-8">{t('misc.version')} 1.0.0</Text>
 
         {/* ── Currency picker ── */}
         <Modal

@@ -2,24 +2,38 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { translations } from '../i18n/translations';
 import type { TKey } from '../i18n/translations';
+import type { Transaction, AutoDebitPeriod } from '../types';
 
 export interface NotifPrefs {
   weeklySummary: boolean;
   budgetAlerts: boolean;
   streakReminders: boolean;
   tips: boolean;
+  paymentReminders: boolean;
 }
 
 const STORAGE_KEY = 'kachingo_notif_prefs';
 const FIRST_PROMPT_KEY = 'kachingo_notif_first_prompted';
 const SCHEDULED_IDS_KEY = 'kachingo_notif_scheduled_ids';
+const PAYMENT_REMINDER_IDS_KEY = 'kachingo_payment_reminder_ids';
 
 export const DEFAULT_PREFS: NotifPrefs = {
   weeklySummary: true,
   budgetAlerts: true,
   streakReminders: true,
   tips: true,
+  paymentReminders: true,
 };
+
+function advanceDate(d: Date, period: AutoDebitPeriod): Date {
+  const next = new Date(d);
+  if (period === 'daily') next.setDate(next.getDate() + 1);
+  else if (period === 'weekly') next.setDate(next.getDate() + 7);
+  else if (period === 'biweekly') next.setDate(next.getDate() + 14);
+  else if (period === 'monthly') next.setMonth(next.getMonth() + 1);
+  else if (period === 'yearly') next.setFullYear(next.getFullYear() + 1);
+  return next;
+}
 
 export async function loadNotifPrefs(): Promise<NotifPrefs> {
   try {
@@ -185,6 +199,76 @@ export async function sendLanguagePreviewNotification(lang: string): Promise<voi
     },
     trigger: null, // deliver immediately
   });
+}
+
+export async function schedulePaymentReminderNotifications(
+  transactions: Transaction[],
+  prefsOverride?: NotifPrefs,
+): Promise<void> {
+  try {
+    const Notifications = await getNotifications();
+
+    // Cancel previously scheduled payment reminders
+    const rawIds = await AsyncStorage.getItem(PAYMENT_REMINDER_IDS_KEY);
+    const existingIds: string[] = rawIds ? JSON.parse(rawIds) : [];
+    await Promise.all(existingIds.map(id =>
+      Notifications.cancelScheduledNotificationAsync(id).catch(() => {}),
+    ));
+
+    const prefs = prefsOverride ?? await loadNotifPrefs();
+    if (!prefs.paymentReminders) {
+      await AsyncStorage.removeItem(PAYMENT_REMINDER_IDS_KEY);
+      return;
+    }
+
+    const granted = await requestNotificationPermissionIfNeeded();
+    if (!granted) return;
+
+    const t = await getTranslationFunction();
+    const now = new Date();
+    const horizon = new Date();
+    horizon.setDate(horizon.getDate() + 30);
+
+    const templates = transactions.filter(tx =>
+      tx.isAutoDebit && tx.autoDebitPeriod && !tx.id.includes('_auto_'),
+    );
+
+    const newIds: string[] = [];
+    for (const tmpl of templates) {
+      const related = transactions.filter(tx =>
+        tx.id === tmpl.id || tx.id.startsWith(`${tmpl.id}_auto_`),
+      );
+      const lastMs = Math.max(...related.map(tx => new Date(tx.date).getTime()));
+      let next = advanceDate(new Date(lastMs), tmpl.autoDebitPeriod!);
+
+      while (next <= horizon) {
+        if (next > now) {
+          const reminderDate = new Date(next);
+          reminderDate.setDate(reminderDate.getDate() - 1);
+          reminderDate.setHours(9, 0, 0, 0);
+
+          if (reminderDate > now) {
+            const name = tmpl.description || tmpl.category;
+            const id = await Notifications.scheduleNotificationAsync({
+              content: {
+                title: t('notif.payment_due_title' as TKey),
+                body: `${name} ${t('notif.payment_due_body' as TKey)}`,
+                sound: true,
+              },
+              trigger: {
+                channelId: 'kachingo-default',
+                date: reminderDate,
+              } as any,
+            });
+            newIds.push(id);
+          }
+        }
+        next = advanceDate(next, tmpl.autoDebitPeriod!);
+      }
+    }
+
+    await AsyncStorage.setItem(PAYMENT_REMINDER_IDS_KEY, JSON.stringify(newIds));
+  } catch { /* Non-critical */ }
 }
 
 export async function sendBudgetAlertOnce(key: string, title: string, body: string): Promise<void> {

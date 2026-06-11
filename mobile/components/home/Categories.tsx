@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Alert, Modal, ScrollView, PanResponder, Animated, Image, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, Modal, ScrollView, PanResponder, Animated, Image } from 'react-native';
 import { Trash2, Edit2, RefreshCw, ChevronDown, ChevronRight, ChevronLeft, X, ImageIcon } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';

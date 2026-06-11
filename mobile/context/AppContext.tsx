@@ -7,6 +7,7 @@ import { requestReview } from '../utils/requestReview';
 import { playTransactionSound } from '../utils/sounds';
 import { supabase } from '../utils/supabase';
 import { buildWidgetData, updateWidgetData } from '../utils/widgetData';
+import { schedulePaymentReminderNotifications } from '../utils/notifications';
 
 const INSTALL_DATE_KEY = 'kachingo_install_date';
 
@@ -300,7 +301,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
         if (saved) {
           const data = JSON.parse(saved);
-          setTransactions(processAutoDebits(data.transactions || []));
+          const processedTxs = processAutoDebits(data.transactions || []);
+          setTransactions(processedTxs);
+          schedulePaymentReminderNotifications(processedTxs).catch(() => {});
           const savedProfile = data.userProfile || DEFAULT_PROFILE;
           const deviceLang = detectDeviceLanguage();
           // One-time migration: switch language from the old 'en' default to
