@@ -11,6 +11,7 @@ import {
   Modal,
   Image,
   StyleSheet,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -400,6 +401,24 @@ export default function OnboardingScreen() {
               {step === TOTAL_STEPS ? t('onboard.get_started') : t('onboard.continue')}
             </Text>
           </TouchableOpacity>
+          {step === TOTAL_STEPS && (
+            <Text style={s.legalText}>
+              {t('onboard.legal_agree')}{' '}
+              <Text
+                style={s.legalLink}
+                onPress={() => Linking.openURL('https://kachingo.app/terms')}
+              >
+                {t('onboard.terms_link')}
+              </Text>
+              {' & '}
+              <Text
+                style={s.legalLink}
+                onPress={() => Linking.openURL(process.env.EXPO_PUBLIC_PRIVACY_URL ?? 'https://kachingo.app/privacy')}
+              >
+                {t('onboard.privacy_link')}
+              </Text>
+            </Text>
+          )}
         </View>
       </KeyboardAvoidingView>
 
@@ -552,7 +571,9 @@ function makeStyles(bg: string, card: string, border: string, textPrimary: strin
     grid2Label: { fontSize: 12, fontWeight: '600', color: textPrimary, flex: 1 },
 
     // CTA
-    ctaArea: { paddingHorizontal: 20, paddingVertical: 16 },
+    ctaArea: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
+    legalText: { textAlign: 'center', fontSize: 11, color: textSecondary, marginTop: 10, lineHeight: 16 },
+    legalLink: { color: '#16a34a', fontWeight: '600' },
     primaryBtn: { backgroundColor: '#16a34a', borderRadius: 16, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, alignSelf: 'stretch', shadowColor: '#16a34a', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
     primaryBtnTxt: { color: '#fff', fontSize: 16, fontWeight: '700' },
     ctaBtn: { backgroundColor: '#16a34a', borderRadius: 16, paddingVertical: 16, alignItems: 'center', shadowColor: '#16a34a', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },

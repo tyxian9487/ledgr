@@ -110,7 +110,7 @@ async function cancelManagedNotifications(): Promise<void> {
 }
 
 async function scheduleManagedNotification(
-  content: { title: string; body: string },
+  content: { title: string; body: string; data?: Record<string, string> },
   trigger: Record<string, unknown>,
 ): Promise<string> {
   const Notifications = await getNotifications();
@@ -142,6 +142,7 @@ export async function syncNotificationSettings(prefs: NotifPrefs, t?: (key: stri
       {
         title: translate('notif.weekly_summary'),
         body: translate('notif.weekly_summary_body'),
+        data: { route: '/(tabs)/trends' },
       },
       { type: 'weekly', weekday: 1, hour: 21, minute: 0 },
     ));
@@ -152,6 +153,7 @@ export async function syncNotificationSettings(prefs: NotifPrefs, t?: (key: stri
       {
         title: translate('notif.streak_reminders'),
         body: translate('notif.streak_reminders_body'),
+        data: { route: '/(tabs)' },
       },
       { type: 'daily', hour: 20, minute: 0 },
     ));
@@ -173,7 +175,7 @@ export async function syncNotificationSettings(prefs: NotifPrefs, t?: (key: stri
     ];
     for (let i = 0; i < 7; i++) {
       ids.push(await scheduleManagedNotification(
-        { title: tipTitle, body: tipBodies[i] },
+        { title: tipTitle, body: tipBodies[i], data: { route: '/(tabs)' } },
         { type: 'weekly', weekday: i + 1, hour: 9, minute: 0 },
       ));
     }
@@ -254,6 +256,7 @@ export async function schedulePaymentReminderNotifications(
                 title: t('notif.payment_due_title' as TKey),
                 body: `${name} ${t('notif.payment_due_body' as TKey)}`,
                 sound: true,
+                data: { route: '/(tabs)' },
               },
               trigger: {
                 channelId: 'kachingo-default',
@@ -281,7 +284,7 @@ export async function sendBudgetAlertOnce(key: string, title: string, body: stri
   if (!granted) return;
   const Notifications = await getNotifications();
   await Notifications.scheduleNotificationAsync({
-    content: { title, body, sound: true },
+    content: { title, body, sound: true, data: { route: '/(tabs)/budget' } },
     trigger: null,
   });
   await AsyncStorage.setItem(sentKey, '1');
