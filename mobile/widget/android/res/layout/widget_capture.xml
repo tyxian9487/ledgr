@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:id="@+id/capture_root"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@drawable/widget_bg"
+  android:orientation="vertical"
+  android:gravity="center"
+  android:padding="10dp">
+
+  <ImageView
+    android:layout_width="40dp"
+    android:layout_height="40dp"
+    android:src="@android:drawable/ic_menu_camera"
+    android:tint="#FFFFFF" />
+
+  <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Scan Receipt"
+    android:textColor="#DDFFFFFF"
+    android:textSize="11sp"
+    android:textStyle="bold"
+    android:layout_marginTop="6dp" />
+</LinearLayout>

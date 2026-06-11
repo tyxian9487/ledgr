@@ -5,6 +5,7 @@ import { Transaction, UserProfile, BudgetSettings, AutoDebitPeriod, CustomCatego
 import { initMixpanel, trackEvent, identifyUser, resetAnalytics } from '../utils/analytics';
 import { playTransactionSound } from '../utils/sounds';
 import { supabase } from '../utils/supabase';
+import { buildWidgetData, updateWidgetData } from '../utils/widgetData';
 
 function advanceDate(date: Date, period: AutoDebitPeriod): Date {
   const d = new Date(date);
@@ -462,6 +463,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!darkModeManuallySet) setDarkMode(systemColorScheme === 'dark');
   }, [systemColorScheme, darkModeManuallySet]);
+
+  // Push fresh data to home-screen widgets whenever transactions, budget, or currency changes.
+  useEffect(() => {
+    if (!hasLoadedStorage) return;
+    const now = new Date();
+    const data = buildWidgetData({
+      transactions,
+      year: now.getFullYear(),
+      month: now.getMonth(),
+      currencySymbol: (() => {
+        const code = userProfile.currency || 'USD';
+        if (code === 'CNY') return '¥';
+        try {
+          return new Intl.NumberFormat('en-US', { style: 'currency', currency: code, minimumFractionDigits: 0 })
+            .format(0).replace(/[\d,.\s]/g, '').trim() || code;
+        } catch { return '$'; }
+      })(),
+      savingsGoal: budget.savingsGoal,
+      expectedIncome: budget.expectedIncome,
+      customGoals: budget.customGoals,
+    });
+    updateWidgetData(data);
+  }, [transactions, budget, userProfile.currency, hasLoadedStorage]);
 
   const expenseCategories = useMemo<Category[]>(() => [
     ...EXPENSE_CATEGORIES.filter(c => !disabledCategories.includes(c.id)),

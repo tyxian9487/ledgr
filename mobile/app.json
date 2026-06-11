@@ -42,6 +42,7 @@
     "plugins": [
       "@sentry/react-native/expo",
       "./plugins/withAndroidCrashHandler",
+      "./plugins/withKachingoWidget",
       "expo-router",
       "expo-apple-authentication",
       "expo-camera",

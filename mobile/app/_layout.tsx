@@ -275,7 +275,17 @@ function PinLockGate() {
   const { isAuthenticated, hasCompletedOnboarding } = useApp();
   const [locked, setLocked] = useState(false);
   const appState = useRef(AppState.currentState);
+  const initialCheckDone = useRef(false);
 
+  // Cold-start / first auth: show PIN lock immediately
+  useEffect(() => {
+    if (!isAuthenticated || !hasCompletedOnboarding) return;
+    if (initialCheckDone.current) return;
+    initialCheckDone.current = true;
+    isPinEnabled().then(enabled => { if (enabled) setLocked(true); });
+  }, [isAuthenticated, hasCompletedOnboarding]);
+
+  // Background → foreground: show PIN lock
   useEffect(() => {
     const sub = AppState.addEventListener('change', async (nextState) => {
       const wasBackground = appState.current.match(/inactive|background/);
