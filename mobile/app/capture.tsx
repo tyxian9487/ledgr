@@ -235,13 +235,16 @@ export default function CaptureScreen() {
   const saveAndGoHome = useCallback(async () => {
     if (!parsed) return;
     try {
-      await AsyncStorage.setItem(PENDING_RECEIPT_KEY, JSON.stringify(parsed));
+      await AsyncStorage.setItem(PENDING_RECEIPT_KEY, JSON.stringify({
+        ...parsed,
+        receiptImage: capturedUri ?? undefined,
+      }));
       trackEvent('receipt_scanned', { category: parsed.category, amount: parsed.amount });
       router.replace('/(tabs)');
     } catch {
       Alert.alert(t('camera.error_title'), t('camera.save_failed_msg'));
     }
-  }, [parsed, router, t]);
+  }, [parsed, capturedUri, router, t]);
 
   // ── Permission not yet determined ──────────────────────────────────────────
   if (!cameraPermission) {
