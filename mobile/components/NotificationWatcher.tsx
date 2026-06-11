@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../context/LanguageContext';
 import { computeBadges } from '../utils/achievements';
@@ -17,11 +18,24 @@ const SEEN_BADGES_KEY = 'kachingo_seen_badges';
 export default function NotificationWatcher() {
   const { transactions, budget, isAuthenticated } = useApp();
   const { t } = useTranslation();
+  const router = useRouter();
   const [pendingBadge, setPendingBadge] = useState<BadgeRef | null>(null);
   const [seenLoaded, setSeenLoaded] = useState(false);
   const seenRef = useRef<Set<string>>(new Set());
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    let sub: { remove: () => void } | undefined;
+    (async () => {
+      const Notifications = await import('expo-notifications');
+      sub = Notifications.addNotificationResponseReceivedListener(response => {
+        const route = (response.notification.request.content.data?.route as string) ?? '/(tabs)';
+        router.replace(route as any);
+      });
+    })();
+    return () => { sub?.remove(); };
+  }, [router]);
 
   useEffect(() => {
     if (!isAuthenticated) {

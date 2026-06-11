@@ -10,6 +10,8 @@ import { CategoryIconRaw } from '../../components/home/CategoryIcon';
 import ManualEntryModal from '../../components/home/ManualEntryModal';
 import GoalCelebration from '../../components/GoalCelebration';
 import { durationMonthsFromDays, goalMonthIndex, goalMonthWindow } from '../../utils/goals';
+import { trackEvent } from '../../utils/analytics';
+import { requestReview } from '../../utils/requestReview';
 
 interface MonthData {
   adjustedTarget: number;
@@ -92,6 +94,8 @@ export default function GoalDetailScreen() {
   }
   function handleMarkDone() {
     updateCustomGoal(goal!.id, { completedAt: new Date().toISOString() });
+    trackEvent('goal_completed');
+    requestReview();
   }
   function handleDelete() {
     setShowDeleteConfirm(false);

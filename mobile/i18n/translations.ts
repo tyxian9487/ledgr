@@ -473,6 +473,9 @@ export const en = {
   'onboard.update_anytime': 'You can update these settings anytime in Profile',
   'onboard.name_placeholder': 'Enter your name',
   'onboard.name_required': 'Please enter your name to continue',
+  'onboard.legal_agree': 'By tapping Get Started, you agree to our',
+  'onboard.terms_link': 'Terms of Service',
+  'onboard.privacy_link': 'Privacy Policy',
 
   // Profile — account & new sections
   'profile.account': 'Account',
@@ -502,6 +505,10 @@ export const en = {
   'notif.tips': 'Money Tips',
   'notif.tips_desc': 'Daily financial tips & advice',
   'notif.tips_body': 'Small consistent habits make the biggest difference.',
+  'notif.payment_reminders': 'Payment Reminders',
+  'notif.payment_reminders_desc': 'Day-before reminder for recurring payments',
+  'notif.payment_due_title': 'Upcoming Payment',
+  'notif.payment_due_body': 'is due tomorrow',
   'notif.save': 'Save Settings',
   'notif.saved': 'Notification preferences saved!',
 
@@ -955,6 +962,14 @@ export const en = {
   'export.last_week': 'Last Week',
   'export.n_transactions': '{n} transactions',
   'export.btn': 'Export',
+
+  // Home empty state
+  'home.empty_title': 'No transactions yet',
+  'home.empty_desc': 'Tap + to add your first one',
+
+  // Profile — contact & share
+  'profile.contact_support': 'Contact Support',
+  'profile.share_app': 'Share Kachingo',
 } as const;
 
 export type TKey = keyof typeof en;
@@ -1195,6 +1210,7 @@ const zh: Record<TKey, string> = {
   'onboard.select_currency': '选择货币', 'onboard.search_currency': '搜索货币...',
   'onboard.select_one': '请至少选择一项', 'onboard.upload_photo': '点击上传照片',
   'onboard.update_anytime': '您可以随时在个人资料中更新这些设置',
+  'onboard.legal_agree': '点击开始即表示您同意我们的', 'onboard.terms_link': '服务条款', 'onboard.privacy_link': '隐私政策',
   'onboard.name_placeholder': '输入您的姓名', 'onboard.name_required': '请输入您的姓名以继续',
   'profile.account': '账户', 'profile.linked_account': '关联账户', 'profile.subscription_plan': '订阅计划',
   'profile.notifications': '通知', 'profile.data': '数据', 'profile.export_csv': '导出CSV',
@@ -1210,6 +1226,8 @@ const zh: Record<TKey, string> = {
   'notif.streak_reminders_body': '记录您的支出并保持在本月预算内。',
   'notif.tips': '理财技巧', 'notif.tips_desc': '每日财务技巧与建议',
   'notif.tips_body': '小的一致性习惯会产生最大的差异。',
+  'notif.payment_reminders': '付款提醒', 'notif.payment_reminders_desc': '定期付款前一天提醒',
+  'notif.payment_due_title': '即将付款', 'notif.payment_due_body': '明天到期',
   'notif.save': '保存设置', 'notif.saved': '通知偏好已保存！',
   'streak.current': '当前连击', 'streak.best': '最佳', 'streak.months': '个月', 'streak.keep_going': '继续加油！',
   'linked.title': '关联账户', 'linked.provider': '登录方式', 'linked.email_label': '邮箱',
@@ -1475,6 +1493,8 @@ const zh: Record<TKey, string> = {
   'pin.reset_pin': '设置新密码', 'pin.identity_verified': '身份已验证',
   'tx.payment_method': '支付方式', 'tx.pm.cash': '现金', 'tx.pm.card': '银行卡', 'tx.pm.bank': '银行', 'tx.pm.ewallet': '电子钱包', 'tx.pm.cashapp': 'Cash App', 'tx.pm.other': '其他',
   'export.title': '导出 CSV', 'export.choose_range': '选择日期范围', 'export.all_time': '全部', 'export.this_month': '本月', 'export.last_month': '上个月', 'export.last_week': '上周', 'export.n_transactions': '{n} 笔交易', 'export.btn': '导出',
+  'home.empty_title': '暂无交易记录', 'home.empty_desc': '点击 + 添加第一笔记录',
+  'profile.contact_support': '联系客服', 'profile.share_app': '分享 Kachingo',
 };
 
 const ja: Record<TKey, string> = {
@@ -1713,6 +1733,7 @@ const ja: Record<TKey, string> = {
   'onboard.select_currency': '通貨を選択', 'onboard.search_currency': '通貨を検索…',
   'onboard.select_one': '少なくとも 1 つ選択してください', 'onboard.upload_photo': 'タップして写真をアップロード',
   'onboard.update_anytime': 'これらの設定はプロフィールからいつでも変更できます',
+  'onboard.legal_agree': '開始をタップすることで同意します', 'onboard.terms_link': '利用規約', 'onboard.privacy_link': 'プライバシーポリシー',
   'onboard.name_placeholder': '名前を入力してください', 'onboard.name_required': '続けるには名前を入力してください',
   'profile.account': 'アカウント', 'profile.linked_account': 'リンクアカウント', 'profile.subscription_plan': 'サブスクリプション',
   'profile.notifications': '通知', 'profile.data': 'データ', 'profile.export_csv': 'CSVエクスポート',
@@ -1728,6 +1749,8 @@ const ja: Record<TKey, string> = {
   'notif.streak_reminders_body': '支出を記録して、今月の予算内に留まる。',
   'notif.tips': 'マネーヒント', 'notif.tips_desc': '毎日の財務ヒント',
   'notif.tips_body': '小さな一貫した習慣が最大の違いをもたらします。',
+  'notif.payment_reminders': '支払いリマインダー', 'notif.payment_reminders_desc': '定期支払いの前日に通知',
+  'notif.payment_due_title': '支払い予定', 'notif.payment_due_body': 'は明日支払い予定です',
   'notif.save': '設定を保存', 'notif.saved': '通知設定が保存されました！',
   'streak.current': '現在のストリーク', 'streak.best': 'ベスト', 'streak.months': 'ヶ月', 'streak.keep_going': '頑張って！',
   'linked.title': 'リンクアカウント', 'linked.provider': 'サインイン方法', 'linked.email_label': 'メール',
@@ -1993,6 +2016,8 @@ const ja: Record<TKey, string> = {
   'pin.reset_pin': '新しい暗証番号を設定', 'pin.identity_verified': '本人確認完了',
   'tx.payment_method': '支払方法', 'tx.pm.cash': '現金', 'tx.pm.card': 'カード', 'tx.pm.bank': '銀行', 'tx.pm.ewallet': '電子マネー', 'tx.pm.cashapp': 'Cash App', 'tx.pm.other': 'その他',
   'export.title': 'CSV エクスポート', 'export.choose_range': '期間を選択', 'export.all_time': '全期間', 'export.this_month': '今月', 'export.last_month': '先月', 'export.last_week': '先週', 'export.n_transactions': '{n} 件', 'export.btn': 'エクスポート',
+  'home.empty_title': 'まだ取引がありません', 'home.empty_desc': '+ をタップして最初の取引を追加',
+  'profile.contact_support': 'サポートに連絡', 'profile.share_app': 'Kachingo をシェア',
 };
 
 const ko: Record<TKey, string> = {
@@ -2232,6 +2257,7 @@ const ko: Record<TKey, string> = {
   'onboard.select_currency': '통화 선택', 'onboard.search_currency': '통화 검색…',
   'onboard.select_one': '최소 하나를 선택하세요', 'onboard.upload_photo': '탭하여 사진 업로드',
   'onboard.update_anytime': '프로필에서 언제든지 설정을 업데이트할 수 있습니다',
+  'onboard.legal_agree': '시작하기를 누르면 동의하는 것입니다', 'onboard.terms_link': '이용약관', 'onboard.privacy_link': '개인정보 처리방침',
   'onboard.name_placeholder': '이름을 입력하세요', 'onboard.name_required': '계속하려면 이름을 입력해 주세요',
   'profile.account': '계정', 'profile.linked_account': '연결 계정', 'profile.subscription_plan': '구독 플랜',
   'profile.notifications': '알림', 'profile.data': '데이터', 'profile.export_csv': 'CSV 내보내기',
@@ -2247,6 +2273,8 @@ const ko: Record<TKey, string> = {
   'notif.streak_reminders_body': '지출을 기록하고 이번 달 예산 범위 내에 머물러 있으세요.',
   'notif.tips': '재정 팁', 'notif.tips_desc': '매일 재정 팁 및 조언',
   'notif.tips_body': '작은 일관된 습관이 가장 큰 차이를 만듭니다.',
+  'notif.payment_reminders': '결제 알림', 'notif.payment_reminders_desc': '정기 결제 하루 전 알림',
+  'notif.payment_due_title': '예정된 결제', 'notif.payment_due_body': '내일 결제 예정입니다',
   'notif.save': '설정 저장', 'notif.saved': '알림 설정이 저장되었습니다!',
   'streak.current': '현재 스트릭', 'streak.best': '최고', 'streak.months': '개월', 'streak.keep_going': '계속하세요!',
   'linked.title': '연결 계정', 'linked.provider': '로그인 방법', 'linked.email_label': '이메일',
@@ -2512,6 +2540,8 @@ const ko: Record<TKey, string> = {
   'pin.reset_pin': '새 PIN 설정', 'pin.identity_verified': '본인 확인 완료',
   'tx.payment_method': '결제 수단', 'tx.pm.cash': '현금', 'tx.pm.card': '카드', 'tx.pm.bank': '은행', 'tx.pm.ewallet': '전자지갑', 'tx.pm.cashapp': 'Cash App', 'tx.pm.other': '기타',
   'export.title': 'CSV 내보내기', 'export.choose_range': '기간 선택', 'export.all_time': '전체', 'export.this_month': '이번 달', 'export.last_month': '지난 달', 'export.last_week': '지난 주', 'export.n_transactions': '{n}건', 'export.btn': '내보내기',
+  'home.empty_title': '아직 거래 내역이 없습니다', 'home.empty_desc': '+ 를 탭하여 첫 번째 항목 추가',
+  'profile.contact_support': '고객 지원 연락', 'profile.share_app': 'Kachingo 공유',
 };
 
 const ms: Record<TKey, string> = {
@@ -2751,6 +2781,7 @@ const ms: Record<TKey, string> = {
   'onboard.select_currency': 'Pilih Mata Wang', 'onboard.search_currency': 'Cari mata wang…',
   'onboard.select_one': 'Pilih sekurang-kurangnya satu pilihan', 'onboard.upload_photo': 'Ketik untuk muat naik foto',
   'onboard.update_anytime': 'Anda boleh kemas kini tetapan ini pada bila-bila masa dalam Profil',
+  'onboard.legal_agree': 'Dengan mengetik Mulakan, anda bersetuju dengan', 'onboard.terms_link': 'Terma Perkhidmatan', 'onboard.privacy_link': 'Dasar Privasi',
   'onboard.name_placeholder': 'Masukkan nama anda', 'onboard.name_required': 'Sila masukkan nama anda untuk meneruskan',
   'profile.account': 'Akaun', 'profile.linked_account': 'Akaun Terpaut', 'profile.subscription_plan': 'Pelan Langganan',
   'profile.notifications': 'Pemberitahuan', 'profile.data': 'Data', 'profile.export_csv': 'Eksport CSV',
@@ -2766,6 +2797,8 @@ const ms: Record<TKey, string> = {
   'notif.streak_reminders_body': 'Catat perbelanjaan anda dan kekal dalam belanjawan bulan ini.',
   'notif.tips': 'Tips Kewangan', 'notif.tips_desc': 'Tips & nasihat kewangan harian',
   'notif.tips_body': 'Kebiasaan kecil yang konsisten membuat perbezaan yang paling besar.',
+  'notif.payment_reminders': 'Peringatan Pembayaran', 'notif.payment_reminders_desc': 'Peringatan sehari sebelum pembayaran berulang',
+  'notif.payment_due_title': 'Pembayaran Akan Datang', 'notif.payment_due_body': 'perlu dibayar esok',
   'notif.save': 'Simpan Tetapan', 'notif.saved': 'Tetapan pemberitahuan disimpan!',
   'streak.current': 'Pencapaian Semasa', 'streak.best': 'Terbaik', 'streak.months': 'bulan', 'streak.keep_going': 'Teruskan!',
   'linked.title': 'Akaun Terpaut', 'linked.provider': 'Kaedah log masuk', 'linked.email_label': 'E-mel',
@@ -3031,6 +3064,8 @@ const ms: Record<TKey, string> = {
   'pin.reset_pin': 'Tetapkan PIN Baru', 'pin.identity_verified': 'Identiti disahkan',
   'tx.payment_method': 'Kaedah Bayaran', 'tx.pm.cash': 'Tunai', 'tx.pm.card': 'Kad', 'tx.pm.bank': 'Bank', 'tx.pm.ewallet': 'E-Wallet', 'tx.pm.cashapp': 'Cash App', 'tx.pm.other': 'Lain-lain',
   'export.title': 'Eksport CSV', 'export.choose_range': 'Pilih julat tarikh', 'export.all_time': 'Semua Masa', 'export.this_month': 'Bulan Ini', 'export.last_month': 'Bulan Lepas', 'export.last_week': 'Minggu Lepas', 'export.n_transactions': '{n} transaksi', 'export.btn': 'Eksport',
+  'home.empty_title': 'Tiada transaksi lagi', 'home.empty_desc': 'Ketik + untuk tambah yang pertama',
+  'profile.contact_support': 'Hubungi Sokongan', 'profile.share_app': 'Kongsi Kachingo',
 };
 
 export const translations: Record<string, Record<TKey, string>> = { en, zh, ja, ko, ms };

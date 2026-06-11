@@ -1,8 +1,9 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, Image, InteractionManager,
+  View, Text, ScrollView, TouchableOpacity, TextInput, Image, InteractionManager, Platform,
 } from 'react-native';
-// InteractionManager kept — used in useFocusEffect scroll-reset below
+
+const savingsJarImg = require('../../assets/m_savingsjar.png');
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -79,13 +80,15 @@ export default function HomeScreen() {
   const [viewMonth, setViewMonth] = useState(now.getMonth());
   const [viewYear, setViewYear] = useState(now.getFullYear());
   const [viewMode, setViewMode] = useState<'category' | 'date' | 'calendar'>('category');
+  const [_layoutCycle, _bumpLayout] = useState(0);
 
   // Reset scroll and consume any pending receipt left by the camera capture screen.
-  // Always scrolling to top on focus ensures layout is correct after returning from
-  // the capture page (which can disturb Android window-inset state).
+  // On Android, also bump a layout-cycle counter so SafeAreaView re-reads the
+  // correct insets after the camera disturbs the window-inset state (cancel path
+  // or save path both trigger this via useFocusEffect).
   useFocusEffect(useCallback(() => {
-    // Defer until all animations complete so the layout is stable
     const task = InteractionManager.runAfterInteractions(() => {
+      if (Platform.OS === 'android') _bumpLayout(n => n + 1);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
     });
     const PENDING_KEY = 'kachingo_pending_receipt';
@@ -506,15 +509,35 @@ export default function HomeScreen() {
           </View></TourHighlight>
         </View>
 
-        {/* ── Transaction List ── */}
+        {/* ── Transaction List / Empty State ── */}
         <View className="mb-32">
-          <Categories
-            year={viewYear}
-            month={viewMonth}
-            view={viewMode === 'calendar' ? 'date' : viewMode}
-            filterFn={filterFn}
-            onEdit={(tx) => { setEditTx(tx); setShowEntry(true); }}
-          />
+          {transactions.length === 0 ? (
+            <View className="items-center py-12 px-8">
+              <Image source={savingsJarImg} style={{ width: 110, height: 110 }} resizeMode="contain" />
+              <Text className="text-base font-bold text-gray-900 dark:text-white mt-4 text-center">
+                {t('home.empty_title')}
+              </Text>
+              <Text className="text-sm text-gray-400 dark:text-gray-500 mt-1.5 text-center">
+                {t('home.empty_desc')}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowEntry(true)}
+                className="mt-5 bg-green-600 rounded-2xl px-6 py-3 flex-row items-center gap-2"
+                activeOpacity={0.85}
+              >
+                <Plus size={16} color="white" strokeWidth={2.5} />
+                <Text className="text-white font-semibold text-sm">{t('home.add_transaction')}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <Categories
+              year={viewYear}
+              month={viewMonth}
+              view={viewMode === 'calendar' ? 'date' : viewMode}
+              filterFn={filterFn}
+              onEdit={(tx) => { setEditTx(tx); setShowEntry(true); }}
+            />
+          )}
         </View>
       </ScrollView>
 

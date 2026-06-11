@@ -18,6 +18,7 @@ import {
   ActivityIndicator,
   Image,
   Linking,
+  Share,
   InteractionManager,
   Platform,
 } from 'react-native';
@@ -58,6 +59,8 @@ import {
   User,
   Check,
   ExternalLink,
+  Mail,
+  Share2,
 } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
@@ -78,6 +81,7 @@ import {
   syncNotificationSettings,
   sendLanguagePreviewNotification,
   getTranslationFunction,
+  schedulePaymentReminderNotifications,
 } from '../../utils/notifications';
 import BadgeCelebration from '../../components/BadgeCelebration';
 import StatusCelebration from '../../components/StatusCelebration';
@@ -250,6 +254,7 @@ function LegalSheet({ type, onClose }: { type: 'terms' | 'privacy'; onClose: () 
 // ─── Notifications Sheet ──────────────────────────────────────────────────────
 function NotificationsSheet({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
+  const { transactions } = useApp();
   const [prefs, setPrefs] = useState<NotifPrefs>(DEFAULT_PREFS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -265,6 +270,7 @@ function NotificationsSheet({ onClose }: { onClose: () => void }) {
     setSaving(true);
     try {
       await saveNotifPrefs(prefs);
+      await schedulePaymentReminderNotifications(transactions, prefs);
       Alert.alert('', t('notif.saved'), [{ text: t('common.ok'), onPress: onClose }]);
     } finally {
       setSaving(false);
@@ -295,6 +301,12 @@ function NotificationsSheet({ onClose }: { onClose: () => void }) {
       icon: '💡',
       title: t('notif.tips'),
       desc: t('notif.tips_desc'),
+    },
+    {
+      key: 'paymentReminders',
+      icon: '💳',
+      title: t('notif.payment_reminders'),
+      desc: t('notif.payment_reminders_desc'),
     },
   ];
 
@@ -925,7 +937,7 @@ export default function ProfileScreen() {
         {/* Achievements link */}
         <TouchableOpacity
           onPress={() => router.push('/achievements' as any)}
-          className="mx-4 mb-5 flex-row items-center justify-between bg-white dark:bg-gray-900 rounded-2xl px-4 py-3.5 shadow-sm border border-gray-50 dark:border-gray-800"
+          className="mx-4 mb-3 flex-row items-center justify-between bg-white dark:bg-gray-900 rounded-2xl px-4 py-3.5 shadow-sm border border-gray-50 dark:border-gray-800"
           activeOpacity={0.7}
         >
           <View className="flex-row items-center gap-2.5">
@@ -933,6 +945,24 @@ export default function ProfileScreen() {
               <Trophy size={15} color="#d97706" />
             </View>
             <Text className="text-sm font-semibold text-gray-900 dark:text-white">{t('profile.see_achievements')}</Text>
+          </View>
+          <ChevronRight size={14} color="#d1d5db" />
+        </TouchableOpacity>
+
+        {/* Share Kachingo */}
+        <TouchableOpacity
+          onPress={() => {
+            const url = process.env.EXPO_PUBLIC_APP_STORE_URL ?? 'https://kachingo.app';
+            Share.share({ message: `I've been tracking my finances with Kachingo — check it out: ${url}` });
+          }}
+          className="mx-4 mb-5 flex-row items-center justify-between bg-white dark:bg-gray-900 rounded-2xl px-4 py-3.5 shadow-sm border border-gray-50 dark:border-gray-800"
+          activeOpacity={0.7}
+        >
+          <View className="flex-row items-center gap-2.5">
+            <View className="w-8 h-8 rounded-xl bg-green-50 dark:bg-green-900/20 items-center justify-center">
+              <Share2 size={15} color="#16a34a" />
+            </View>
+            <Text className="text-sm font-semibold text-gray-900 dark:text-white">{t('profile.share_app')}</Text>
           </View>
           <ChevronRight size={14} color="#d1d5db" />
         </TouchableOpacity>
@@ -1131,6 +1161,14 @@ export default function ProfileScreen() {
             label={t('profile.help_faq')}
             onPress={() => setShowFAQ(true)}
           />
+          <SettingsRow
+            icon={<Mail size={16} color="#6b7280" />}
+            label={t('profile.contact_support')}
+            onPress={() => {
+              const email = process.env.EXPO_PUBLIC_SUPPORT_EMAIL ?? 'support@kachingo.app';
+              Linking.openURL(`mailto:${email}?subject=Kachingo Support`);
+            }}
+          />
         </View>
 
         {/* FAQ inline */}
@@ -1250,7 +1288,7 @@ export default function ProfileScreen() {
           </View>
         </Modal>
 
-        <Text className="text-center text-[11px] text-gray-300 pb-8">{t('misc.version')}</Text>
+        <Text className="text-center text-[11px] text-gray-300 pb-8">{t('misc.version')} 1.0.0</Text>
 
         {/* ── Currency picker ── */}
         <Modal

@@ -34,6 +34,8 @@ try {
   console.warn('[RevenueCat] react-native-purchases-ui failed to load:', e);
 }
 
+import { trackEvent } from '../utils/analytics';
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const RC_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_KEY ?? '';
@@ -138,7 +140,14 @@ export function PurchasesProvider({ children }: { children: React.ReactNode }) {
     if (!_Purchases) return false;
     const { customerInfo: info } = await _Purchases.purchasePackage(pkg);
     setCustomerInfo(info);
-    return !!info.entitlements.active[PRO_ENTITLEMENT_ID];
+    const granted = !!info.entitlements.active[PRO_ENTITLEMENT_ID];
+    if (granted) {
+      trackEvent('paywall_converted', {
+        product_id: pkg.product?.identifier ?? '',
+        price: pkg.product?.priceString ?? '',
+      });
+    }
+    return granted;
   }, []);
 
   // Returns true if restored purchases include Pro entitlement
