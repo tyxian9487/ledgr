@@ -231,9 +231,17 @@ export default function CaptureScreen() {
     setStage('preview');
   }, []);
 
+  // ── Safe navigation: deactivate camera first so the surface is released
+  //    before the next screen measures its insets (prevents layout glitch).
+  const goBack = useCallback(() => {
+    setIsCameraActive(false);
+    router.back();
+  }, [router]);
+
   // ── Save result → AsyncStorage → navigate home ────────────────────────────
   const saveAndGoHome = useCallback(async () => {
     if (!parsed) return;
+    setIsCameraActive(false);
     try {
       // Copy the temp camera/gallery URI to app's document directory so it
       // persists after the OS clears the camera cache.
@@ -258,6 +266,7 @@ export default function CaptureScreen() {
       trackEvent('receipt_scanned', { category: parsed.category, amount: parsed.amount });
       router.replace('/(tabs)');
     } catch {
+      setIsCameraActive(true);
       Alert.alert(t('camera.error_title'), t('camera.save_failed_msg'));
     }
   }, [parsed, capturedUri, router, t]);
@@ -316,7 +325,7 @@ export default function CaptureScreen() {
         >
           <Text className="text-white font-semibold">{t('camera.gallery_button')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.back()} className="py-3">
+        <TouchableOpacity onPress={() => goBack()} className="py-3">
           <Text className="text-white/50 text-sm">{t('common.cancel')}</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -396,7 +405,7 @@ export default function CaptureScreen() {
             <Text className="text-white font-semibold">{t('camera.scan_again')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => goBack()}
             className="w-full py-3.5 rounded-2xl bg-white/10 border border-white/20 items-center"
             activeOpacity={0.8}
           >
@@ -500,7 +509,7 @@ export default function CaptureScreen() {
       >
         {/* Close */}
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={() => goBack()}
           style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(239,68,68,0.2)', borderWidth: 2, borderColor: 'rgba(239,68,68,0.6)', alignItems: 'center', justifyContent: 'center' }}
           activeOpacity={0.8}
         >
