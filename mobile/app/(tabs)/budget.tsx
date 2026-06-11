@@ -45,6 +45,7 @@ import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { usePurchases } from '../../context/PurchasesContext';
 import { usePaywall } from '../../context/PaywallContext';
+import { trackEvent } from '../../utils/analytics';
 import { BudgetAllocation } from '../../types';
 import { CategoryIconRaw } from '../../components/home/CategoryIcon';
 import { durationMonthsFromDays, goalMonthIndex } from '../../utils/goals';
@@ -293,8 +294,9 @@ export default function BudgetScreen() {
       mode: savingsMode,
     } : undefined;
     updateBudget({ expectedIncome: income, allocations, savingsGoal, customGoals: budget.customGoals });
+    trackEvent('budget_saved', { income, total_pct: totalPct });
     setSaved(true);
-  }, [income, allocations, savingsEnabled, savingsValue, savingsMode, updateBudget, budget.customGoals]);
+  }, [income, allocations, savingsEnabled, savingsValue, savingsMode, updateBudget, budget.customGoals, totalPct]);
 
   const activeGoalCount = (savingsEnabled ? 1 : 0) + activeCustomGoals.length;
   const visibleAllocations = showAllAllocations

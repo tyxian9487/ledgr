@@ -3,9 +3,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme, NativeModules, Platform } from 'react-native';
 import { Transaction, UserProfile, BudgetSettings, AutoDebitPeriod, CustomCategory, CustomGoal, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../types';
 import { initMixpanel, trackEvent, identifyUser, resetAnalytics } from '../utils/analytics';
+import { requestReview } from '../utils/requestReview';
 import { playTransactionSound } from '../utils/sounds';
 import { supabase } from '../utils/supabase';
 import { buildWidgetData, updateWidgetData } from '../utils/widgetData';
+
+const INSTALL_DATE_KEY = 'kachingo_install_date';
 
 function advanceDate(date: Date, period: AutoDebitPeriod): Date {
   const d = new Date(date);
@@ -325,10 +328,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const consent = data.analyticsConsent ?? null;
           setAnalyticsConsent(consent);
           if (consent === true) {
-            initMixpanel().then(() => identifyUser(data.userProfile || DEFAULT_PROFILE));
+            // Record install date on first app open (for days_since_install metric)
+            const installDate = await AsyncStorage.getItem(INSTALL_DATE_KEY);
+            if (!installDate) await AsyncStorage.setItem(INSTALL_DATE_KEY, Date.now().toString());
+            initMixpanel().then(async () => {
+              const profile = data.userProfile || DEFAULT_PROFILE;
+              identifyUser(profile);
+              const storedInstall = await AsyncStorage.getItem(INSTALL_DATE_KEY);
+              const daysSinceInstall = storedInstall
+                ? Math.floor((Date.now() - parseInt(storedInstall, 10)) / 86400000)
+                : 0;
+              trackEvent('app_opened', { plan: profile.plan ?? 'free', days_since_install: daysSinceInstall });
+            });
           }
         } else {
           // Fresh install — seed language from device settings
+          await AsyncStorage.setItem(INSTALL_DATE_KEY, Date.now().toString());
           setTransactions([]);
           setUserProfile(prev => ({ ...prev, language: detectDeviceLanguage() }));
           profileOverridesRef.current = {};
@@ -517,7 +532,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    setTransactions(prev => [...transactionsToAdd, ...prev]);
+    setTransactions(prev => {
+      const next = [...transactionsToAdd, ...prev];
+      // Trigger review on 5th manually-added transaction (not auto-generated copies)
+      const manualCount = next.filter(tx => !tx.id.includes('_auto_')).length;
+      if (manualCount === 5) requestReview();
+      return next;
+    });
     playTransactionSound();
     trackEvent('transaction_added', {
       type: t.type,
@@ -704,6 +725,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addCustomGoal = useCallback((goal: Omit<CustomGoal, 'id'>) => {
     const newGoal: CustomGoal = { ...goal, id: `goal_${Date.now()}` };
     setBudget(prev => ({ ...prev, customGoals: [...(prev.customGoals ?? []), newGoal] }));
+    const durationMonths = Math.round((goal.durationDays ?? 30) / 30);
+    trackEvent('goal_created', { duration_months: durationMonths });
   }, []);
 
   const updateCustomGoal = useCallback((id: string, data: Partial<Omit<CustomGoal, 'id'>>) => {

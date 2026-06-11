@@ -2,6 +2,8 @@ import { useState, useMemo, useCallback, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput, Image, InteractionManager, Platform,
 } from 'react-native';
+
+const savingsJarImg = require('../../assets/m_savingsjar.png');
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -507,15 +509,35 @@ export default function HomeScreen() {
           </View></TourHighlight>
         </View>
 
-        {/* ── Transaction List ── */}
+        {/* ── Transaction List / Empty State ── */}
         <View className="mb-32">
-          <Categories
-            year={viewYear}
-            month={viewMonth}
-            view={viewMode === 'calendar' ? 'date' : viewMode}
-            filterFn={filterFn}
-            onEdit={(tx) => { setEditTx(tx); setShowEntry(true); }}
-          />
+          {transactions.length === 0 ? (
+            <View className="items-center py-12 px-8">
+              <Image source={savingsJarImg} style={{ width: 110, height: 110 }} resizeMode="contain" />
+              <Text className="text-base font-bold text-gray-900 dark:text-white mt-4 text-center">
+                {t('home.empty_title')}
+              </Text>
+              <Text className="text-sm text-gray-400 dark:text-gray-500 mt-1.5 text-center">
+                {t('home.empty_desc')}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowEntry(true)}
+                className="mt-5 bg-green-600 rounded-2xl px-6 py-3 flex-row items-center gap-2"
+                activeOpacity={0.85}
+              >
+                <Plus size={16} color="white" strokeWidth={2.5} />
+                <Text className="text-white font-semibold text-sm">{t('home.add_transaction')}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <Categories
+              year={viewYear}
+              month={viewMonth}
+              view={viewMode === 'calendar' ? 'date' : viewMode}
+              filterFn={filterFn}
+              onEdit={(tx) => { setEditTx(tx); setShowEntry(true); }}
+            />
+          )}
         </View>
       </ScrollView>
 

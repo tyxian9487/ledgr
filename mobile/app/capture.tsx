@@ -20,6 +20,7 @@ import { Camera, X, ImageIcon } from 'lucide-react-native';
 import { useTranslation } from '../context/LanguageContext';
 import { usePurchases } from '../context/PurchasesContext';
 import { usePaywall } from '../context/PaywallContext';
+import { trackEvent } from '../utils/analytics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Stage = 'preview' | 'processing' | 'review';
@@ -235,6 +236,7 @@ export default function CaptureScreen() {
     if (!parsed) return;
     try {
       await AsyncStorage.setItem(PENDING_RECEIPT_KEY, JSON.stringify(parsed));
+      trackEvent('receipt_scanned', { category: parsed.category, amount: parsed.amount });
       router.replace('/(tabs)');
     } catch {
       Alert.alert(t('camera.error_title'), t('camera.save_failed_msg'));

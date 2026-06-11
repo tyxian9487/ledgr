@@ -955,6 +955,14 @@ export const en = {
   'export.last_week': 'Last Week',
   'export.n_transactions': '{n} transactions',
   'export.btn': 'Export',
+
+  // Home empty state
+  'home.empty_title': 'No transactions yet',
+  'home.empty_desc': 'Tap + to add your first one',
+
+  // Profile — contact & share
+  'profile.contact_support': 'Contact Support',
+  'profile.share_app': 'Share Kachingo',
 } as const;
 
 export type TKey = keyof typeof en;
@@ -1475,6 +1483,8 @@ const zh: Record<TKey, string> = {
   'pin.reset_pin': '设置新密码', 'pin.identity_verified': '身份已验证',
   'tx.payment_method': '支付方式', 'tx.pm.cash': '现金', 'tx.pm.card': '银行卡', 'tx.pm.bank': '银行', 'tx.pm.ewallet': '电子钱包', 'tx.pm.cashapp': 'Cash App', 'tx.pm.other': '其他',
   'export.title': '导出 CSV', 'export.choose_range': '选择日期范围', 'export.all_time': '全部', 'export.this_month': '本月', 'export.last_month': '上个月', 'export.last_week': '上周', 'export.n_transactions': '{n} 笔交易', 'export.btn': '导出',
+  'home.empty_title': '暂无交易记录', 'home.empty_desc': '点击 + 添加第一笔记录',
+  'profile.contact_support': '联系客服', 'profile.share_app': '分享 Kachingo',
 };
 
 const ja: Record<TKey, string> = {
@@ -1993,6 +2003,8 @@ const ja: Record<TKey, string> = {
   'pin.reset_pin': '新しい暗証番号を設定', 'pin.identity_verified': '本人確認完了',
   'tx.payment_method': '支払方法', 'tx.pm.cash': '現金', 'tx.pm.card': 'カード', 'tx.pm.bank': '銀行', 'tx.pm.ewallet': '電子マネー', 'tx.pm.cashapp': 'Cash App', 'tx.pm.other': 'その他',
   'export.title': 'CSV エクスポート', 'export.choose_range': '期間を選択', 'export.all_time': '全期間', 'export.this_month': '今月', 'export.last_month': '先月', 'export.last_week': '先週', 'export.n_transactions': '{n} 件', 'export.btn': 'エクスポート',
+  'home.empty_title': 'まだ取引がありません', 'home.empty_desc': '+ をタップして最初の取引を追加',
+  'profile.contact_support': 'サポートに連絡', 'profile.share_app': 'Kachingo をシェア',
 };
 
 const ko: Record<TKey, string> = {
@@ -2512,6 +2524,8 @@ const ko: Record<TKey, string> = {
   'pin.reset_pin': '새 PIN 설정', 'pin.identity_verified': '본인 확인 완료',
   'tx.payment_method': '결제 수단', 'tx.pm.cash': '현금', 'tx.pm.card': '카드', 'tx.pm.bank': '은행', 'tx.pm.ewallet': '전자지갑', 'tx.pm.cashapp': 'Cash App', 'tx.pm.other': '기타',
   'export.title': 'CSV 내보내기', 'export.choose_range': '기간 선택', 'export.all_time': '전체', 'export.this_month': '이번 달', 'export.last_month': '지난 달', 'export.last_week': '지난 주', 'export.n_transactions': '{n}건', 'export.btn': '내보내기',
+  'home.empty_title': '아직 거래 내역이 없습니다', 'home.empty_desc': '+ 를 탭하여 첫 번째 항목 추가',
+  'profile.contact_support': '고객 지원 연락', 'profile.share_app': 'Kachingo 공유',
 };
 
 const ms: Record<TKey, string> = {
@@ -3031,6 +3045,8 @@ const ms: Record<TKey, string> = {
   'pin.reset_pin': 'Tetapkan PIN Baru', 'pin.identity_verified': 'Identiti disahkan',
   'tx.payment_method': 'Kaedah Bayaran', 'tx.pm.cash': 'Tunai', 'tx.pm.card': 'Kad', 'tx.pm.bank': 'Bank', 'tx.pm.ewallet': 'E-Wallet', 'tx.pm.cashapp': 'Cash App', 'tx.pm.other': 'Lain-lain',
   'export.title': 'Eksport CSV', 'export.choose_range': 'Pilih julat tarikh', 'export.all_time': 'Semua Masa', 'export.this_month': 'Bulan Ini', 'export.last_month': 'Bulan Lepas', 'export.last_week': 'Minggu Lepas', 'export.n_transactions': '{n} transaksi', 'export.btn': 'Eksport',
+  'home.empty_title': 'Tiada transaksi lagi', 'home.empty_desc': 'Ketik + untuk tambah yang pertama',
+  'profile.contact_support': 'Hubungi Sokongan', 'profile.share_app': 'Kongsi Kachingo',
 };
 
 export const translations: Record<string, Record<TKey, string>> = { en, zh, ja, ko, ms };
