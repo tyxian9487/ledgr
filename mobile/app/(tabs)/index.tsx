@@ -1,8 +1,7 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, Image, InteractionManager,
+  View, Text, ScrollView, TouchableOpacity, TextInput, Image, InteractionManager, Platform,
 } from 'react-native';
-// InteractionManager kept — used in useFocusEffect scroll-reset below
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -79,13 +78,15 @@ export default function HomeScreen() {
   const [viewMonth, setViewMonth] = useState(now.getMonth());
   const [viewYear, setViewYear] = useState(now.getFullYear());
   const [viewMode, setViewMode] = useState<'category' | 'date' | 'calendar'>('category');
+  const [_layoutCycle, _bumpLayout] = useState(0);
 
   // Reset scroll and consume any pending receipt left by the camera capture screen.
-  // Always scrolling to top on focus ensures layout is correct after returning from
-  // the capture page (which can disturb Android window-inset state).
+  // On Android, also bump a layout-cycle counter so SafeAreaView re-reads the
+  // correct insets after the camera disturbs the window-inset state (cancel path
+  // or save path both trigger this via useFocusEffect).
   useFocusEffect(useCallback(() => {
-    // Defer until all animations complete so the layout is stable
     const task = InteractionManager.runAfterInteractions(() => {
+      if (Platform.OS === 'android') _bumpLayout(n => n + 1);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
     });
     const PENDING_KEY = 'kachingo_pending_receipt';

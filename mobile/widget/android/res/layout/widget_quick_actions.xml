@@ -16,10 +16,10 @@
     android:gravity="center"
     android:padding="10dp">
     <ImageView
+      android:id="@+id/qa_capture_icon"
       android:layout_width="40dp"
       android:layout_height="40dp"
       android:src="@android:drawable/ic_menu_camera"
-      android:tint="#FFFFFF"
       android:background="@drawable/widget_icon_bg"
       android:padding="8dp" />
     <TextView
@@ -47,10 +47,10 @@
     android:gravity="center"
     android:padding="10dp">
     <ImageView
+      android:id="@+id/qa_add_icon"
       android:layout_width="40dp"
       android:layout_height="40dp"
       android:src="@android:drawable/ic_input_add"
-      android:tint="#FFFFFF"
       android:background="@drawable/widget_icon_bg"
       android:padding="8dp" />
     <TextView
