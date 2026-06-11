@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTourTarget } from '../../context/TourContext';
-import { isPinEnabled, removePin } from '../../utils/pin';
+import { isPinEnabled, removePin, removeSecurityQuestion, removeBiometricPref } from '../../utils/pin';
 import PinSetupModal from '../../components/PinSetupModal';
 import PinEntryModal from '../../components/PinEntryModal';
 import TourHighlight from '../../components/TourHighlight';
@@ -621,6 +621,8 @@ export default function ProfileScreen() {
   async function handlePinVerified() {
     setShowPinVerify(false);
     await removePin();
+    await removeSecurityQuestion();
+    await removeBiometricPref();
     setPinEnabled(false);
   }
 

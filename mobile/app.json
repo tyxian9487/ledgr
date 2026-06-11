@@ -50,6 +50,12 @@
       "expo-web-browser",
       "expo-secure-store",
       [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Kachingo to use Face ID to unlock the app"
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "ios": { "newArchEnabled": true },
