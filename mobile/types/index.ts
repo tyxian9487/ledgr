@@ -15,6 +15,7 @@ export interface Transaction {
   autoDebitPeriod?: AutoDebitPeriod;
   receiptImage?: string;
   linkedGoalId?: string;
+  paymentMethod?: string;
 }
 
 export interface UserProfile {

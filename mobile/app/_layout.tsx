@@ -12,9 +12,9 @@ if (SENTRY_DSN) {
     dist: Constants.expoConfig?.ios?.buildNumber ?? String(Constants.expoConfig?.android?.versionCode ?? ''),
   });
 }
-import React, { useEffect, useState, Component } from 'react';
+import React, { useEffect, useState, useRef, Component } from 'react';
 import { StatusBar as RootStatusBar } from 'expo-status-bar';
-import { View, Text, ScrollView, Linking, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, Linking, TouchableOpacity, AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
 import { AppProvider, useApp } from '../context/AppContext';
@@ -28,6 +28,8 @@ import ConsentBanner from '../components/ConsentBanner';
 import TourOverlay from '../components/TourOverlay';
 import NotificationWatcher from '../components/NotificationWatcher';
 import SoundPlayer from '../components/SoundPlayer';
+import PinEntryModal from '../components/PinEntryModal';
+import { isPinEnabled } from '../utils/pin';
 import { useColorScheme } from 'nativewind';
 import { supabase, handleOAuthRedirect } from '../utils/supabase';
 import {
@@ -268,6 +270,28 @@ function NotificationPermissionRequester() {
   return null;
 }
 
+// Shows PinEntryModal when app returns from background and PIN is enabled
+function PinLockGate() {
+  const { isAuthenticated, hasCompletedOnboarding } = useApp();
+  const [locked, setLocked] = useState(false);
+  const appState = useRef(AppState.currentState);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', async (nextState) => {
+      const wasBackground = appState.current.match(/inactive|background/);
+      appState.current = nextState;
+      if (wasBackground && nextState === 'active' && isAuthenticated && hasCompletedOnboarding) {
+        const enabled = await isPinEnabled();
+        if (enabled) setLocked(true);
+      }
+    });
+    return () => sub.remove();
+  }, [isAuthenticated, hasCompletedOnboarding]);
+
+  if (!locked) return null;
+  return <PinEntryModal visible onSuccess={() => setLocked(false)} />;
+}
+
 // Keeps userProfile.plan in sync with the RevenueCat entitlement
 function EntitlementSyncBridge() {
   const { isPro } = usePurchases();
@@ -297,6 +321,7 @@ export default function RootLayout() {
                     <NotificationPermissionRequester />
                     <NotificationWatcher />
                     <SoundPlayer />
+                    <PinLockGate />
                     <NavigationGuard />
                     <TourOverlay />
                     <ConsentBanner />

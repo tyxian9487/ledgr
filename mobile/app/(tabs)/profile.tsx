@@ -1,6 +1,9 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTourTarget } from '../../context/TourContext';
+import { isPinEnabled, removePin } from '../../utils/pin';
+import PinSetupModal from '../../components/PinSetupModal';
+import PinEntryModal from '../../components/PinEntryModal';
 import TourHighlight from '../../components/TourHighlight';
 import CategoryManagerSheet from '../../components/CategoryManagerSheet';
 import {
@@ -48,6 +51,7 @@ import {
   Bell,
   Link,
   Download,
+  Lock,
   BarChart2,
   User,
   Check,
@@ -593,6 +597,33 @@ export default function ProfileScreen() {
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
+  // PIN lock
+  const [pinEnabled, setPinEnabled] = useState(false);
+  const [showPinSetup, setShowPinSetup] = useState(false);
+  const [showPinVerify, setShowPinVerify] = useState(false);
+
+  // Export CSV date filter
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportRange, setExportRange] = useState<'all' | 'this_month' | 'last_month' | 'last_week'>('all');
+
+  useEffect(() => {
+    isPinEnabled().then(setPinEnabled);
+  }, []);
+
+  async function handlePinToggle() {
+    if (pinEnabled) {
+      setShowPinVerify(true);
+    } else {
+      setShowPinSetup(true);
+    }
+  }
+
+  async function handlePinVerified() {
+    setShowPinVerify(false);
+    await removePin();
+    setPinEnabled(false);
+  }
+
   async function doClearData() {
     const AsyncStorageLib = require('@react-native-async-storage/async-storage').default;
     await AsyncStorageLib.clear();
@@ -690,23 +721,62 @@ export default function ProfileScreen() {
     }
   }
 
-  async function handleExportCSV() {
-    const header = 'Date,Type,Category,Amount,Description';
-    const rows = transactions.map(tx => {
+  function getExportDateBounds(range: typeof exportRange): { from: Date; to: Date } | null {
+    const now = new Date();
+    if (range === 'this_month') {
+      return {
+        from: new Date(now.getFullYear(), now.getMonth(), 1),
+        to: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59),
+      };
+    }
+    if (range === 'last_month') {
+      return {
+        from: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+        to: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59),
+      };
+    }
+    if (range === 'last_week') {
+      const day = now.getDay();
+      const from = new Date(now);
+      from.setDate(now.getDate() - day - 7);
+      from.setHours(0, 0, 0, 0);
+      const to = new Date(from);
+      to.setDate(from.getDate() + 6);
+      to.setHours(23, 59, 59, 999);
+      return { from, to };
+    }
+    return null;
+  }
+
+  async function doExportCSV() {
+    setShowExportModal(false);
+    const bounds = getExportDateBounds(exportRange);
+    const filtered = bounds
+      ? transactions.filter(tx => {
+          const d = new Date(tx.date);
+          return d >= bounds.from && d <= bounds.to;
+        })
+      : transactions;
+    const header = 'Date,Type,Category,Amount,Description,PaymentMethod';
+    const rows = filtered.map(tx => {
       const d = new Date(tx.date).toISOString().slice(0, 10);
       const desc = (tx.description || '').replace(/,/g, ';');
-      return `${d},${tx.type},${tx.category},${tx.amount},${desc}`;
+      return `${d},${tx.type},${tx.category},${tx.amount},${desc},${tx.paymentMethod ?? ''}`;
     });
     const csv = [header, ...rows].join('\n');
     try {
       const FileSystem = await import('expo-file-system/legacy');
       const Sharing = await import('expo-sharing');
-      const path = FileSystem.cacheDirectory + 'kachingo_transactions.csv';
+      const path = FileSystem.cacheDirectory + 'ledgr_transactions.csv';
       await FileSystem.writeAsStringAsync(path, csv, { encoding: FileSystem.EncodingType.UTF8 });
-      await Sharing.shareAsync(path, { mimeType: 'text/csv', dialogTitle: t('profile.export_csv') });
+      await Sharing.shareAsync(path, { mimeType: 'text/csv', dialogTitle: t('export.title') });
     } catch {
-      Alert.alert(t('profile.export_csv'), `${rows.length} transactions exported.`);
+      Alert.alert(t('export.title'), t('export.n_transactions', { n: rows.length }));
     }
+  }
+
+  function handleExportCSV() {
+    setShowExportModal(true);
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -998,6 +1068,25 @@ export default function ProfileScreen() {
             }
             onPress={() => setShowLanguage(true)}
           />
+          <View className="flex-row items-center gap-3 px-4 py-3.5 border-t border-gray-50 dark:border-gray-900">
+            <View className="w-9 h-9 rounded-2xl bg-gray-100 dark:bg-gray-800 items-center justify-center">
+              <Lock size={16} color="#6b7280" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-sm font-medium text-gray-900 dark:text-white">{t('pin.lock_title')}</Text>
+              {pinEnabled && (
+                <TouchableOpacity onPress={() => setShowPinSetup(true)}>
+                  <Text className="text-xs text-green-600 mt-0.5">{t('pin.lock_desc')} · Change PIN →</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            <Switch
+              value={pinEnabled}
+              onValueChange={handlePinToggle}
+              trackColor={{ false: '#e5e7eb', true: '#16a34a' }}
+              thumbColor="#fff"
+            />
+          </View>
         </View>
 
         {/* ── DATA ── */}
@@ -1303,6 +1392,68 @@ export default function ProfileScreen() {
       {showSubscription ? (
         <SubscriptionSheet onClose={() => setShowSubscription(false)} />
       ) : null}
+
+      {/* PIN setup (set new PIN) */}
+      <PinSetupModal
+        visible={showPinSetup}
+        onSuccess={() => { setShowPinSetup(false); setPinEnabled(true); }}
+        onClose={() => setShowPinSetup(false)}
+      />
+
+      {/* PIN verify (to disable PIN) */}
+      <PinEntryModal
+        visible={showPinVerify}
+        onSuccess={handlePinVerified}
+        onCancel={() => setShowPinVerify(false)}
+      />
+
+      {/* Export CSV date filter modal */}
+      <Modal visible={showExportModal} transparent animationType="fade" onRequestClose={() => setShowExportModal(false)}>
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <View style={{ backgroundColor: darkMode ? '#111827' : '#ffffff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 32 }}>
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: darkMode ? '#374151' : '#e5e7eb', alignSelf: 'center', marginBottom: 16 }} />
+            <Text style={{ fontSize: 17, fontWeight: '700', color: darkMode ? '#f9fafb' : '#111827', marginBottom: 4 }}>{t('export.title')}</Text>
+            <Text style={{ fontSize: 13, color: darkMode ? '#9ca3af' : '#6b7280', marginBottom: 16 }}>{t('export.choose_range')}</Text>
+            {(
+              [
+                { key: 'all',        label: t('export.all_time'),   count: transactions.length },
+                { key: 'this_month', label: t('export.this_month'), count: (() => { const n = new Date(); return transactions.filter(tx => { const d = new Date(tx.date); return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth(); }).length; })() },
+                { key: 'last_month', label: t('export.last_month'), count: (() => { const n = new Date(); const y = n.getMonth() === 0 ? n.getFullYear() - 1 : n.getFullYear(); const m = n.getMonth() === 0 ? 11 : n.getMonth() - 1; return transactions.filter(tx => { const d = new Date(tx.date); return d.getFullYear() === y && d.getMonth() === m; }).length; })() },
+                { key: 'last_week',  label: t('export.last_week'),  count: (() => { const bounds = getExportDateBounds('last_week'); return bounds ? transactions.filter(tx => { const d = new Date(tx.date); return d >= bounds.from && d <= bounds.to; }).length : 0; })() },
+              ] as const
+            ).map(opt => (
+              <TouchableOpacity
+                key={opt.key}
+                onPress={() => setExportRange(opt.key)}
+                style={{
+                  flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                  padding: 14, borderRadius: 14, marginBottom: 8,
+                  backgroundColor: exportRange === opt.key ? '#16a34a' : (darkMode ? '#1f2937' : '#f3f4f6'),
+                }}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '600', color: exportRange === opt.key ? '#ffffff' : (darkMode ? '#f9fafb' : '#111827') }}>
+                  {opt.label}
+                </Text>
+                <Text style={{ fontSize: 12, color: exportRange === opt.key ? '#bbf7d0' : (darkMode ? '#6b7280' : '#9ca3af') }}>
+                  {t('export.n_transactions', { n: opt.count })}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              onPress={doExportCSV}
+              style={{ backgroundColor: '#16a34a', borderRadius: 16, paddingVertical: 16, alignItems: 'center', marginTop: 8 }}
+            >
+              <Text style={{ color: '#ffffff', fontWeight: '700', fontSize: 16 }}>{t('export.btn')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowExportModal(false)}
+              style={{ alignItems: 'center', marginTop: 12 }}
+            >
+              <Text style={{ color: darkMode ? '#6b7280' : '#9ca3af', fontSize: 14 }}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {celebrationBadge ? (
         <BadgeCelebration

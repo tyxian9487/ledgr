@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const paymentMascotImg = require('../../assets/m_payment.png');
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,16 +15,18 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { RefreshCw, Calendar, Plus, X, ChevronDown, ChevronUp, Image as ImageIcon } from 'lucide-react-native';
+import { RefreshCw, Calendar, Plus, X, ChevronDown, ChevronUp, Image as ImageIcon, ChevronRight } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { usePurchases } from '../../context/PurchasesContext';
 import { usePaywall } from '../../context/PaywallContext';
-import { TransactionType, AutoDebitPeriod, CustomCategory } from '../../types';
+import { TransactionType, AutoDebitPeriod, CustomCategory, CURRENCIES } from '../../types';
 import CategoryIcon from './CategoryIcon';
 import QuickAddCategorySheet from '../QuickAddCategorySheet';
+import { fetchExchangeRate } from '../../utils/exchangeRate';
 
 interface Props {
   visible: boolean;
@@ -39,6 +41,7 @@ interface Props {
     isAutoDebit?: boolean;
     autoDebitPeriod?: AutoDebitPeriod;
     linkedGoalId?: string;
+    paymentMethod?: string;
   };
   transactionId?: string;
 }
@@ -208,7 +211,7 @@ function CalendarDateModal({
 }
 
 export default function ManualEntryModal({ visible, onClose, transactionId, prefill }: Props) {
-  const { addTransaction, updateTransaction, getCurrencySymbol, expenseCategories, incomeCategories, budget, updateCustomGoal, transactions } = useApp();
+  const { addTransaction, updateTransaction, getCurrencySymbol, formatCurrency, expenseCategories, incomeCategories, budget, updateCustomGoal, transactions, userProfile } = useApp();
   const { t } = useTranslation();
   const { isPro } = usePurchases();
   const { showPaywall } = usePaywall();
@@ -238,6 +241,17 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
   const [customDateInput, setCustomDateInput] = useState(date);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showAddTxHint, setShowAddTxHint] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState(prefill?.paymentMethod ?? 'cash');
+
+  // Transaction currency (may differ from user's default)
+  const userCurrency = userProfile?.currency ?? 'USD';
+  const [txCurrency, setTxCurrency] = useState(userCurrency);
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+  const [currencySearch, setCurrencySearch] = useState('');
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const [isFetchingRate, setIsFetchingRate] = useState(false);
+  const [rateError, setRateError] = useState(false);
+  const rateReqRef = useRef(0);
 
   useEffect(() => {
     if (!visible) return;
@@ -251,6 +265,12 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
     setIsAutoDebit(prefill?.isAutoDebit ?? false);
     setPeriod(prefill?.autoDebitPeriod ?? 'monthly');
     setLinkedGoalId(prefill?.linkedGoalId ?? '');
+    setPaymentMethod(prefill?.paymentMethod ?? 'cash');
+    setTxCurrency(userCurrency);
+    setExchangeRate(null);
+    setRateError(false);
+    setShowCurrencyPicker(false);
+    setCurrencySearch('');
     setShowCategoryPicker(false);
     setShowPeriodPicker(false);
     setShowAddCategory(false);
@@ -258,6 +278,29 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
     setCustomDateMode(false);
     setShowDatePicker(false);
   }, [visible, prefill]);
+
+  // Fetch exchange rate when txCurrency differs from user's default currency
+  useEffect(() => {
+    if (txCurrency === userCurrency) {
+      setExchangeRate(null);
+      setRateError(false);
+      return;
+    }
+    const reqId = ++rateReqRef.current;
+    setIsFetchingRate(true);
+    setRateError(false);
+    fetchExchangeRate(txCurrency, userCurrency).then(rate => {
+      if (reqId !== rateReqRef.current) return;
+      setIsFetchingRate(false);
+      if (rate === null) {
+        setRateError(true);
+        setExchangeRate(null);
+      } else {
+        setExchangeRate(rate);
+        setRateError(false);
+      }
+    });
+  }, [txCurrency, userCurrency]);
 
   useEffect(() => {
     AsyncStorage.getItem('ledgr_addtx_hint_seen').then(val => {
@@ -302,9 +345,14 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
 
   function handleSubmit() {
     if (!canSubmit) return;
+    const rawAmount = parseFloat(amount);
+    // If a foreign currency was selected and we have a rate, convert to user's default
+    const finalAmount = txCurrency !== userCurrency && exchangeRate !== null
+      ? Math.round(rawAmount * exchangeRate * 100) / 100
+      : rawAmount;
     const data = {
       type,
-      amount: parseFloat(amount),
+      amount: finalAmount,
       category,
       description,
       date: new Date(date + 'T12:00:00').toISOString(),
@@ -312,6 +360,7 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
       autoDebitPeriod: isAutoDebit ? period : undefined,
       receiptImage: prefill?.receiptImage,
       linkedGoalId: (category === 'savings' && linkedGoalId) ? linkedGoalId : undefined,
+      paymentMethod,
     };
     if (transactionId) {
       updateTransaction(transactionId, data);
@@ -342,6 +391,9 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
       setIsAutoDebit(false);
       setPeriod('monthly');
       setLinkedGoalId('');
+      setPaymentMethod('cash');
+      setTxCurrency(userCurrency);
+      setExchangeRate(null);
       setCustomDateMode(false);
       setCustomDateInput(todayString());
       setShowCategoryPicker(false);
@@ -459,8 +511,16 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
             {/* Amount */}
             <View className="mb-4">
               <Text className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">{t('common.amount')}</Text>
-              <View className="flex-row items-center border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 bg-gray-50 dark:bg-gray-800">
-                <Text className="text-gray-400 font-semibold mr-2">{currencySymbol}</Text>
+              <View className="flex-row items-center border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-3 py-3 bg-gray-50 dark:bg-gray-800 gap-2">
+                {/* Currency selector chip */}
+                <TouchableOpacity
+                  onPress={() => { setShowCurrencyPicker(true); setCurrencySearch(''); }}
+                  className="flex-row items-center gap-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-2.5 py-1.5"
+                  activeOpacity={0.7}
+                >
+                  <Text className="text-xs font-bold text-gray-700 dark:text-gray-200">{txCurrency}</Text>
+                  <ChevronDown size={10} color="#9ca3af" />
+                </TouchableOpacity>
                 <TextInput
                   placeholder="0.00"
                   placeholderTextColor="#d1d5db"
@@ -470,6 +530,33 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
                   className="flex-1 text-xl font-bold text-gray-900 dark:text-white"
                 />
               </View>
+
+              {/* Conversion row — shown when foreign currency selected */}
+              {txCurrency !== userCurrency && (
+                <View className="flex-row items-center gap-2 mt-1.5 px-1">
+                  {isFetchingRate ? (
+                    <>
+                      <ActivityIndicator size="small" color="#16a34a" />
+                      <Text className="text-xs text-gray-400">{t('tx.rate_loading')}</Text>
+                    </>
+                  ) : rateError ? (
+                    <Text className="text-xs text-red-400">{t('tx.rate_error')}</Text>
+                  ) : exchangeRate !== null && amount && parseFloat(amount) > 0 ? (
+                    <>
+                      <Text className="text-xs text-green-600 dark:text-green-400 font-semibold">
+                        {t('tx.converts_to', {
+                          amount: formatCurrency(Math.round(parseFloat(amount) * exchangeRate * 100) / 100),
+                        })}
+                      </Text>
+                      <Text className="text-[10px] text-gray-400">({userCurrency})</Text>
+                    </>
+                  ) : exchangeRate !== null ? (
+                    <Text className="text-[10px] text-gray-400">
+                      1 {txCurrency} = {formatCurrency(exchangeRate)}
+                    </Text>
+                  ) : null}
+                </View>
+              )}
             </View>
 
             {/* Date */}
@@ -528,6 +615,38 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
                   <Text className="text-sm font-semibold text-blue-500">{t('tx.change_date')}</Text>
                 </TouchableOpacity>
               )}
+            </View>
+
+            {/* Payment Method */}
+            <View className="mb-4">
+              <Text className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">{t('tx.payment_method')}</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {((): Array<{ id: string; label: string; emoji: string }> => {
+                  const isUSD = (userProfile?.currency ?? 'USD') === 'USD';
+                  return [
+                    { id: 'cash',    label: t('tx.pm.cash'),                  emoji: '💵' },
+                    { id: 'card',    label: t('tx.pm.card'),                  emoji: '💳' },
+                    { id: 'bank',    label: t('tx.pm.bank'),                  emoji: '🏦' },
+                    { id: 'ewallet', label: isUSD ? t('tx.pm.cashapp') : t('tx.pm.ewallet'), emoji: '📱' },
+                    { id: 'other',   label: t('tx.pm.other'),                 emoji: '➕' },
+                  ];
+                })().map(pm => (
+                  <TouchableOpacity
+                    key={pm.id}
+                    onPress={() => setPaymentMethod(pm.id)}
+                    className={`flex-row items-center gap-1 px-3 py-2 rounded-xl border ${
+                      paymentMethod === pm.id
+                        ? 'bg-green-600 border-green-600'
+                        : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                    <Text style={{ fontSize: 13 }}>{pm.emoji}</Text>
+                    <Text className={`text-xs font-semibold ${paymentMethod === pm.id ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>
+                      {pm.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
 
             {/* Category */}
@@ -726,6 +845,94 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── Transaction currency picker ── */}
+      <Modal
+        visible={showCurrencyPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowCurrencyPicker(false)}
+      >
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' }}>
+          <View
+            className="bg-white dark:bg-gray-900 rounded-t-3xl"
+            style={{ maxHeight: '80%', paddingBottom: insets.bottom + 8 }}
+          >
+            {/* Handle */}
+            <View className="items-center pt-3 pb-2">
+              <View className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
+            </View>
+
+            {/* Header */}
+            <View className="flex-row items-center justify-between px-5 pb-3">
+              <Text className="text-base font-bold text-gray-900 dark:text-white">
+                {t('tx.select_tx_currency')}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowCurrencyPicker(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center"
+              >
+                <X size={14} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Search */}
+            <View className="flex-row items-center gap-2 mx-4 mb-2 bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2">
+              <Text className="text-gray-400 text-sm">🔍</Text>
+              <TextInput
+                value={currencySearch}
+                onChangeText={setCurrencySearch}
+                placeholder={t('tx.search_currency')}
+                placeholderTextColor="#9ca3af"
+                className="flex-1 text-sm text-gray-900 dark:text-white"
+                autoCapitalize="characters"
+              />
+              {currencySearch ? (
+                <TouchableOpacity onPress={() => setCurrencySearch('')}>
+                  <X size={13} color="#9ca3af" />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            {/* List */}
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              {/* User's default currency pinned at top */}
+              {!currencySearch && (
+                <TouchableOpacity
+                  onPress={() => { setTxCurrency(userCurrency); setShowCurrencyPicker(false); }}
+                  className={`flex-row items-center justify-between px-5 py-3 border-b border-gray-50 dark:border-gray-800 ${txCurrency === userCurrency ? 'bg-green-50 dark:bg-green-900/20' : ''}`}
+                >
+                  <View className="flex-row items-center gap-3">
+                    <Text className="text-sm font-bold text-gray-900 dark:text-white w-12">{userCurrency}</Text>
+                    <Text className="text-sm text-gray-500 dark:text-gray-400 flex-shrink">{CURRENCIES.find(c => c.code === userCurrency)?.name ?? userCurrency}</Text>
+                    <View className="bg-green-100 dark:bg-green-900/30 rounded-full px-2 py-0.5">
+                      <Text className="text-[10px] font-bold text-green-700 dark:text-green-400">Default</Text>
+                    </View>
+                  </View>
+                  {txCurrency === userCurrency && <Text className="text-green-600 font-bold">✓</Text>}
+                </TouchableOpacity>
+              )}
+              {CURRENCIES.filter(c => {
+                if (!currencySearch) return c.code !== userCurrency;
+                const q = currencySearch.toLowerCase();
+                return c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q);
+              }).map(c => (
+                <TouchableOpacity
+                  key={c.code}
+                  onPress={() => { setTxCurrency(c.code); setShowCurrencyPicker(false); }}
+                  className={`flex-row items-center justify-between px-5 py-3 border-b border-gray-50 dark:border-gray-800 ${txCurrency === c.code ? 'bg-green-50 dark:bg-green-900/20' : ''}`}
+                >
+                  <View className="flex-row items-center gap-3 flex-1 mr-3">
+                    <Text className="text-sm font-bold text-gray-900 dark:text-white w-12">{c.code}</Text>
+                    <Text className="text-sm text-gray-500 dark:text-gray-400 flex-1" numberOfLines={1}>{c.name}</Text>
+                  </View>
+                  {txCurrency === c.code && <Text className="text-green-600 font-bold">✓</Text>}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
       </Modal>
 
       <CalendarDateModal
