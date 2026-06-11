@@ -116,39 +116,38 @@ struct DonutWidgetView: View {
     let slices = d?.slices ?? []
 
     ZStack {
-      Color(red: 0.07, green: 0.44, blue: 0.24) // green-700
-      VStack(spacing: 4) {
+      Color(red: 0.07, green: 0.44, blue: 0.24)
+      VStack(spacing: 0) {
+        Spacer()
         ZStack {
-          DonutChart(slices: slices.isEmpty ? [] : slices, lineWidth: 20)
-            .frame(width: 110, height: 110)
-          VStack(spacing: 1) {
+          DonutChart(slices: slices.isEmpty ? [] : slices, lineWidth: 26)
+            .frame(width: 160, height: 160)
+          VStack(spacing: 2) {
             Text("Expenses")
-              .font(.system(size: 9, weight: .medium))
+              .font(.system(size: 10, weight: .medium))
               .foregroundColor(.white.opacity(0.65))
             Text(fmt(d?.expenses ?? 0, symbol: symbol))
-              .font(.system(size: 16, weight: .bold))
+              .font(.system(size: 18, weight: .bold))
               .foregroundColor(.white)
           }
         }
+        Spacer()
         Divider().background(Color.white.opacity(0.3))
         HStack {
-          VStack(alignment: .leading, spacing: 1) {
+          VStack(alignment: .leading, spacing: 2) {
             Text("Remaining")
-              .font(.system(size: 9))
+              .font(.system(size: 10))
               .foregroundColor(.white.opacity(0.6))
             let rem = d?.remaining ?? 0
             Text(fmt(rem, symbol: symbol))
-              .font(.system(size: 14, weight: .bold))
+              .font(.system(size: 18, weight: .bold))
               .foregroundColor(rem >= 0 ? .white : Color(red: 0.99, green: 0.63, blue: 0.63))
           }
           Spacer()
-          Image(systemName: "chart.pie.fill")
-            .foregroundColor(.white.opacity(0.4))
-            .font(.system(size: 18))
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
       }
-      .padding(.vertical, 10)
     }
     .cornerRadius(20)
     .widgetURL(URL(string: "kachingo://home"))
@@ -163,7 +162,7 @@ struct DonutWidget: Widget {
     }
     .configurationDisplayName("Monthly Overview")
     .description("Expense donut chart with remaining balance.")
-    .supportedFamilies([.systemMedium])
+    .supportedFamilies([.systemLarge])
   }
 }
 
@@ -343,7 +342,7 @@ struct GoalWidgetView: View {
 
     ZStack {
       Color(red: 0.07, green: 0.44, blue: 0.24)
-      VStack(alignment: .leading, spacing: 8) {
+      VStack(alignment: .leading, spacing: 10) {
         Text("Goals")
           .font(.system(size: 13, weight: .bold))
           .foregroundColor(.white)
@@ -353,30 +352,37 @@ struct GoalWidgetView: View {
           AddGoalRowView()
           Spacer()
         } else {
-          // Upper row: monthly savings goal
-          if hasMonthlySavings, let ms = d?.monthlySavings {
-            GoalRowView(
-              title: "Monthly Savings",
-              saved: ms.saved,
-              target: ms.target,
-              symbol: symbol,
-              color: Color(red: 0.13, green: 0.76, blue: 0.37)
-            )
-          } else {
-            AddGoalRowView()
+          // Upper 2×1 row: monthly savings goal
+          Group {
+            if hasMonthlySavings, let ms = d?.monthlySavings {
+              GoalRowView(
+                title: "Monthly Savings",
+                saved: ms.saved,
+                target: ms.target,
+                symbol: symbol,
+                color: Color(red: 0.13, green: 0.76, blue: 0.37)
+              )
+            } else {
+              AddGoalRowView()
+            }
           }
-          // Lower row: custom goal
-          if hasCustomGoal, let cg = d?.customGoal {
-            GoalRowView(
-              title: cg.name,
-              saved: cg.saved,
-              target: cg.target,
-              symbol: symbol,
-              color: colorFromHex(cg.color)
-            )
-          } else {
-            AddGoalRowView()
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+          // Lower 2×1 row: custom savings goal or add button
+          Group {
+            if hasCustomGoal, let cg = d?.customGoal {
+              GoalRowView(
+                title: cg.name,
+                saved: cg.saved,
+                target: cg.target,
+                symbol: symbol,
+                color: colorFromHex(cg.color)
+              )
+            } else {
+              AddGoalRowView()
+            }
           }
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
       }
       .padding(14)
@@ -394,6 +400,6 @@ struct GoalWidget: Widget {
     }
     .configurationDisplayName("Goals")
     .description("Track your monthly savings and custom goals.")
-    .supportedFamilies([.systemMedium])
+    .supportedFamilies([.systemLarge])
   }
 }
