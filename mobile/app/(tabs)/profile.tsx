@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTourTarget } from '../../context/TourContext';
 import { isPinEnabled, removePin, removeSecurityQuestion, removeBiometricPref } from '../../utils/pin';
@@ -18,13 +18,15 @@ import {
   ActivityIndicator,
   Image,
   Linking,
+  InteractionManager,
+  Platform,
 } from 'react-native';
 
 const happyMascotImg = require('../../assets/m_expression_happy.png');
 const winkMascotImg  = require('../../assets/m_expression_wink.png');
 const sadMascotImg   = require('../../assets/m_expression_sad.png');
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import {
   Moon,
@@ -434,6 +436,16 @@ export default function ProfileScreen() {
   const { t, language } = useTranslation();
   const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
+  const [_layoutCycle, _bumpLayout] = useState(0);
+
+  useFocusEffect(useCallback(() => {
+    if (Platform.OS !== 'android') return;
+    const task = InteractionManager.runAfterInteractions(() => {
+      _bumpLayout(n => n + 1);
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    });
+    return () => task.cancel();
+  }, []));
   const {
     transactions,
     budget,

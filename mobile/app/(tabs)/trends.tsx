@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,10 @@ import {
   TouchableOpacity,
   Modal,
   Image,
+  InteractionManager,
+  Platform,
 } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { useTourTarget } from '../../context/TourContext';
 import TourHighlight from '../../components/TourHighlight';
 
@@ -396,6 +399,17 @@ function CategoryModal({
 
 export default function TrendsScreen() {
   const scrollRef = useRef<ScrollView>(null);
+  const [_layoutCycle, _bumpLayout] = useState(0);
+
+  useFocusEffect(useCallback(() => {
+    if (Platform.OS !== 'android') return;
+    const task = InteractionManager.runAfterInteractions(() => {
+      _bumpLayout(n => n + 1);
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    });
+    return () => task.cancel();
+  }, []));
+
   const { transactions, formatCurrency } = useApp();
   const { t } = useTranslation();
   const { colorScheme } = useColorScheme();
