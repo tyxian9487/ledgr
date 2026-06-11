@@ -8,6 +8,7 @@ import { playTransactionSound } from '../utils/sounds';
 import { supabase } from '../utils/supabase';
 import { buildWidgetData, updateWidgetData } from '../utils/widgetData';
 import { schedulePaymentReminderNotifications } from '../utils/notifications';
+import { fetchExchangeRate } from '../utils/exchangeRate';
 
 const INSTALL_DATE_KEY = 'kachingo_install_date';
 
@@ -21,11 +22,12 @@ function advanceDate(date: Date, period: AutoDebitPeriod): Date {
   return d;
 }
 
-function processAutoDebits(txs: Transaction[]): Transaction[] {
+async function processAutoDebits(txs: Transaction[], userCurrency: string): Promise<Transaction[]> {
   const ceiling = new Date();
   ceiling.setHours(23, 59, 59, 999);
   const existingIds = new Set(txs.map(t => t.id));
   const additions: Transaction[] = [];
+  const rateCache: Record<string, number | null> = {};
 
   const templates = txs.filter(t => t.isAutoDebit && t.autoDebitPeriod && !t.id.includes('_auto_'));
 
@@ -36,7 +38,17 @@ function processAutoDebits(txs: Transaction[]): Transaction[] {
     while (next <= ceiling) {
       const nid = `${tmpl.id}_auto_${next.getTime()}`;
       if (!existingIds.has(nid)) {
-        additions.push({ ...tmpl, id: nid, date: next.toISOString() });
+        let amount = tmpl.amount;
+        if (tmpl.originalCurrency && tmpl.originalAmount != null && tmpl.originalCurrency !== userCurrency) {
+          if (!(tmpl.originalCurrency in rateCache)) {
+            rateCache[tmpl.originalCurrency] = await fetchExchangeRate(tmpl.originalCurrency, userCurrency);
+          }
+          const rate = rateCache[tmpl.originalCurrency];
+          if (rate !== null) {
+            amount = Math.round(tmpl.originalAmount * rate * 100) / 100;
+          }
+        }
+        additions.push({ ...tmpl, id: nid, date: next.toISOString(), amount });
         existingIds.add(nid);
       }
       next = advanceDate(next, tmpl.autoDebitPeriod!);
@@ -271,7 +283,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const loadRemoteProfile = useCallback(async (
     uid: string,
     authProfile: Pick<UserProfile, 'name' | 'email' | 'avatar'>,
-  ) => {
+  ): Promise<string | undefined> => {
     const { data, error } = await supabase
       .from('profiles')
       .select('name,email,avatar,plan,currency,language')
@@ -279,11 +291,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .maybeSingle();
     if (error) {
       console.warn('[Profile] Failed to load remote profile:', error.message);
-      return;
+      return undefined;
     }
     if (data) {
       setUserProfile(prev => mergeAuthenticatedProfile(prev, authProfile, data, profileOverridesRef.current));
+      return data.currency as string | undefined;
     }
+    return undefined;
   }, []);
 
   useEffect(() => {
@@ -301,10 +315,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
         if (saved) {
           const data = JSON.parse(saved);
-          const processedTxs = processAutoDebits(data.transactions || []);
+          const savedProfile = data.userProfile || DEFAULT_PROFILE;
+          const processedTxs = await processAutoDebits(data.transactions || [], savedProfile.currency ?? 'USD');
           setTransactions(processedTxs);
           schedulePaymentReminderNotifications(processedTxs).catch(() => {});
-          const savedProfile = data.userProfile || DEFAULT_PROFILE;
           const deviceLang = detectDeviceLanguage();
           // One-time migration: switch language from the old 'en' default to
           // the actual device language. langMigratedV1 prevents re-running
@@ -397,13 +411,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
           const uid = session.user.id;
           (async () => {
-            await loadRemoteProfile(uid, authProfile);
+            const loadedCurrency = await loadRemoteProfile(uid, authProfile);
             const lastSynced = await AsyncStorage.getItem('kachingo_last_synced');
             const { data } = await supabase.from('user_data')
               .select('*').eq('user_id', uid).maybeSingle();
             if (!data) return;
             if (lastSynced && new Date(data.updated_at) <= new Date(lastSynced)) return;
-            if (data.transactions?.length) setTransactions(processAutoDebits(data.transactions));
+            if (data.transactions?.length) setTransactions(await processAutoDebits(data.transactions, loadedCurrency ?? 'USD'));
             if (data.budget && Object.keys(data.budget).length > 0) setBudget(data.budget);
             if (data.custom_categories?.length) setCustomCategories(data.custom_categories);
             setDisabledCategories(data.disabled_categories ?? []);
@@ -519,7 +533,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const baseId = Date.now().toString();
     const transactionsToAdd: Transaction[] = [{ ...t, id: baseId }];
 
-    if (t.isAutoDebit && t.autoDebitPeriod) {
+    if (t.isAutoDebit && t.autoDebitPeriod && !t.originalCurrency) {
       const baseDate = new Date(t.date);
       const periods = 12;
       for (let i = 1; i <= periods; i++) {

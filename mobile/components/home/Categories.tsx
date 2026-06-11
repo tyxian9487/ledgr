@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Alert, Modal, ScrollView, PanResponder, Animated, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, Modal, ScrollView, PanResponder, Animated, Image, Dimensions } from 'react-native';
 import { Trash2, Edit2, RefreshCw, ChevronDown, ChevronRight, ChevronLeft, X, ImageIcon } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
@@ -122,26 +122,24 @@ export function CalendarModal({
 
   // ── Swipe-to-dismiss ──────────────────────────────────────────────────────────
   const translateY = useRef(new Animated.Value(0)).current;
+  const scrollYRef = useRef(0);
 
   // Reset sheet position each time the modal mounts
   useEffect(() => { translateY.setValue(0); }, []);
 
   const panResponder = useRef(
     PanResponder.create({
-      // Activate only on downward vertical swipes (not taps, not horizontal)
       onMoveShouldSetPanResponder: (_, { dy, dx }) =>
-        dy > 8 && Math.abs(dy) > Math.abs(dx) * 1.5,
+        dy > 8 && Math.abs(dy) > Math.abs(dx) * 1.5 && scrollYRef.current <= 0,
       onPanResponderMove: (_, { dy }) => {
         if (dy > 0) translateY.setValue(dy);
       },
       onPanResponderRelease: (_, { dy, vy }) => {
         if (dy > 130 || vy > 1.2) {
-          // Flick or drag past threshold → slide out then close
           Animated.timing(translateY, {
             toValue: 700, duration: 220, useNativeDriver: true,
           }).start(() => onClose());
         } else {
-          // Not far enough → snap back
           Animated.spring(translateY, {
             toValue: 0, tension: 80, friction: 12, useNativeDriver: true,
           }).start();
@@ -163,35 +161,42 @@ export function CalendarModal({
         pointerEvents="none" />
 
       <Animated.View
+        {...panResponder.panHandlers}
         style={{
           position: 'absolute', left: 0, right: 0, bottom: 0,
           backgroundColor: c.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28,
           transform: [{ translateY }],
+          maxHeight: Dimensions.get('window').height * 0.87,
         }}
       >
-        {/* Drag handle — pan responder lives here so calendar taps aren't swallowed */}
+        {/* Drag handle */}
         <View
-          {...panResponder.panHandlers}
           style={{ alignItems: 'center', paddingTop: 12, paddingBottom: 16 }}
         >
           <View style={{ width: 36, height: 4, backgroundColor: c.handle, borderRadius: 2 }} />
         </View>
 
-        {/* Month navigation — also draggable */}
-        <View
-          {...panResponder.panHandlers}
-          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 16 }}
+        <ScrollView
+          scrollEventThrottle={16}
+          onScroll={(e) => { scrollYRef.current = e.nativeEvent.contentOffset.y; }}
+          bounces={false}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 14 + bottomInset }}
         >
-          <TouchableOpacity onPress={prevMonth} style={{ padding: 8 }}>
-            <ChevronLeft size={20} color={c.icon} />
-          </TouchableOpacity>
-          <Text style={{ fontSize: 17, fontWeight: '700', color: c.textPrimary }}>
-            {t(`month.${MONTH_KEYS[calMonth]}` as any)} {calYear}
-          </Text>
-          <TouchableOpacity onPress={nextMonth} style={{ padding: 8 }}>
-            <ChevronRight size={20} color={c.icon} />
-          </TouchableOpacity>
-        </View>
+          {/* Month navigation */}
+          <View
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 16 }}
+          >
+            <TouchableOpacity onPress={prevMonth} style={{ padding: 8 }}>
+              <ChevronLeft size={20} color={c.icon} />
+            </TouchableOpacity>
+            <Text style={{ fontSize: 17, fontWeight: '700', color: c.textPrimary }}>
+              {t(`month.${MONTH_KEYS[calMonth]}` as any)} {calYear}
+            </Text>
+            <TouchableOpacity onPress={nextMonth} style={{ padding: 8 }}>
+              <ChevronRight size={20} color={c.icon} />
+            </TouchableOpacity>
+          </View>
 
           {/* Day headers */}
           <View style={{ flexDirection: 'row', paddingHorizontal: 10, marginBottom: 4 }}>
@@ -266,7 +271,7 @@ export function CalendarModal({
 
           {/* Selected day transactions */}
           {selectedDay !== null && (
-            <ScrollView style={{ maxHeight: 180, borderTopWidth: 1, borderTopColor: c.border }} nestedScrollEnabled>
+            <View style={{ borderTopWidth: 1, borderTopColor: c.border }}>
               <Text style={{ fontSize: 11, fontWeight: '700', color: c.textMuted, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                 {t(`month.${MONTH_KEYS[calMonth]}` as any)} {selectedDay}
                 {selectedDayTxs.length === 0 ? ` — ${t('home.no_transactions')}` : ''}
@@ -281,15 +286,16 @@ export function CalendarModal({
                   </Text>
                 </View>
               ))}
-            </ScrollView>
+            </View>
           )}
 
           {/* Close */}
-          <TouchableOpacity onPress={onClose} style={{ alignItems: 'center', paddingTop: 14, paddingBottom: 14 + bottomInset }}>
+          <TouchableOpacity onPress={onClose} style={{ alignItems: 'center', paddingTop: 14, paddingBottom: 14 }}>
             <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: c.closeBtn, alignItems: 'center', justifyContent: 'center' }}>
               <X size={18} color={c.closeIcon} />
             </View>
           </TouchableOpacity>
+        </ScrollView>
       </Animated.View>
     </Modal>
   );

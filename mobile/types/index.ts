@@ -8,6 +8,8 @@ export interface Transaction {
   id: string;
   type: TransactionType;
   amount: number;
+  originalAmount?: number;   // amount in the foreign currency before conversion
+  originalCurrency?: string; // the foreign currency code (set only when != user's currency)
   category: string;
   description: string;
   date: string;

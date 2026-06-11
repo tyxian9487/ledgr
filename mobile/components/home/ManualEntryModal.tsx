@@ -353,6 +353,8 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
     const data = {
       type,
       amount: finalAmount,
+      originalAmount: txCurrency !== userCurrency && exchangeRate !== null ? rawAmount : undefined,
+      originalCurrency: txCurrency !== userCurrency && exchangeRate !== null ? txCurrency : undefined,
       category,
       description,
       date: new Date(date + 'T12:00:00').toISOString(),
