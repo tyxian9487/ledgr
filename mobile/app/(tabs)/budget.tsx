@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTour, useTourTarget } from '../../context/TourContext';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import TourHighlight from '../../components/TourHighlight';
 import {
   View,
@@ -10,6 +10,8 @@ import {
   TextInput,
   Image,
   Modal,
+  InteractionManager,
+  Platform,
 } from 'react-native';
 
 const savingsJarImg = require('../../assets/m_savingsjar.png');
@@ -174,7 +176,24 @@ export default function BudgetScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
+  const [_layoutCycle, _bumpLayout] = useState(0);
   const { bottom: safeBottom } = useSafeAreaInsets();
+
+  // After returning from the camera capture screen on Android the window-inset
+  // state is disturbed: SafeAreaView may read a stale/large top inset, producing
+  // a black gap above the header. Waiting for all interactions to complete (so
+  // the navigation animation has fully settled) then bumping a counter forces
+  // this component to re-render, causing SafeAreaView to re-read the now-correct
+  // insets from the context. scrollTo(y:0) additionally ensures the header row
+  // is not hidden behind a mis-positioned ScrollView.
+  useFocusEffect(useCallback(() => {
+    if (Platform.OS !== 'android') return;
+    const task = InteractionManager.runAfterInteractions(() => {
+      _bumpLayout(n => n + 1);
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    });
+    return () => task.cancel();
+  }, []));
   const {
     budget, updateBudget, getMonthTransactions, getMonthIncome,
     formatCurrency, getCurrencySymbol, removeCustomGoal,
