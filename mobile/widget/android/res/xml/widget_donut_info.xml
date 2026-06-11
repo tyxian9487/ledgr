@@ -8,4 +8,4 @@
   android:initialLayout="@layout/widget_donut"
   android:resizeMode="horizontal|vertical"
   android:widgetCategory="home_screen"
-  android:description="Expense donut chart with remaining balance" />
+  android:description="@string/widget_donut_desc" />

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="widget_donut_desc">Expense donut chart with remaining balance</string>
+  <string name="widget_capture_desc">Quickly scan a receipt</string>
+  <string name="widget_quick_actions_desc">Scan or add a transaction</string>
+  <string name="widget_goal_desc">Monthly savings and custom goal tracker</string>
+</resources>
