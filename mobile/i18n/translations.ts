@@ -775,6 +775,38 @@ export const en = {
   'currency.PHP': 'Philippine Peso',
   'currency.IDR': 'Indonesian Rupiah',
   'currency.VND': 'Vietnamese Dong',
+
+  // PIN lock
+  'pin.lock_title': 'App PIN Lock',
+  'pin.lock_desc': 'Require PIN on app open',
+  'pin.setup_title': 'Set App PIN',
+  'pin.setup_enter': 'Enter a 4-digit PIN',
+  'pin.setup_confirm': 'Confirm your PIN',
+  'pin.setup_mismatch': "PINs don't match. Try again.",
+  'pin.entry_title': 'Enter PIN',
+  'pin.entry_wrong': 'Incorrect PIN. Try again.',
+  'pin.too_many_attempts': 'Too many attempts. Restart the app.',
+  'pin.entry_cancel': 'Cancel',
+  'pin.enabled': 'Enabled',
+
+  // Payment method
+  'tx.payment_method': 'Payment Method',
+  'tx.pm.cash': 'Cash',
+  'tx.pm.card': 'Card',
+  'tx.pm.bank': 'Bank',
+  'tx.pm.ewallet': 'E-Wallet',
+  'tx.pm.cashapp': 'Cash App',
+  'tx.pm.other': 'Other',
+
+  // CSV export date filter
+  'export.title': 'Export CSV',
+  'export.choose_range': 'Choose date range',
+  'export.all_time': 'All Time',
+  'export.this_month': 'This Month',
+  'export.last_month': 'Last Month',
+  'export.last_week': 'Last Week',
+  'export.n_transactions': '{n} transactions',
+  'export.btn': 'Export',
 } as const;
 
 export type TKey = keyof typeof en;
@@ -1161,6 +1193,12 @@ const zh: Record<TKey, string> = {
   'currency.PHP': '菲律宾比索',
   'currency.IDR': '印尼盾',
   'currency.VND': '越南盾',
+  'pin.lock_title': 'APP 密码锁', 'pin.lock_desc': '打开应用时需要密码', 'pin.setup_title': '设置密码',
+  'pin.setup_enter': '输入4位密码', 'pin.setup_confirm': '确认您的密码', 'pin.setup_mismatch': '密码不匹配，请重试。',
+  'pin.entry_title': '输入密码', 'pin.entry_wrong': '密码错误，请重试。', 'pin.too_many_attempts': '尝试次数过多，请重启应用。',
+  'pin.entry_cancel': '取消', 'pin.enabled': '已启用',
+  'tx.payment_method': '支付方式', 'tx.pm.cash': '现金', 'tx.pm.card': '银行卡', 'tx.pm.bank': '银行', 'tx.pm.ewallet': '电子钱包', 'tx.pm.cashapp': 'Cash App', 'tx.pm.other': '其他',
+  'export.title': '导出 CSV', 'export.choose_range': '选择日期范围', 'export.all_time': '全部', 'export.this_month': '本月', 'export.last_month': '上个月', 'export.last_week': '上周', 'export.n_transactions': '{n} 笔交易', 'export.btn': '导出',
 };
 
 const ja: Record<TKey, string> = {
@@ -1543,6 +1581,12 @@ const ja: Record<TKey, string> = {
   'currency.PHP': 'フィリピンペソ',
   'currency.IDR': 'インドネシアルピア',
   'currency.VND': 'ベトナムドン',
+  'pin.lock_title': 'アプリ暗証番号', 'pin.lock_desc': '起動時に暗証番号を要求', 'pin.setup_title': '暗証番号を設定',
+  'pin.setup_enter': '4桁の暗証番号を入力', 'pin.setup_confirm': '暗証番号を確認', 'pin.setup_mismatch': '暗証番号が一致しません。再度入力してください。',
+  'pin.entry_title': '暗証番号を入力', 'pin.entry_wrong': '暗証番号が違います。再度入力してください。', 'pin.too_many_attempts': '試行回数が多すぎます。アプリを再起動してください。',
+  'pin.entry_cancel': 'キャンセル', 'pin.enabled': '有効',
+  'tx.payment_method': '支払方法', 'tx.pm.cash': '現金', 'tx.pm.card': 'カード', 'tx.pm.bank': '銀行', 'tx.pm.ewallet': '電子マネー', 'tx.pm.cashapp': 'Cash App', 'tx.pm.other': 'その他',
+  'export.title': 'CSV エクスポート', 'export.choose_range': '期間を選択', 'export.all_time': '全期間', 'export.this_month': '今月', 'export.last_month': '先月', 'export.last_week': '先週', 'export.n_transactions': '{n} 件', 'export.btn': 'エクスポート',
 };
 
 const ko: Record<TKey, string> = {
@@ -1926,6 +1970,12 @@ const ko: Record<TKey, string> = {
   'currency.PHP': '필리핀 페소',
   'currency.IDR': '인도네시아 루피아',
   'currency.VND': '베트남 동',
+  'pin.lock_title': '앱 PIN 잠금', 'pin.lock_desc': '앱 실행 시 PIN 필요', 'pin.setup_title': 'PIN 설정',
+  'pin.setup_enter': '4자리 PIN을 입력하세요', 'pin.setup_confirm': 'PIN을 확인하세요', 'pin.setup_mismatch': 'PIN이 일치하지 않습니다. 다시 시도하세요.',
+  'pin.entry_title': 'PIN 입력', 'pin.entry_wrong': '잘못된 PIN입니다. 다시 시도하세요.', 'pin.too_many_attempts': '시도 횟수 초과. 앱을 재시작하세요.',
+  'pin.entry_cancel': '취소', 'pin.enabled': '사용 중',
+  'tx.payment_method': '결제 수단', 'tx.pm.cash': '현금', 'tx.pm.card': '카드', 'tx.pm.bank': '은행', 'tx.pm.ewallet': '전자지갑', 'tx.pm.cashapp': 'Cash App', 'tx.pm.other': '기타',
+  'export.title': 'CSV 내보내기', 'export.choose_range': '기간 선택', 'export.all_time': '전체', 'export.this_month': '이번 달', 'export.last_month': '지난 달', 'export.last_week': '지난 주', 'export.n_transactions': '{n}건', 'export.btn': '내보내기',
 };
 
 const ms: Record<TKey, string> = {
@@ -2311,6 +2361,12 @@ const ms: Record<TKey, string> = {
   'currency.PHP': 'Peso Filipina',
   'currency.IDR': 'Rupiah Indonesia',
   'currency.VND': 'Dong Vietnam',
+  'pin.lock_title': 'Kunci PIN Apl', 'pin.lock_desc': 'Perlukan PIN semasa buka apl', 'pin.setup_title': 'Tetapkan PIN',
+  'pin.setup_enter': 'Masukkan PIN 4 digit', 'pin.setup_confirm': 'Sahkan PIN anda', 'pin.setup_mismatch': 'PIN tidak sepadan. Cuba lagi.',
+  'pin.entry_title': 'Masukkan PIN', 'pin.entry_wrong': 'PIN salah. Cuba lagi.', 'pin.too_many_attempts': 'Terlalu banyak cubaan. Mulakan semula apl.',
+  'pin.entry_cancel': 'Batal', 'pin.enabled': 'Diaktifkan',
+  'tx.payment_method': 'Kaedah Bayaran', 'tx.pm.cash': 'Tunai', 'tx.pm.card': 'Kad', 'tx.pm.bank': 'Bank', 'tx.pm.ewallet': 'E-Wallet', 'tx.pm.cashapp': 'Cash App', 'tx.pm.other': 'Lain-lain',
+  'export.title': 'Eksport CSV', 'export.choose_range': 'Pilih julat tarikh', 'export.all_time': 'Semua Masa', 'export.this_month': 'Bulan Ini', 'export.last_month': 'Bulan Lepas', 'export.last_week': 'Minggu Lepas', 'export.n_transactions': '{n} transaksi', 'export.btn': 'Eksport',
 };
 
 export const translations: Record<string, Record<TKey, string>> = { en, zh, ja, ko, ms };

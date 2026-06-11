@@ -39,6 +39,7 @@ interface Props {
     isAutoDebit?: boolean;
     autoDebitPeriod?: AutoDebitPeriod;
     linkedGoalId?: string;
+    paymentMethod?: string;
   };
   transactionId?: string;
 }
@@ -208,7 +209,7 @@ function CalendarDateModal({
 }
 
 export default function ManualEntryModal({ visible, onClose, transactionId, prefill }: Props) {
-  const { addTransaction, updateTransaction, getCurrencySymbol, expenseCategories, incomeCategories, budget, updateCustomGoal, transactions } = useApp();
+  const { addTransaction, updateTransaction, getCurrencySymbol, expenseCategories, incomeCategories, budget, updateCustomGoal, transactions, userProfile } = useApp();
   const { t } = useTranslation();
   const { isPro } = usePurchases();
   const { showPaywall } = usePaywall();
@@ -238,6 +239,7 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
   const [customDateInput, setCustomDateInput] = useState(date);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showAddTxHint, setShowAddTxHint] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState(prefill?.paymentMethod ?? 'cash');
 
   useEffect(() => {
     if (!visible) return;
@@ -251,6 +253,7 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
     setIsAutoDebit(prefill?.isAutoDebit ?? false);
     setPeriod(prefill?.autoDebitPeriod ?? 'monthly');
     setLinkedGoalId(prefill?.linkedGoalId ?? '');
+    setPaymentMethod(prefill?.paymentMethod ?? 'cash');
     setShowCategoryPicker(false);
     setShowPeriodPicker(false);
     setShowAddCategory(false);
@@ -312,6 +315,7 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
       autoDebitPeriod: isAutoDebit ? period : undefined,
       receiptImage: prefill?.receiptImage,
       linkedGoalId: (category === 'savings' && linkedGoalId) ? linkedGoalId : undefined,
+      paymentMethod,
     };
     if (transactionId) {
       updateTransaction(transactionId, data);
@@ -342,6 +346,7 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
       setIsAutoDebit(false);
       setPeriod('monthly');
       setLinkedGoalId('');
+      setPaymentMethod('cash');
       setCustomDateMode(false);
       setCustomDateInput(todayString());
       setShowCategoryPicker(false);
@@ -528,6 +533,38 @@ export default function ManualEntryModal({ visible, onClose, transactionId, pref
                   <Text className="text-sm font-semibold text-blue-500">{t('tx.change_date')}</Text>
                 </TouchableOpacity>
               )}
+            </View>
+
+            {/* Payment Method */}
+            <View className="mb-4">
+              <Text className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">{t('tx.payment_method')}</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {((): Array<{ id: string; label: string; emoji: string }> => {
+                  const isUSD = (userProfile?.currency ?? 'USD') === 'USD';
+                  return [
+                    { id: 'cash',    label: t('tx.pm.cash'),                  emoji: '💵' },
+                    { id: 'card',    label: t('tx.pm.card'),                  emoji: '💳' },
+                    { id: 'bank',    label: t('tx.pm.bank'),                  emoji: '🏦' },
+                    { id: 'ewallet', label: isUSD ? t('tx.pm.cashapp') : t('tx.pm.ewallet'), emoji: '📱' },
+                    { id: 'other',   label: t('tx.pm.other'),                 emoji: '➕' },
+                  ];
+                })().map(pm => (
+                  <TouchableOpacity
+                    key={pm.id}
+                    onPress={() => setPaymentMethod(pm.id)}
+                    className={`flex-row items-center gap-1 px-3 py-2 rounded-xl border ${
+                      paymentMethod === pm.id
+                        ? 'bg-green-600 border-green-600'
+                        : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                    <Text style={{ fontSize: 13 }}>{pm.emoji}</Text>
+                    <Text className={`text-xs font-semibold ${paymentMethod === pm.id ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>
+                      {pm.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
 
             {/* Category */}
