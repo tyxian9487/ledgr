@@ -235,9 +235,25 @@ export default function CaptureScreen() {
   const saveAndGoHome = useCallback(async () => {
     if (!parsed) return;
     try {
+      // Copy the temp camera/gallery URI to app's document directory so it
+      // persists after the OS clears the camera cache.
+      let permanentUri: string | undefined;
+      if (capturedUri) {
+        try {
+          const FileSystem = await import('expo-file-system/legacy');
+          const dir = `${FileSystem.documentDirectory}receipts/`;
+          await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
+          const ext = capturedUri.split('.').pop()?.split('?')[0]?.toLowerCase() || 'jpg';
+          const dest = `${dir}receipt_${Date.now()}.${ext}`;
+          await FileSystem.copyAsync({ from: capturedUri, to: dest });
+          permanentUri = dest;
+        } catch {
+          permanentUri = capturedUri; // fallback to temp URI if copy fails
+        }
+      }
       await AsyncStorage.setItem(PENDING_RECEIPT_KEY, JSON.stringify({
         ...parsed,
-        receiptImage: capturedUri ?? undefined,
+        receiptImage: permanentUri,
       }));
       trackEvent('receipt_scanned', { category: parsed.category, amount: parsed.amount });
       router.replace('/(tabs)');

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Alert, Modal, ScrollView, PanResponder, Animated } from 'react-native';
-import { Trash2, Edit2, RefreshCw, ChevronDown, ChevronRight, ChevronLeft, X } from 'lucide-react-native';
+import { View, Text, TouchableOpacity, Alert, Modal, ScrollView, PanResponder, Animated, Image, StyleSheet } from 'react-native';
+import { Trash2, Edit2, RefreshCw, ChevronDown, ChevronRight, ChevronLeft, X, ImageIcon } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { useColorScheme } from 'nativewind';
@@ -313,6 +313,7 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
   };
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [viewingReceipt, setViewingReceipt] = useState<string | null>(null);
 
   const allCategories = useMemo(() => [...expenseCategories, ...incomeCategories], [expenseCategories, incomeCategories]);
 
@@ -365,6 +366,15 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
         <Text style={{ fontSize: 13, fontWeight: '700', color: tx.type === 'income' ? '#16a34a' : '#ef4444', marginRight: 2 }}>
           {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
         </Text>
+        {tx.receiptImage && (
+          <TouchableOpacity
+            onPress={() => setViewingReceipt(tx.receiptImage!)}
+            style={{ padding: 7 }}
+            hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+          >
+            <ImageIcon size={13} color="#16a34a" />
+          </TouchableOpacity>
+        )}
         {onEdit && (
           <TouchableOpacity onPress={() => onEdit(tx)} style={{ padding: 7 }} hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}>
             <Edit2 size={13} color="#9ca3af" />
@@ -394,6 +404,19 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
                 </TouchableOpacity>
               </View>
             </View>
+          </View>
+        </Modal>
+        <Modal visible={!!viewingReceipt} transparent animationType="fade" onRequestClose={() => setViewingReceipt(null)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center' }}>
+            <TouchableOpacity
+              onPress={() => setViewingReceipt(null)}
+              style={{ position: 'absolute', top: 48, right: 20, zIndex: 10, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <X size={20} color="#fff" />
+            </TouchableOpacity>
+            {viewingReceipt && (
+              <Image source={{ uri: viewingReceipt }} style={{ width: '90%', height: '75%' }} resizeMode="contain" />
+            )}
           </View>
         </Modal>
         <Text style={{ color: '#9ca3af', fontSize: 14, textAlign: 'center' }}>{t('misc.no_tx_month' as any)}</Text>
@@ -429,6 +452,19 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
                 </TouchableOpacity>
               </View>
             </View>
+          </View>
+        </Modal>
+        <Modal visible={!!viewingReceipt} transparent animationType="fade" onRequestClose={() => setViewingReceipt(null)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center' }}>
+            <TouchableOpacity
+              onPress={() => setViewingReceipt(null)}
+              style={{ position: 'absolute', top: 48, right: 20, zIndex: 10, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <X size={20} color="#fff" />
+            </TouchableOpacity>
+            {viewingReceipt && (
+              <Image source={{ uri: viewingReceipt }} style={{ width: '90%', height: '75%' }} resizeMode="contain" />
+            )}
           </View>
         </Modal>
         {rows.map(row => {
@@ -510,6 +546,19 @@ export default function Categories({ year, month, view, filterFn, onEdit }: Cate
               </TouchableOpacity>
             </View>
           </View>
+        </View>
+      </Modal>
+      <Modal visible={!!viewingReceipt} transparent animationType="fade" onRequestClose={() => setViewingReceipt(null)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={() => setViewingReceipt(null)}
+            style={{ position: 'absolute', top: 48, right: 20, zIndex: 10, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <X size={20} color="#fff" />
+          </TouchableOpacity>
+          {viewingReceipt && (
+            <Image source={{ uri: viewingReceipt }} style={{ width: '90%', height: '75%' }} resizeMode="contain" />
+          )}
         </View>
       </Modal>
       {dateRows.map(({ dateStr, dayTxs, expenses, income }) => {
