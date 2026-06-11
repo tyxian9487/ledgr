@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Alert, View, Text, TouchableOpacity } from 'react-native';
 import Svg, { Circle, Circle as SvgCircle, Path, Text as SvgText } from 'react-native-svg';
-import { ChevronLeft, ChevronRight, ChevronDown, Share2, ArrowLeftRight } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, ChevronDown, Share2, ArrowLeftRight, Eye, EyeOff } from 'lucide-react-native';
 import { captureRef } from 'react-native-view-shot';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../context/LanguageContext';
@@ -16,6 +16,8 @@ interface Props {
   onNextMonth: () => void;
   onYearChange?: (year: number) => void;
   statsHighlightActive?: boolean;
+  numbersHidden?: boolean;
+  onToggleHide?: () => void;
 }
 
 const MONTH_KEYS = [
@@ -142,10 +144,12 @@ const STATUS_CONFIG = {
   critical:  { Coin: CopperCoin, textColor: '#f97316', score: '<60' },
 } as const;
 
-export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYearChange, statsHighlightActive }: Props) {
+export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYearChange, statsHighlightActive, numbersHidden = false, onToggleHide }: Props) {
   const { getMonthTransactions, getMonthIncome, getMonthExpenses, formatCurrency } = useApp();
   const { t } = useTranslation();
   const shareCardRef = useRef<View>(null);
+
+  const mask = (val: string) => numbersHidden ? '••••••' : val;
 
   const txs = getMonthTransactions(year, month);
   const totalIncome = getMonthIncome(year, month);
@@ -303,12 +307,25 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
       </View>
 
       {/* Donut — centered, tappable segments */}
+      <View style={{ position: 'relative' }}>
+        {/* Eye toggle — upper right of donut section */}
+        {onToggleHide && (
+          <TouchableOpacity
+            onPress={onToggleHide}
+            style={{ position: 'absolute', top: 0, right: 16, zIndex: 10, width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}
+            activeOpacity={0.7}
+          >
+            {numbersHidden
+              ? <EyeOff size={15} color="rgba(255,255,255,0.85)" />
+              : <Eye size={15} color="rgba(255,255,255,0.85)" />}
+          </TouchableOpacity>
+        )}
       <View className="items-center pb-1">
         <DonutRing
           slices={activeSlices.map((s) => ({ id: s.id, color: s.color, pct: s.pct }))}
           size={200}
           centerLabel={activeCenterLabel}
-          centerValue={formatCurrency(activeCenterValue)}
+          centerValue={mask(formatCurrency(activeCenterValue))}
           selectedId={selectedSliceId}
           onSlicePress={handleSlicePress}
         />
@@ -320,8 +337,8 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
               <View className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-white/15 mb-3 -mt-1 max-w-[88%]">
                 <View className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: sel.color }} />
                 <Text className="text-white/90 text-xs font-semibold flex-shrink" numberOfLines={1}>{sel.label}</Text>
-                <Text className="text-white font-bold text-xs">{formatCurrency(sel.amount)}</Text>
-                <Text className="text-white/50 text-[10px]">({sel.pct.toFixed(0)}%)</Text>
+                <Text className="text-white font-bold text-xs">{mask(formatCurrency(sel.amount))}</Text>
+                <Text className="text-white/50 text-[10px]">({numbersHidden ? '••' : sel.pct.toFixed(0)}%)</Text>
               </View>
             );
           }
@@ -330,6 +347,7 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
           }
           return <Text className="text-white/35 text-xs mb-3 -mt-1">{t('card.tap_segment')}</Text>;
         })()}
+      </View>
       </View>
 
       {/* Income / Remaining row */}
@@ -347,7 +365,7 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
             <ArrowLeftRight size={10} color="rgba(255,255,255,0.45)" />
           </View>
           <Text className="text-white font-bold text-base">
-            {showIncome ? formatCurrency(totalExpenses) : formatCurrency(totalIncome)}
+            {mask(showIncome ? formatCurrency(totalExpenses) : formatCurrency(totalIncome))}
           </Text>
         </TouchableOpacity>
         <View className="flex-1 bg-white/15 rounded-2xl p-3">
@@ -359,7 +377,7 @@ export default function GreenCard({ year, month, onPrevMonth, onNextMonth, onYea
               className="font-bold text-base"
               style={{ color: remaining >= 0 ? 'white' : '#fca5a5' }}
             >
-              {formatCurrency(Math.abs(remaining))}
+              {mask(formatCurrency(Math.abs(remaining)))}
             </Text>
             {remaining < 0 && (
               <Text className="text-red-300 text-[10px]">{t('card.deficit')}</Text>

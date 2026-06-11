@@ -75,6 +75,7 @@ export default function HomeScreen() {
   const [showEntry, setShowEntry] = useState(false);
   const [entryPrefill, setEntryPrefill] = useState<{ type?: 'expense' | 'income'; amount?: number; category?: string; description?: string } | undefined>(undefined);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
+  const [numbersHidden, setNumbersHidden] = useState(false);
   const [viewMonth, setViewMonth] = useState(now.getMonth());
   const [viewYear, setViewYear] = useState(now.getFullYear());
   const [viewMode, setViewMode] = useState<'category' | 'date' | 'calendar'>('category');
@@ -210,6 +211,8 @@ export default function HomeScreen() {
             onNextMonth={nextMonth}
             onYearChange={setViewYear}
             statsHighlightActive={statsActive}
+            numbersHidden={numbersHidden}
+            onToggleHide={() => setNumbersHidden(h => !h)}
           />
         </TourHighlight>
 
